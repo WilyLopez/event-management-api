@@ -1,0 +1,33 @@
+spring:
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+  flyway:
+    validate-on-migrate: true
+
+logging:
+  level:
+    root: WARN
+    com.playzone.pems: INFO
+    org.hibernate.SQL: WARN
+    org.springframework.security: WARN
+  file:
+    name: /var/log/playzone/pems.log
+
+server:
+  error:
+    include-message: never
+    include-binding-errors: never
+
+springdoc:
+  swagger-ui:
+    enabled: false
+  api-docs:
+    enabled: false
+
+playzone:
+  seguridad:
+    jwt-expiracion-ms: 900000

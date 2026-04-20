@@ -1,0 +1,173 @@
+spring:
+  application:
+    name: playzone-pems
+
+  profiles:
+    active: dev
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/BDGestionEvento}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:123456}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: PlayZone-HikariPool
+      minimum-idle: 2
+      maximum-pool-size: 10
+      idle-timeout: 30000
+      connection-timeout: 20000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: public
+        jdbc:
+          time_zone: America/Lima
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+    validate-on-migrate: true
+    encoding: UTF-8
+    schemas: public
+
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:noreply@playzone.pe}
+    password: ${MAIL_PASSWORD:changeme}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+        debug: false
+    default-encoding: UTF-8
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 20MB
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+      fail-on-empty-beans: false
+    deserialization:
+      fail-on-unknown-properties: false
+    default-property-inclusion: non_null
+    time-zone: America/Lima
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: never
+    include-exception: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: PlayZone PEMS
+    version: 1.0.0
+    description: PlayZone Event Management System
+
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operations-sorter: alpha
+    tags-sorter: alpha
+    display-request-duration: true
+    try-it-out-enabled: true
+  show-actuator: false
+
+playzone:
+
+  url-base: ${APP_URL:http://localhost:8080}
+
+  seguridad:
+    jwt-secret: ${JWT_SECRET:W7kP9mN2xQzL4rT8uV1sB6cY3eH0jA5fG}
+    jwt-expiracion-ms: ${JWT_EXP_MS:1800000}
+    jwt-verificacion-expiracion-ms: ${JWT_VER_EXP_MS:86400000}
+    max-intentos-login: 5
+    duracion-bloqueo-min: 15
+
+  negocio:
+    aforo-maximo: 60
+    anticipacion-min-horas: 1
+    anticipacion-min-evento-dias: 15
+    max-reprogramaciones: 1
+    visitas-para-entrada-gratis: 6
+
+  cors:
+    origenes-permitidos: ${CORS_ORIGINS:http://localhost:3000,http://localhost:5173}
+
+  correo:
+    nombre-remitente: ${MAIL_SENDER_NAME:PlayZone}
+
+  storage:
+    access-key: ${STORAGE_ACCESS_KEY:minioadmin}
+    secret-key: ${STORAGE_SECRET_KEY:minioadmin}
+    region: ${STORAGE_REGION:us-east-1}
+    endpoint: ${STORAGE_ENDPOINT:http://localhost:9000}
+    bucket: ${STORAGE_BUCKET:playzone-media}
+    url-publica: ${STORAGE_URL_PUBLICA:http://localhost:9000/playzone-media}
+
+  # SUNAT / Nubefact
+  sunat:
+    nubefact:
+      url: ${NUBEFACT_URL:https://api.nubefact.com}
+      token: ${NUBEFACT_TOKEN:changeme}
+      ruc: ${NUBEFACT_RUC:20000000001}
+
+  # HTTP client
+  http:
+    connect-timeout-ms: 5000
+    read-timeout-ms: 10000
+
+logging:
+  level:
+    root: INFO
+    com.playzone.pems: DEBUG
+    org.springframework.security: INFO
+    org.hibernate.SQL: INFO
+    org.hibernate.type.descriptor.sql: INFO
+    org.flywaydb: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/playzone-pems.log
