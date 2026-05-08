@@ -1,4 +1,10 @@
 spring:
+  config:
+    import:
+      - "optional:file:./.env[.properties]"
+      - "optional:file:../.env[.properties]"
+      - "optional:file:pems/.env[.properties]"
+
   application:
     name: playzone-pems
 
@@ -40,8 +46,8 @@ spring:
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:noreply@playzone.pe}
-    password: ${MAIL_PASSWORD:changeme}
+    username: ${MAIL_USERNAME:tucorreo@gmail.com}
+    password: ${MAIL_PASSWORD:}
     properties:
       mail:
         smtp:
@@ -96,9 +102,9 @@ management:
 
 info:
   app:
-    name: PlayZone PEMS
+    name: Kiki y Lala PEMS
     version: 1.0.0
-    description: PlayZone Event Management System
+    description: Kiki y Lala Event Management System
 
 
 springdoc:
@@ -136,7 +142,7 @@ playzone:
     origenes-permitidos: ${CORS_ORIGINS:http://localhost:3000,http://localhost:5173}
 
   correo:
-    nombre-remitente: ${MAIL_SENDER_NAME:PlayZone}
+    nombre-remitente: ${MAIL_SENDER_NAME:Kiki y Lala}
 
   storage:
     access-key: ${STORAGE_ACCESS_KEY:minioadmin}
