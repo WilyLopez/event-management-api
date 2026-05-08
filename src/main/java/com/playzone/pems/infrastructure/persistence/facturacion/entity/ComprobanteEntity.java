@@ -42,7 +42,7 @@ public class ComprobanteEntity {
     @JoinColumn(name = "idserie", nullable = false)
     private SerieComprobanteEntity serie;
 
-    @Column(nullable = false, length = 4)
+    @Column(name = "serienum", nullable = false, length = 4)
     private String serieNum;
 
     @Column(nullable = false, length = 8)

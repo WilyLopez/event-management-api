@@ -23,10 +23,10 @@ public class ContenidoWebEntity {
     private Long id;
 
     @Column(name = "idseccion", nullable = false)
-    private Long idSeccion;
+    private Integer idSeccion;
 
     @Column(name = "idtipocontenido", nullable = false)
-    private Long idTipoContenido;
+    private Integer idTipoContenido;
 
     @Column(nullable = false, length = 100)
     private String clave;

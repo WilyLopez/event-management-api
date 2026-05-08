@@ -34,7 +34,7 @@ public class ImagenGaleriaEntity {
     private String altTexto;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "categoriaimagen", nullable = false, length = 20)
     private CategoriaImagen categoriaImagen;
 
     @Column(name = "ordenvisualizacion", nullable = false)
