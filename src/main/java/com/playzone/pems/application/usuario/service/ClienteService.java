@@ -38,8 +38,6 @@ public class ClienteService
             throw new ValidationException("dni", "Ya existe una cuenta con ese DNI.");
         }
 
-        String token = generarTokenPort.generarTokenVerificacionCorreo(0L);
-
         Cliente cliente = Cliente.builder()
                 .nombre(command.getNombre())
                 .correo(command.getCorreo())
@@ -51,18 +49,13 @@ public class ClienteService
                 .direccionFiscal(command.getDireccionFiscal())
                 .esVip(false)
                 .contadorVisitas(0)
-                .correoVerificado(false)
-                .tokenVerificacion(token)
+                .correoVerificado(true)
                 .activo(true)
                 .build();
 
         Cliente guardado = clienteRepository.save(cliente);
 
-        correoPort.enviarVerificacion(
-                guardado.getCorreo(),
-                guardado.getNombre(),
-                "/verificar?token=" + token
-        );
+        correoPort.enviarBienvenida(guardado.getCorreo(), guardado.getNombre());
 
         return toQuery(guardado);
     }

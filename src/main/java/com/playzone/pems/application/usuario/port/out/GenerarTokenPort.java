@@ -9,4 +9,10 @@ public interface GenerarTokenPort {
     boolean esTokenValido(String token);
 
     Long extraerIdUsuario(String token);
+
+    String extraerCorreo(String token);
+
+    String extraerRol(String token);
+
+    String resolverToken(jakarta.servlet.http.HttpServletRequest request);
 }
