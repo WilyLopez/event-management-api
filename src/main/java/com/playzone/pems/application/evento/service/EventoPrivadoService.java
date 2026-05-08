@@ -4,6 +4,7 @@ import com.playzone.pems.application.evento.dto.command.SolicitarEventoPrivadoCo
 import com.playzone.pems.application.evento.dto.query.EventoPrivadoQuery;
 import com.playzone.pems.application.evento.port.in.CancelarEventoPrivadoUseCase;
 import com.playzone.pems.application.evento.port.in.ConfirmarEventoPrivadoUseCase;
+import com.playzone.pems.application.evento.port.in.ConsultarEventosPrivadosUseCase;
 import com.playzone.pems.application.evento.port.in.SolicitarEventoPrivadoUseCase;
 import com.playzone.pems.application.evento.port.out.EnviarNotificacionEventoPort;
 import com.playzone.pems.domain.calendario.exception.FechaNoDisponibleException;
@@ -20,6 +21,8 @@ import com.playzone.pems.shared.exception.ValidationException;
 import com.playzone.pems.shared.util.FechaUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +34,8 @@ import java.time.LocalDate;
 public class EventoPrivadoService
         implements SolicitarEventoPrivadoUseCase,
         ConfirmarEventoPrivadoUseCase,
-        CancelarEventoPrivadoUseCase {
+        CancelarEventoPrivadoUseCase,
+        ConsultarEventosPrivadosUseCase {
 
     private final EventoPrivadoRepository     eventoRepository;
     private final ClienteRepository           clienteRepository;
@@ -41,6 +45,34 @@ public class EventoPrivadoService
 
     @Value("${playzone.negocio.anticipacion-min-evento-dias:15}")
     private int anticipacionMinDias;
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<EventoPrivadoQuery> consultarPorCliente(Long idCliente, Pageable pageable) {
+        return eventoRepository.findByCliente(idCliente, pageable)
+                .map(e -> toQuery(e, obtenerCliente(e.getIdCliente()), obtenerTurno(e.getIdTurno())));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<EventoPrivadoQuery> consultarPorSedeYEstado(Long idSede, String estado, Pageable pageable) {
+        return eventoRepository.findBySedeAndEstado(idSede, EstadoEventoPrivado.valueOf(estado), pageable)
+                .map(e -> toQuery(e, obtenerCliente(e.getIdCliente()), obtenerTurno(e.getIdTurno())));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<EventoPrivadoQuery> consultarPorSedeYRangoFechas(Long idSede, LocalDate inicio, LocalDate fin, Pageable pageable) {
+        return eventoRepository.findBySedeAndFechasBetween(idSede, inicio, fin, pageable)
+                .map(e -> toQuery(e, obtenerCliente(e.getIdCliente()), obtenerTurno(e.getIdTurno())));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public EventoPrivadoQuery consultarPorId(Long idEvento) {
+        EventoPrivado e = obtenerEvento(idEvento);
+        return toQuery(e, obtenerCliente(e.getIdCliente()), obtenerTurno(e.getIdTurno()));
+    }
 
     @Override
     @Transactional

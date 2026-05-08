@@ -19,7 +19,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,25 +42,41 @@ public class CalendarioService
     public DisponibilidadQuery consultarPorFecha(Long idSede, LocalDate fecha) {
         DisponibilidadDiaria disp = disponibilidadRepository
                 .findBySedeAndFecha(idSede, fecha)
-                .orElseThrow(() -> new DisponibilidadNotFoundException(idSede, fecha));
+                .orElseGet(() -> buildDefaultDisponibilidad(idSede, fecha));
 
         boolean bloqueado = bloqueRepository.existsBloqueActivoEnFecha(idSede, fecha);
-        TipoDia tipoDia   = resolverTipoDia(fecha);
-
-        return toQuery(disp, tipoDia, bloqueado);
+        return toQuery(disp, resolverTipoDia(fecha), bloqueado);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<DisponibilidadQuery> consultarRango(Long idSede, LocalDate inicio, LocalDate fin) {
-        return disponibilidadRepository
-                .findBySedeAndFechasBetween(idSede, inicio, fin)
-                .stream()
-                .map(d -> {
-                    boolean bloqueado = bloqueRepository.existsBloqueActivoEnFecha(idSede, d.getFecha());
-                    return toQuery(d, resolverTipoDia(d.getFecha()), bloqueado);
-                })
-                .toList();
+        List<DisponibilidadDiaria> existentes = disponibilidadRepository
+                .findBySedeAndFechasBetween(idSede, inicio, fin);
+
+        Map<LocalDate, DisponibilidadDiaria> map = existentes.stream()
+                .collect(Collectors.toMap(DisponibilidadDiaria::getFecha, d -> d));
+
+        List<DisponibilidadQuery> result = new ArrayList<>();
+        LocalDate current = inicio;
+        while (!current.isAfter(fin)) {
+            DisponibilidadDiaria d = map.getOrDefault(current, buildDefaultDisponibilidad(idSede, current));
+            boolean bloqueado = bloqueRepository.existsBloqueActivoEnFecha(idSede, current);
+            result.add(toQuery(d, resolverTipoDia(current), bloqueado));
+            current = current.plusDays(1);
+        }
+        return result;
+    }
+
+    private DisponibilidadDiaria buildDefaultDisponibilidad(Long idSede, LocalDate fecha) {
+        return DisponibilidadDiaria.builder()
+                .idSede(idSede)
+                .fecha(fecha)
+                .accesoPublicoActivo(true)
+                .turnoT1Disponible(true)
+                .turnoT2Disponible(true)
+                .aforoPublicoActual(0)
+                .build();
     }
 
     @Override

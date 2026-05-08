@@ -4,6 +4,7 @@ import com.playzone.pems.application.evento.dto.command.CrearReservaPublicaComma
 import com.playzone.pems.application.evento.dto.command.ReprogramarReservaCommand;
 import com.playzone.pems.application.evento.dto.query.ReservaPublicaQuery;
 import com.playzone.pems.application.evento.port.in.CancelarReservaUseCase;
+import com.playzone.pems.application.evento.port.in.ConsultarReservasUseCase;
 import com.playzone.pems.application.evento.port.in.CrearReservaPublicaUseCase;
 import com.playzone.pems.application.evento.port.in.ReprogramarReservaUseCase;
 import com.playzone.pems.application.evento.port.out.EnviarTicketPorCorreoPort;
@@ -27,6 +28,8 @@ import com.playzone.pems.shared.util.FechaUtil;
 import com.playzone.pems.shared.util.TicketUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,7 +41,8 @@ import java.time.LocalDate;
 public class ReservaPublicaService
         implements CrearReservaPublicaUseCase,
         ReprogramarReservaUseCase,
-        CancelarReservaUseCase {
+        CancelarReservaUseCase,
+        ConsultarReservasUseCase {
 
     private final ReservaPublicaRepository   reservaRepository;
     private final ClienteRepository          clienteRepository;
@@ -56,6 +60,35 @@ public class ReservaPublicaService
 
     @Value("${playzone.negocio.max-reprogramaciones:1}")
     private int maxReprogramaciones;
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ReservaPublicaQuery> consultarPorCliente(Long idCliente, Pageable pageable) {
+        Cliente cliente = clienteRepository.findById(idCliente)
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente", idCliente));
+        return reservaRepository.findByCliente(idCliente, pageable)
+                .map(r -> toQuery(r, cliente.getNombre()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ReservaPublicaQuery> consultarPorSedeYFecha(Long idSede, LocalDate fecha, Pageable pageable) {
+        return reservaRepository.findBySedeAndFecha(idSede, fecha, pageable)
+                .map(r -> toQuery(r, fetchNombreCliente(r.getIdCliente())));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ReservaPublicaQuery> consultarPorSedeYEstado(Long idSede, String estado, Pageable pageable) {
+        return reservaRepository.findBySedeAndEstado(idSede, EstadoReservaPublica.valueOf(estado), pageable)
+                .map(r -> toQuery(r, fetchNombreCliente(r.getIdCliente())));
+    }
+
+    private String fetchNombreCliente(Long idCliente) {
+        return clienteRepository.findById(idCliente)
+                .map(Cliente::getNombre)
+                .orElse("Cliente Desconocido");
+    }
 
     @Override
     @Transactional
@@ -102,6 +135,8 @@ public class ReservaPublicaService
                 .build();
 
         ReservaPublica guardada = reservaRepository.save(reserva);
+        disponibilidadRepository.incrementarAforo(command.getIdSede(), command.getFechaEvento());
+
         ReservaPublicaQuery query = toQuery(guardada, cliente.getNombre());
 
         correoPort.enviarTicket(cliente.getCorreo(), cliente.getNombre(), query);
@@ -163,6 +198,8 @@ public class ReservaPublicaService
                 .build();
 
         ReservaPublica guardada = reservaRepository.save(nueva);
+        disponibilidadRepository.decrementarAforo(original.getIdSede(), original.getFechaEvento());
+        disponibilidadRepository.incrementarAforo(original.getIdSede(), command.getNuevaFechaEvento());
 
         Cliente cliente = clienteRepository.findById(guardada.getIdCliente())
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente", guardada.getIdCliente()));
@@ -189,6 +226,7 @@ public class ReservaPublicaService
                 .build();
 
         ReservaPublica guardada = reservaRepository.save(cancelada);
+        disponibilidadRepository.decrementarAforo(reserva.getIdSede(), reserva.getFechaEvento());
 
         Cliente cliente = clienteRepository.findById(guardada.getIdCliente())
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente", guardada.getIdCliente()));
@@ -200,7 +238,8 @@ public class ReservaPublicaService
         if (FechaUtil.esPasado(fecha)) {
             throw new FechaNoDisponibleException(fecha, "La fecha ya pasó.");
         }
-        if (!FechaUtil.superaAnticipacionMinima(fecha, anticipacionMinHoras)) {
+        // Solo validamos anticipación en horas si la fecha es futura (no hoy)
+        if (fecha.isAfter(FechaUtil.hoyPeru()) && !FechaUtil.superaAnticipacionMinima(fecha, anticipacionMinHoras)) {
             throw new FechaNoDisponibleException(fecha,
                     "Debe reservar con al menos " + anticipacionMinHoras + " hora(s) de anticipación.");
         }

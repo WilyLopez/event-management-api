@@ -15,7 +15,7 @@ public class CrearReservaRequest {
     @NotNull
     private CanalReserva canalReserva;
 
-    @NotNull @Future
+    @NotNull @FutureOrPresent
     private LocalDate fechaEvento;
 
     @NotBlank @Size(max = 120)
