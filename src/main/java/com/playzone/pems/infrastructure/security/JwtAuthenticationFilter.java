@@ -1,5 +1,6 @@
 package com.playzone.pems.infrastructure.security;
 
+import com.playzone.pems.application.usuario.port.out.GenerarTokenPort;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,7 +21,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtTokenProvider       jwtTokenProvider;
+    private final GenerarTokenPort       jwtTokenProvider;
     private final CustomUserDetailsService userDetailsService;
 
     @Override
@@ -57,10 +58,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private String resolverCorreo(HttpServletRequest request, String token) {
-        String correo = request.getHeader("X-User-Email");
-        if (correo != null && !correo.isBlank()) return correo;
-        Long id = jwtTokenProvider.extraerIdUsuario(token);
-        return id.toString();
+        String correoHeader = request.getHeader("X-User-Email");
+        if (correoHeader != null && !correoHeader.isBlank()) return correoHeader;
+        return jwtTokenProvider.extraerCorreo(token);
     }
 
     @Override

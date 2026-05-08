@@ -87,6 +87,17 @@ public class JwtTokenProvider implements GenerarTokenPort {
         return Long.valueOf(claims.getSubject());
     }
 
+    @Override
+    public String extraerCorreo(String token) {
+        return Jwts.parser()
+                .verifyWith(key())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get(CLAIM_CORREO, String.class);
+    }
+
+    @Override
     public String extraerRol(String token) {
         return Jwts.parser()
                 .verifyWith(key())
@@ -96,6 +107,7 @@ public class JwtTokenProvider implements GenerarTokenPort {
                 .get(CLAIM_ROL, String.class);
     }
 
+    @Override
     public String resolverToken(jakarta.servlet.http.HttpServletRequest request) {
         String bearer = request.getHeader("Authorization");
         if (bearer != null && bearer.startsWith("Bearer ")) {
