@@ -1,24 +1,29 @@
 package com.playzone.pems.interfaces.rest.calendario.request;
 
-import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
 
 @Getter
-@NoArgsConstructor
 public class BloquearFechasRequest {
 
-    @NotNull @FutureOrPresent
+    @NotNull
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate fechaInicio;
 
     @NotNull
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate fechaFin;
 
-    @NotBlank @Size(max = 300)
+    @NotBlank
+    @Size(min = 1, max = 20)
+    private String tipoBloqueo;
+
+    @NotBlank
+    @Size(min = 3, max = 300)
     private String motivo;
 }

@@ -30,4 +30,8 @@ public class TurnoEntity {
 
     @Column(name = "horafin", nullable = false)
     private LocalTime horaFin;
+
+    public String getNombre() {
+        return descripcion;
+    }
 }

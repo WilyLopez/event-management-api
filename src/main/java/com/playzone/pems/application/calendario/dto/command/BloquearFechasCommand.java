@@ -22,6 +22,7 @@ public class BloquearFechasCommand {
 
     @NotNull
     private final LocalDate fechaFin;
+    private String    tipoBloqueo;
 
     @NotBlank
     @Size(max = 300)
