@@ -6,6 +6,8 @@ import com.playzone.pems.domain.cms.repository.ResenaRepository;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import com.playzone.pems.shared.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +16,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class ResenaService implements ModerarResenaUseCase {
 
     private final ResenaRepository resenaRepository;
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Resena> listar(boolean pendientes, Pageable pageable) {
+        return pendientes ? resenaRepository.findPendientes(pageable) 
+                         : resenaRepository.findAprobadas(pageable);
+    }
 
     @Override
     @Transactional
