@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -53,8 +54,8 @@ public class PromocionScheduler {
     public void notificarPromocionesActivasHoy() {
         LocalDate hoy = FechaUtil.hoyPeru();
 
-        List<Promocion> activas = promocionRepository.findAutomaticasVigentes(
-                null, TipoDia.SEMANA, hoy);
+        List<Promocion> activas = new ArrayList<>(promocionRepository.findAutomaticasVigentes(
+                null, TipoDia.SEMANA, hoy));
 
         activas.addAll(promocionRepository.findAutomaticasVigentes(
                 null, TipoDia.FIN_SEMANA_FERIADO, hoy));
