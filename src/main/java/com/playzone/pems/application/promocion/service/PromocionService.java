@@ -5,6 +5,7 @@ import com.playzone.pems.application.promocion.dto.query.PromocionQuery;
 import com.playzone.pems.application.promocion.port.in.AplicarPromocionUseCase;
 import com.playzone.pems.application.promocion.port.in.CrearPromocionUseCase;
 import com.playzone.pems.application.promocion.port.in.DesactivarPromocionUseCase;
+import com.playzone.pems.application.promocion.port.in.ListarPromocionesUseCase;
 import com.playzone.pems.domain.evento.model.ReservaPublica;
 import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
 import com.playzone.pems.domain.promocion.exception.PromocionNotFoundException;
@@ -13,20 +14,34 @@ import com.playzone.pems.domain.promocion.repository.PromocionRepository;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import com.playzone.pems.shared.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class PromocionService
         implements CrearPromocionUseCase,
+        ListarPromocionesUseCase,
         AplicarPromocionUseCase,
         DesactivarPromocionUseCase {
 
     private final PromocionRepository       promocionRepository;
     private final ReservaPublicaRepository  reservaRepository;
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PromocionQuery> listar() {
+        return promocionRepository.findAll(Pageable.unpaged())
+                .getContent()
+                .stream()
+                .map(this::toQuery)
+                .collect(Collectors.toList());
+    }
 
     @Override
     @Transactional

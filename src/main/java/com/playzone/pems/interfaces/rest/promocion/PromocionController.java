@@ -4,6 +4,7 @@ import com.playzone.pems.application.promocion.dto.command.CrearPromocionCommand
 import com.playzone.pems.application.promocion.dto.query.PromocionQuery;
 import com.playzone.pems.application.promocion.port.in.CrearPromocionUseCase;
 import com.playzone.pems.application.promocion.port.in.DesactivarPromocionUseCase;
+import com.playzone.pems.application.promocion.port.in.ListarPromocionesUseCase;
 import com.playzone.pems.interfaces.rest.promocion.request.CrearPromocionRequest;
 import com.playzone.pems.interfaces.rest.promocion.response.PromocionResponse;
 import com.playzone.pems.shared.response.ApiResponse;
@@ -14,14 +15,26 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/promociones")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 public class PromocionController {
 
-    private final CrearPromocionUseCase     crearUseCase;
+    private final CrearPromocionUseCase      crearUseCase;
+    private final ListarPromocionesUseCase   listarUseCase;
     private final DesactivarPromocionUseCase desactivarUseCase;
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<PromocionResponse>>> listar() {
+        List<PromocionResponse> lista = listarUseCase.listar()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+        return ResponseEntity.ok(ApiResponse.ok(lista));
+    }
 
     @PostMapping
     public ResponseEntity<ApiResponse<PromocionResponse>> crear(
