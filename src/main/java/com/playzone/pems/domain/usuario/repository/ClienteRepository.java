@@ -20,6 +20,11 @@ public interface ClienteRepository {
 
     Page<Cliente> findByNombreOrCorreo(String texto, Pageable pageable);
 
+    Page<Cliente> buscarConFiltros(
+            String search, Boolean esVip, Boolean activo,
+            Boolean verificado, Boolean frecuente,
+            int minVisitas, Pageable pageable);
+
     Cliente save(Cliente cliente);
 
     boolean existsByCorreo(String correo);

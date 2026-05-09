@@ -58,4 +58,16 @@ public class ClientePersistenceAdapter implements ClienteRepository {
     public void incrementarContadorVisitas(Long idCliente) {
         clienteJpa.incrementarContadorVisitas(idCliente);
     }
+
+    @Override
+    public Page<Cliente> buscarConFiltros(
+            String search, Boolean esVip, Boolean activo,
+            Boolean verificado, Boolean frecuente,
+            int minVisitas, Pageable pageable) {
+
+        return clienteJpa.buscarConFiltros(
+                        search, esVip, activo, verificado, frecuente,
+                        minVisitas, pageable)
+                .map(mapper::toDomain);
+    }
 }

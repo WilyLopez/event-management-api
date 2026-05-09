@@ -25,6 +25,31 @@ public interface ClienteJpaRepository extends JpaRepository<ClienteEntity, Long>
 
     boolean existsByDni(String dni);
 
+    @Query("""
+        SELECT c FROM ClienteEntity c
+        WHERE
+            (CAST(:search AS string) IS NULL OR
+            LOWER(c.nombre)   LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) OR
+            LOWER(c.correo)   LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) OR
+            LOWER(c.telefono) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) OR
+            c.dni             LIKE CONCAT('%', CAST(:search AS string), '%')        OR
+            c.ruc             LIKE CONCAT('%', CAST(:search AS string), '%')
+            )
+            AND (:esVip     IS NULL OR c.esVip             = :esVip)
+            AND (:activo    IS NULL OR c.activo             = :activo)
+            AND (:verificado IS NULL OR c.correoVerificado  = :verificado)
+            AND (:frecuente IS NULL OR c.contadorVisitas   >= :minVisitas)
+        """)
+    Page<ClienteEntity> buscarConFiltros(
+        @Param("search")    String  search,
+        @Param("esVip")     Boolean esVip,
+        @Param("activo")    Boolean activo,
+        @Param("verificado")Boolean verificado,
+        @Param("frecuente") Boolean frecuente,
+        @Param("minVisitas")int     minVisitas,
+        Pageable pageable
+    );
+
     @Modifying
     @Query("UPDATE ClienteEntity c SET c.contadorVisitas = c.contadorVisitas + 1 WHERE c.id = :id")
     void incrementarContadorVisitas(@Param("id") Long id);
