@@ -8,6 +8,10 @@ public class ContratoNotFoundException extends ResourceNotFoundException {
         super("Contrato", id);
     }
 
+    public ContratoNotFoundException(String message) {
+        super(message);
+    }
+
     public ContratoNotFoundException(String campo, Object valor) {
         super("Contrato", campo, valor);
     }

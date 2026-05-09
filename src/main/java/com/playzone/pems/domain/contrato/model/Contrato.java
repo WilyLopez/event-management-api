@@ -19,6 +19,21 @@ public class Contrato {
     private String         archivoPdfUrl;
     private LocalDate      fechaFirma;
     private Long           idUsuarioRedactor;
+    private String         usuarioRedactor;
+    private String         plantilla;
+    private String         observaciones;
+    private int            version;
+
+    private String         nombreCliente;
+    private String         correoCliente;
+    private String         tipoEvento;
+    private LocalDate      fechaEvento;
+    private String         turno;
+    private Integer        aforoDeclarado;
+    private java.math.BigDecimal precioTotalContrato;
+    private java.math.BigDecimal montoAdelanto;
+    private java.math.BigDecimal saldoPendiente;
+
     private LocalDateTime  fechaCreacion;
     private LocalDateTime  fechaActualizacion;
 

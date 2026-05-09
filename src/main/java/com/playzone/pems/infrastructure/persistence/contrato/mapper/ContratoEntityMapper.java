@@ -14,14 +14,36 @@ public class ContratoEntityMapper {
 
     public Contrato toDomain(ContratoEntity e) {
         if (e == null) return null;
+        var ev = e.getEventoPrivado();
+        var cl = ev.getCliente();
+        
+        java.math.BigDecimal saldo = java.math.BigDecimal.ZERO;
+        if (ev.getPrecioTotalContrato() != null) {
+            saldo = ev.getPrecioTotalContrato().subtract(
+                ev.getMontoAdelanto() != null ? ev.getMontoAdelanto() : java.math.BigDecimal.ZERO);
+        }
+
         return Contrato.builder()
                 .id(e.getId())
-                .idEventoPrivado(e.getEventoPrivado().getId())
+                .idEventoPrivado(ev.getId())
                 .estado(e.getEstado())
                 .contenidoTexto(e.getContenidoTexto())
                 .archivoPdfUrl(e.getArchivoPdfUrl())
                 .fechaFirma(e.getFechaFirma())
                 .idUsuarioRedactor(e.getUsuarioRedactor().getId())
+                .usuarioRedactor(e.getUsuarioRedactor().getNombre())
+                .plantilla(e.getPlantilla())
+                .observaciones(e.getObservaciones())
+                .version(e.getVersion())
+                .nombreCliente(cl.getNombre())
+                .correoCliente(cl.getCorreo())
+                .tipoEvento(ev.getTipoEvento())
+                .fechaEvento(ev.getFechaEvento())
+                .turno(ev.getTurno().getNombre())
+                .aforoDeclarado(ev.getAforoDeclarado())
+                .precioTotalContrato(ev.getPrecioTotalContrato())
+                .montoAdelanto(ev.getMontoAdelanto())
+                .saldoPendiente(saldo)
                 .fechaCreacion(e.getFechaCreacion())
                 .fechaActualizacion(e.getFechaActualizacion())
                 .build();
@@ -39,6 +61,9 @@ public class ContratoEntityMapper {
                 .archivoPdfUrl(d.getArchivoPdfUrl())
                 .fechaFirma(d.getFechaFirma())
                 .usuarioRedactor(redactor)
+                .plantilla(d.getPlantilla())
+                .observaciones(d.getObservaciones())
+                .version(d.getVersion())
                 .build();
     }
 

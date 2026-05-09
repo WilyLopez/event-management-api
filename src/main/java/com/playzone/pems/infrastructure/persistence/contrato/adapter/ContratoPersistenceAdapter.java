@@ -1,5 +1,6 @@
 package com.playzone.pems.infrastructure.persistence.contrato.adapter;
 
+import com.playzone.pems.domain.contrato.model.enums.EstadoContrato;
 import com.playzone.pems.domain.contrato.model.Contrato;
 import com.playzone.pems.domain.contrato.repository.ContratoRepository;
 import com.playzone.pems.infrastructure.persistence.contrato.jpa.ContratoJpaRepository;
@@ -8,6 +9,8 @@ import com.playzone.pems.infrastructure.persistence.evento.jpa.EventoPrivadoJpaR
 import com.playzone.pems.infrastructure.persistence.usuario.jpa.UsuarioAdminJpaRepository;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,5 +48,23 @@ public class ContratoPersistenceAdapter implements ContratoRepository {
     @Override
     public boolean existsByEventoPrivado(Long idEventoPrivado) {
         return contratoJpa.existsByEventoPrivado_Id(idEventoPrivado);
+    }
+
+    @Override
+    public boolean existsById(Long id) {
+        return contratoJpa.existsById(id);
+    }
+
+    @Override
+    public Page<Contrato> buscarConFiltros(String search, String estado, Long idSede, Pageable pageable) {
+        EstadoContrato estadoEnum = null;
+        if (estado != null && !estado.isBlank()) {
+            try {
+                estadoEnum = EstadoContrato.valueOf(estado);
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        return contratoJpa.buscarConFiltros(search, estadoEnum, idSede, pageable)
+                .map(mapper::toDomain);
     }
 }

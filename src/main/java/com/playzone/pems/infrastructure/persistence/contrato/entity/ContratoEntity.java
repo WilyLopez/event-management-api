@@ -46,6 +46,15 @@ public class ContratoEntity {
     @JoinColumn(name = "idusuarioredactor", nullable = false)
     private UsuarioAdminEntity usuarioRedactor;
 
+    @Column(name = "plantilla", length = 100)
+    private String plantilla;
+
+    @Column(name = "observaciones", columnDefinition = "TEXT")
+    private String observaciones;
+
+    @Column(name = "version", nullable = false)
+    private int version;
+
     @CreationTimestamp
     @Column(name = "fechacreacion", nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;

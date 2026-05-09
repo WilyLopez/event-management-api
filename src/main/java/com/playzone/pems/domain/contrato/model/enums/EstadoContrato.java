@@ -3,38 +3,25 @@ package com.playzone.pems.domain.contrato.model.enums;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-import java.util.Arrays;
-
 @Getter
 @RequiredArgsConstructor
 public enum EstadoContrato {
 
-    BORRADOR(
-            "BORRADOR",
-            "Contrato en redacción, no firmado"
-    ),
-    FIRMADO(
-            "FIRMADO",
-            "Contrato firmado por ambas partes"
-    );
+    BORRADOR("BORRADOR",          true,  false),
+    ENVIADO("ENVIADO",            true,  false),
+    PENDIENTE_FIRMA("PENDIENTE_FIRMA", true, false),
+    FIRMADO("FIRMADO",            false, true),
+    VENCIDO("VENCIDO",            false, false),
+    CANCELADO("CANCELADO",        false, false),
+    ARCHIVADO("ARCHIVADO",        false, false);
 
-    private final String codigo;
-    private final String descripcion;
+    private final String  codigo;
+    private final boolean editable;
+    private final boolean firmado;
 
-    public boolean esEditable() {
-        return this == BORRADOR;
-    }
-
-    public boolean esFirmado() {
-        return this == FIRMADO;
-    }
-
-    public static EstadoContrato desdeCodigo(String codigo) {
-        return Arrays.stream(values())
-                .filter(e -> e.codigo.equalsIgnoreCase(codigo))
-                .findFirst()
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Estado de contrato inválido: '" + codigo + "'"));
+    public boolean esEditable() { return editable; }
+    public boolean esFirmado()  { return firmado;  }
+    public boolean esTerminal() {
+        return this == FIRMADO || this == CANCELADO || this == ARCHIVADO;
     }
 }

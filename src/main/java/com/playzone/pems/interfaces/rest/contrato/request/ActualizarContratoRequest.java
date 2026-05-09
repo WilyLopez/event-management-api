@@ -6,11 +6,8 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class GenerarContratoRequest {
-
-    @NotBlank
-    private String contenidoTexto;
-
-    @NotBlank
+public class ActualizarContratoRequest {
+    @NotBlank private String contenidoTexto;
     private String plantilla;
+    private String observaciones;
 }

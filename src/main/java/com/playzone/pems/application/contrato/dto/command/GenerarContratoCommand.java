@@ -17,4 +17,7 @@ public class GenerarContratoCommand {
 
     @NotBlank
     private final String contenidoTexto;
+
+    @NotBlank
+    private final String plantilla;
 }
