@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public interface EventoPrivadoJpaRepository extends JpaRepository<EventoPrivadoEntity, Long> {
 
@@ -17,6 +18,8 @@ public interface EventoPrivadoJpaRepository extends JpaRepository<EventoPrivadoE
     Page<EventoPrivadoEntity> findBySede_IdAndEstado(Long idSede, EstadoEventoPrivado estado, Pageable pageable);
 
     Page<EventoPrivadoEntity> findBySede_IdAndFechaEventoBetween(Long idSede, LocalDate inicio, LocalDate fin, Pageable pageable);
+
+    List<EventoPrivadoEntity> findBySede_IdAndFechaEvento(Long idSede, LocalDate fecha);
 
     @Query("SELECT COUNT(e) > 0 FROM EventoPrivadoEntity e WHERE e.sede.id = :idSede AND e.fechaEvento = :fecha AND e.turno.id = :idTurno AND e.estado IN ('SOLICITADA','CONFIRMADA')")
     boolean existsActivoBySedeAndFechaAndTurno(

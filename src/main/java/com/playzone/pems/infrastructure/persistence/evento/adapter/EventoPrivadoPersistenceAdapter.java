@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -44,6 +45,10 @@ public class EventoPrivadoPersistenceAdapter implements EventoPrivadoRepository 
 
     @Override public Page<EventoPrivado> findBySedeAndFechasBetween(Long idSede, LocalDate inicio, LocalDate fin, Pageable pageable) {
         return eventoJpa.findBySede_IdAndFechaEventoBetween(idSede, inicio, fin, pageable).map(mapper::toDomain);
+    }
+
+    @Override public List<EventoPrivado> findBySedeAndFecha(Long idSede, LocalDate fecha) {
+        return eventoJpa.findBySede_IdAndFechaEvento(idSede, fecha).stream().map(mapper::toDomain).toList();
     }
 
     @Override public boolean existsActivoBySedeAndFechaAndTurno(Long idSede, LocalDate fecha, Long idTurno) {

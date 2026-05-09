@@ -20,6 +20,8 @@ public interface ReservaPublicaJpaRepository extends JpaRepository<ReservaPublic
 
     Page<ReservaPublicaEntity> findBySede_IdAndFechaEvento(Long idSede, LocalDate fecha, Pageable pageable);
 
+    List<ReservaPublicaEntity> findBySede_IdAndFechaEvento(Long idSede, LocalDate fecha);
+
     Page<ReservaPublicaEntity> findBySede_IdAndEstado(Long idSede, EstadoReservaPublica estado, Pageable pageable);
 
     List<ReservaPublicaEntity> findBySede_IdAndFechaEventoAndEstado(Long idSede, LocalDate fecha, EstadoReservaPublica estado);

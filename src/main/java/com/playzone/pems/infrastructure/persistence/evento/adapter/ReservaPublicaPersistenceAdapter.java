@@ -44,6 +44,10 @@ public class ReservaPublicaPersistenceAdapter implements ReservaPublicaRepositor
         return reservaJpa.findBySede_IdAndFechaEvento(idSede, fecha, pageable).map(mapper::toDomain);
     }
 
+    @Override public List<ReservaPublica> findBySedeAndFecha(Long idSede, LocalDate fecha) {
+        return reservaJpa.findBySede_IdAndFechaEvento(idSede, fecha).stream().map(mapper::toDomain).toList();
+    }
+
     @Override public Page<ReservaPublica> findBySedeAndEstado(Long idSede, EstadoReservaPublica estado, Pageable pageable) {
         return reservaJpa.findBySede_IdAndEstado(idSede, estado, pageable).map(mapper::toDomain);
     }

@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 public interface EventoPrivadoRepository {
@@ -19,6 +20,8 @@ public interface EventoPrivadoRepository {
 
     Page<EventoPrivado> findBySedeAndFechasBetween(
             Long idSede, LocalDate inicio, LocalDate fin, Pageable pageable);
+
+    List<EventoPrivado> findBySedeAndFecha(Long idSede, LocalDate fecha);
 
     boolean existsActivoBySedeAndFechaAndTurno(Long idSede, LocalDate fecha, Long idTurno);
 

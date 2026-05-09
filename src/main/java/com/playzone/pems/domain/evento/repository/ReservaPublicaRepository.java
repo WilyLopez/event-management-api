@@ -19,6 +19,8 @@ public interface ReservaPublicaRepository {
 
     Page<ReservaPublica> findBySedeAndFecha(Long idSede, LocalDate fecha, Pageable pageable);
 
+    List<ReservaPublica> findBySedeAndFecha(Long idSede, LocalDate fecha);
+
     Page<ReservaPublica> findBySedeAndEstado(
             Long idSede, EstadoReservaPublica estado, Pageable pageable);
 
