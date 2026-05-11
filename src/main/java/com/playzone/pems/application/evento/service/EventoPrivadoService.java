@@ -2,6 +2,7 @@ package com.playzone.pems.application.evento.service;
 
 import com.playzone.pems.application.evento.dto.command.SolicitarEventoPrivadoCommand;
 import com.playzone.pems.application.evento.dto.query.EventoPrivadoQuery;
+import com.playzone.pems.application.evento.port.in.BuscarEventosAdminUseCase;
 import com.playzone.pems.application.evento.port.in.CancelarEventoPrivadoUseCase;
 import com.playzone.pems.application.evento.port.in.ConfirmarEventoPrivadoUseCase;
 import com.playzone.pems.application.evento.port.in.ConsultarEventosPrivadosUseCase;
@@ -35,7 +36,8 @@ public class EventoPrivadoService
         implements SolicitarEventoPrivadoUseCase,
         ConfirmarEventoPrivadoUseCase,
         CancelarEventoPrivadoUseCase,
-        ConsultarEventosPrivadosUseCase {
+        ConsultarEventosPrivadosUseCase,
+        BuscarEventosAdminUseCase {
 
     private final EventoPrivadoRepository     eventoRepository;
     private final ClienteRepository           clienteRepository;
@@ -45,6 +47,24 @@ public class EventoPrivadoService
 
     @Value("${playzone.negocio.anticipacion-min-evento-dias:15}")
     private int anticipacionMinDias;
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<EventoPrivadoQuery> buscar(
+            Long idSede, String estado, LocalDate fecha, String search, Pageable pageable) {
+
+        EstadoEventoPrivado estadoEnum = null;
+        if (estado != null && !estado.isBlank()) {
+            try { estadoEnum = EstadoEventoPrivado.valueOf(estado); }
+            catch (IllegalArgumentException ignored) {}
+        }
+
+        String searchPattern = (search != null && !search.isBlank()) 
+                ? "%" + search.toLowerCase() + "%" : null;
+
+        return eventoRepository.buscarAdmin(idSede, estadoEnum, fecha, searchPattern, pageable)
+                .map(e -> toQuery(e, obtenerCliente(e.getIdCliente()), obtenerTurno(e.getIdTurno())));
+    }
 
     @Override
     @Transactional(readOnly = true)

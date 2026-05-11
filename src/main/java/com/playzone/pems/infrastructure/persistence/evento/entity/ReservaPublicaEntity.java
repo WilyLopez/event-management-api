@@ -91,6 +91,22 @@ public class ReservaPublicaEntity {
     @Column(name = "motivocancelacion", length = 300)
     private String motivoCancelacion;
 
+    @Column(name = "ingresado", nullable = false)
+    @Builder.Default
+    private boolean ingresado = false;
+
+    @Column(name = "fechaingreso")
+    private LocalDateTime fechaIngreso;
+
+    @Column(name = "codigoqr", length = 200)
+    private String codigoQr;
+
+    @Column(name = "mediopago", length = 30)
+    private String medioPago;
+
+    @Column(name = "referenciapago", length = 100)
+    private String referenciaPago;
+
     @CreationTimestamp
     @Column(name = "fechacreacion", nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;

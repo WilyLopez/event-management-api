@@ -28,16 +28,20 @@ public class EventoPrivadoEntityMapper {
                 .motivoCancelacion(e.getMotivoCancelacion())
                 .notasInternas(e.getNotasInternas())
                 .idUsuarioGestor(e.getUsuarioGestor() != null ? e.getUsuarioGestor().getId() : null)
+                .estadoOperativo(e.getEstadoOperativo())
+                .checklistCompleto(e.isChecklistCompleto())
+                .horaInicioReal(e.getHoraInicioReal())
+                .horaFinReal(e.getHoraFinReal())
                 .fechaCreacion(e.getFechaCreacion())
                 .fechaActualizacion(e.getFechaActualizacion())
                 .build();
     }
 
     public EventoPrivadoEntity toEntity(EventoPrivado d,
-                                        ClienteEntity cliente,
-                                        SedeEntity sede,
-                                        TurnoEntity turno,
-                                        UsuarioAdminEntity gestor) {
+                                         ClienteEntity cliente,
+                                         SedeEntity sede,
+                                         TurnoEntity turno,
+                                         UsuarioAdminEntity gestor) {
         if (d == null) return null;
         return EventoPrivadoEntity.builder()
                 .id(d.getId())
@@ -54,6 +58,10 @@ public class EventoPrivadoEntityMapper {
                 .motivoCancelacion(d.getMotivoCancelacion())
                 .notasInternas(d.getNotasInternas())
                 .usuarioGestor(gestor)
+                .estadoOperativo(d.getEstadoOperativo())
+                .checklistCompleto(d.isChecklistCompleto())
+                .horaInicioReal(d.getHoraInicioReal())
+                .horaFinReal(d.getHoraFinReal())
                 .build();
     }
 }

@@ -1,5 +1,6 @@
 package com.playzone.pems.domain.evento.repository;
 
+import com.playzone.pems.application.evento.dto.query.MetricasReservaQuery;
 import com.playzone.pems.domain.evento.model.ReservaPublica;
 import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
 import org.springframework.data.domain.Page;
@@ -21,6 +22,8 @@ public interface ReservaPublicaRepository {
 
     List<ReservaPublica> findBySedeAndFecha(Long idSede, LocalDate fecha);
 
+    List<ReservaPublica> findBySedeAndFechaBetween(Long idSede, LocalDate inicio, LocalDate fin);
+
     Page<ReservaPublica> findBySedeAndEstado(
             Long idSede, EstadoReservaPublica estado, Pageable pageable);
 
@@ -31,4 +34,10 @@ public interface ReservaPublicaRepository {
     ReservaPublica save(ReservaPublica reserva);
 
     boolean existsByNumeroTicket(String numeroTicket);
+
+    Page<ReservaPublica> buscarAdmin(
+            Long idSede, EstadoReservaPublica estadoEnum, LocalDate fecha,
+            Boolean ingresado, Boolean esReprogramacion, String searchPattern, Pageable pageable);
+
+    MetricasReservaQuery calcularMetricas(Long idSede, LocalDate fecha);
 }

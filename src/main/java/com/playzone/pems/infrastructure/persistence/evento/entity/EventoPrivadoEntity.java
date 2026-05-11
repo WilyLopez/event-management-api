@@ -61,6 +61,7 @@ public class EventoPrivadoEntity {
     private BigDecimal precioTotalContrato;
 
     @Column(name = "montoadelanto", precision = 10, scale = 2)
+    @Builder.Default
     private BigDecimal montoAdelanto = BigDecimal.ZERO;
 
     @Column(name = "motivocancelacion", length = 500)
@@ -72,6 +73,19 @@ public class EventoPrivadoEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "idusuariogestor")
     private UsuarioAdminEntity usuarioGestor;
+
+    @Column(name = "estadooperativo", length = 40)
+    private String estadoOperativo;
+
+    @Column(name = "checklistcompleto", nullable = false)
+    @Builder.Default
+    private boolean checklistCompleto = false;
+
+    @Column(name = "horainicioreal")
+    private LocalDateTime horaInicioReal;
+
+    @Column(name = "horafinreal")
+    private LocalDateTime horaFinReal;
 
     @CreationTimestamp
     @Column(name = "fechacreacion", nullable = false, updatable = false)

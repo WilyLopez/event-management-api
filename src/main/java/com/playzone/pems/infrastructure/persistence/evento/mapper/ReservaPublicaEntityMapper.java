@@ -32,15 +32,20 @@ public class ReservaPublicaEntityMapper {
                 .dniAcompanante(e.getDniAcompanante())
                 .firmoConsentimiento(e.isFirmoConsentimiento())
                 .motivoCancelacion(e.getMotivoCancelacion())
+                .ingresado(e.isIngresado())
+                .fechaIngreso(e.getFechaIngreso())
+                .codigoQr(e.getCodigoQr())
+                .medioPago(e.getMedioPago())
+                .referenciaPago(e.getReferenciaPago())
                 .fechaCreacion(e.getFechaCreacion())
                 .fechaActualizacion(e.getFechaActualizacion())
                 .build();
     }
 
     public ReservaPublicaEntity toEntity(ReservaPublica d,
-                                         ClienteEntity cliente,
-                                         SedeEntity sede,
-                                         ReservaPublicaEntity reservaOriginal) {
+                                          ClienteEntity cliente,
+                                          SedeEntity sede,
+                                          ReservaPublicaEntity reservaOriginal) {
         if (d == null) return null;
         return ReservaPublicaEntity.builder()
                 .id(d.getId())
@@ -63,6 +68,11 @@ public class ReservaPublicaEntityMapper {
                 .dniAcompanante(d.getDniAcompanante())
                 .firmoConsentimiento(d.isFirmoConsentimiento())
                 .motivoCancelacion(d.getMotivoCancelacion())
+                .ingresado(d.isIngresado())
+                .fechaIngreso(d.getFechaIngreso())
+                .codigoQr(d.getCodigoQr())
+                .medioPago(d.getMedioPago())
+                .referenciaPago(d.getReferenciaPago())
                 .build();
     }
 }

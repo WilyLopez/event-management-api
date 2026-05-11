@@ -47,12 +47,23 @@ public class EventoPrivadoPersistenceAdapter implements EventoPrivadoRepository 
         return eventoJpa.findBySede_IdAndFechaEventoBetween(idSede, inicio, fin, pageable).map(mapper::toDomain);
     }
 
+    @Override public List<EventoPrivado> findBySedeAndFechaBetween(Long idSede, LocalDate inicio, LocalDate fin) {
+        return eventoJpa.findBySede_IdAndFechaEventoBetween(idSede, inicio, fin).stream().map(mapper::toDomain).toList();
+    }
+
     @Override public List<EventoPrivado> findBySedeAndFecha(Long idSede, LocalDate fecha) {
         return eventoJpa.findBySede_IdAndFechaEvento(idSede, fecha).stream().map(mapper::toDomain).toList();
     }
 
     @Override public boolean existsActivoBySedeAndFechaAndTurno(Long idSede, LocalDate fecha, Long idTurno) {
         return eventoJpa.existsActivoBySedeAndFechaAndTurno(idSede, fecha, idTurno);
+    }
+
+    @Override
+    public Page<EventoPrivado> buscarAdmin(
+            Long idSede, EstadoEventoPrivado estadoEnum, LocalDate fecha, String searchPattern, Pageable pageable) {
+        return eventoJpa.buscarAdmin(idSede, estadoEnum, fecha, searchPattern, pageable)
+                .map(mapper::toDomain);
     }
 
     @Override

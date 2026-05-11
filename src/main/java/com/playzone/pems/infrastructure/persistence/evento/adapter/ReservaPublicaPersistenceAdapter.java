@@ -1,5 +1,6 @@
 package com.playzone.pems.infrastructure.persistence.evento.adapter;
 
+import com.playzone.pems.application.evento.dto.query.MetricasReservaQuery;
 import com.playzone.pems.domain.evento.model.ReservaPublica;
 import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
 import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
@@ -48,17 +50,57 @@ public class ReservaPublicaPersistenceAdapter implements ReservaPublicaRepositor
         return reservaJpa.findBySede_IdAndFechaEvento(idSede, fecha).stream().map(mapper::toDomain).toList();
     }
 
+    @Override public List<ReservaPublica> findBySedeAndFechaBetween(Long idSede, LocalDate inicio, LocalDate fin) {
+        return reservaJpa.findBySede_IdAndFechaEventoBetween(idSede, inicio, fin).stream().map(mapper::toDomain).toList();
+    }
+
     @Override public Page<ReservaPublica> findBySedeAndEstado(Long idSede, EstadoReservaPublica estado, Pageable pageable) {
         return reservaJpa.findBySede_IdAndEstado(idSede, estado, pageable).map(mapper::toDomain);
     }
 
     @Override public List<ReservaPublica> findConfirmadasBySedeAndFecha(Long idSede, LocalDate fecha) {
-        return reservaJpa.findBySede_IdAndFechaEventoAndEstado(idSede, fecha, EstadoReservaPublica.CONFIRMADA)
-                .stream().map(mapper::toDomain).toList();
+        return reservaJpa.findBySede_IdAndFechaEventoAndEstado(
+                idSede, fecha, EstadoReservaPublica.CONFIRMADA).stream().map(mapper::toDomain).toList();
     }
 
     @Override public int countConfirmadasBySedeAndFecha(Long idSede, LocalDate fecha) {
         return reservaJpa.countConfirmadasBySedeAndFecha(idSede, fecha);
+    }
+
+    @Override
+    public Page<ReservaPublica> buscarAdmin(
+            Long idSede, EstadoReservaPublica estadoEnum, LocalDate fecha,
+            Boolean ingresado, Boolean esReprogramacion, String searchPattern, Pageable pageable) {
+        return reservaJpa.buscarAdmin(
+                idSede, estadoEnum, fecha, ingresado, esReprogramacion, searchPattern, pageable)
+                .map(mapper::toDomain);
+    }
+
+    @Override
+    public MetricasReservaQuery calcularMetricas(Long idSede, LocalDate fecha) {
+        LocalDate dia = fecha != null ? fecha : LocalDate.now(ZoneId.of("America/Lima"));
+        int total      = reservaJpa.countBySedeAndFechaAndEstado(idSede, dia, EstadoReservaPublica.PENDIENTE)
+                       + reservaJpa.countBySedeAndFechaAndEstado(idSede, dia, EstadoReservaPublica.CONFIRMADA)
+                       + reservaJpa.countBySedeAndFechaAndEstado(idSede, dia, EstadoReservaPublica.CANCELADA)
+                       + reservaJpa.countBySedeAndFechaAndEstado(idSede, dia, EstadoReservaPublica.REPROGRAMADA)
+                       + reservaJpa.countBySedeAndFechaAndEstado(idSede, dia, EstadoReservaPublica.COMPLETADA);
+        int pendientes  = reservaJpa.countBySedeAndFechaAndEstado(idSede, dia, EstadoReservaPublica.PENDIENTE);
+        int confirmadas = reservaJpa.countConfirmadasBySedeAndFecha(idSede, dia);
+        int canceladas  = reservaJpa.countBySedeAndFechaAndEstado(idSede, dia, EstadoReservaPublica.CANCELADA);
+        int ingresados  = reservaJpa.countIngresadosBySedeAndFecha(idSede, dia);
+
+        return MetricasReservaQuery.builder()
+                .fecha(dia)
+                .totalReservas(total)
+                .pendientes(pendientes)
+                .confirmadas(confirmadas)
+                .canceladas(canceladas)
+                .ingresados(ingresados)
+                .aforoMaximo(60)
+                .aforoOcupado(confirmadas)
+                .aforoRestante(Math.max(0, 60 - confirmadas))
+                .ingresosDia(reservaJpa.sumIngresosBySedeAndFecha(idSede, dia))
+                .build();
     }
 
     @Override
@@ -70,7 +112,6 @@ public class ReservaPublicaPersistenceAdapter implements ReservaPublicaRepositor
                 .orElseThrow(() -> new ResourceNotFoundException("Sede", reserva.getIdSede()));
         ReservaPublicaEntity original = reserva.getIdReservaOriginal() != null
                 ? reservaJpa.findById(reserva.getIdReservaOriginal()).orElse(null) : null;
-
         return mapper.toDomain(reservaJpa.save(mapper.toEntity(reserva, cliente, sede, original)));
     }
 

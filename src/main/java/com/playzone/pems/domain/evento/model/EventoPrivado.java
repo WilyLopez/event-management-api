@@ -1,7 +1,10 @@
 package com.playzone.pems.domain.evento.model;
 
 import com.playzone.pems.domain.evento.model.enums.EstadoEventoPrivado;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -13,22 +16,26 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class EventoPrivado {
 
-    private Long                 id;
-    private Long                 idCliente;
-    private Long                 idSede;
-    private EstadoEventoPrivado  estado;
-    private Long                 idTurno;
-    private LocalDate            fechaEvento;
-    private String               tipoEvento;
-    private String               contactoAdicional;
-    private Integer              aforoDeclarado;
-    private BigDecimal           precioTotalContrato;
-    private BigDecimal           montoAdelanto;
-    private String               motivoCancelacion;
-    private String               notasInternas;
-    private Long                 idUsuarioGestor;
-    private LocalDateTime        fechaCreacion;
-    private LocalDateTime        fechaActualizacion;
+    private Long                id;
+    private Long                idCliente;
+    private Long                idSede;
+    private EstadoEventoPrivado estado;
+    private Long                idTurno;
+    private LocalDate           fechaEvento;
+    private String              tipoEvento;
+    private String              contactoAdicional;
+    private Integer             aforoDeclarado;
+    private BigDecimal          precioTotalContrato;
+    private BigDecimal          montoAdelanto;
+    private String              motivoCancelacion;
+    private String              notasInternas;
+    private Long                idUsuarioGestor;
+    private LocalDateTime       fechaCreacion;
+    private LocalDateTime       fechaActualizacion;
+    private String              estadoOperativo;
+    private boolean             checklistCompleto;
+    private LocalDateTime       horaInicioReal;
+    private LocalDateTime       horaFinReal;
 
     public BigDecimal calcularMontoSaldo() {
         if (precioTotalContrato == null) return null;

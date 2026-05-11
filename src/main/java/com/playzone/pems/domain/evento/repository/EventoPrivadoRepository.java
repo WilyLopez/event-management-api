@@ -21,9 +21,14 @@ public interface EventoPrivadoRepository {
     Page<EventoPrivado> findBySedeAndFechasBetween(
             Long idSede, LocalDate inicio, LocalDate fin, Pageable pageable);
 
+    List<EventoPrivado> findBySedeAndFechaBetween(Long idSede, LocalDate inicio, LocalDate fin);
+
     List<EventoPrivado> findBySedeAndFecha(Long idSede, LocalDate fecha);
 
     boolean existsActivoBySedeAndFechaAndTurno(Long idSede, LocalDate fecha, Long idTurno);
+
+    Page<EventoPrivado> buscarAdmin(
+            Long idSede, EstadoEventoPrivado estadoEnum, LocalDate fecha, String searchPattern, Pageable pageable);
 
     EventoPrivado save(EventoPrivado evento);
 }

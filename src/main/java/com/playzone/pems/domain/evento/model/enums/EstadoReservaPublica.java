@@ -56,7 +56,7 @@ public enum EstadoReservaPublica {
     }
 
     public boolean ocupaAforo() {
-        return this == CONFIRMADA;
+        return this == CONFIRMADA || this == COMPLETADA;
     }
 
     public static EstadoReservaPublica desdeCodigo(String codigo) {
