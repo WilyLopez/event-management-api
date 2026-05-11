@@ -1,12 +1,12 @@
 -- V2: Configuración del sistema y sede principal
 
 CREATE TABLE configuracionsistema (
-    idconfiguracion    BIGSERIAL       PRIMARY KEY,
+    idconfiguracion    BIGSERIAL    PRIMARY KEY,
     clave              VARCHAR(80)  NOT NULL UNIQUE,
     valor              VARCHAR(500) NOT NULL,
     descripcion        VARCHAR(300),
     tipo               VARCHAR(20)  NOT NULL DEFAULT 'TEXTO'
-                           CHECK (tipo IN ('TEXTO','NUMERO','BOOLEANO','JSON')),
+                           CHECK (tipo IN ('TEXTO', 'NUMERO', 'BOOLEANO', 'JSON')),
     fechaactualizacion TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
@@ -27,17 +27,17 @@ INSERT INTO configuracionsistema (clave, valor, tipo, descripcion) VALUES
     ('INTERVALO_PREPARACION_FIN',          '16:00',    'TEXTO',  'Fin del intervalo de preparación entre turnos');
 
 CREATE TABLE sede (
-    idsede         BIGSERIAL       PRIMARY KEY,
-    nombre         VARCHAR(120) NOT NULL,
-    direccion      VARCHAR(300) NOT NULL,
-    ciudad         VARCHAR(80)  NOT NULL,
-    departamento   VARCHAR(80)  NOT NULL,
-    telefono       VARCHAR(20),
-    correo         VARCHAR(120),
-    ruc            VARCHAR(11),
-    activo         BOOLEAN      NOT NULL DEFAULT TRUE,
-    fechacreacion  TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+    idsede        BIGSERIAL    PRIMARY KEY,
+    nombre        VARCHAR(120) NOT NULL,
+    direccion     VARCHAR(300) NOT NULL,
+    ciudad        VARCHAR(80)  NOT NULL,
+    departamento  VARCHAR(80)  NOT NULL,
+    telefono      VARCHAR(20),
+    correo        VARCHAR(120),
+    ruc           VARCHAR(11),
+    activo        BOOLEAN      NOT NULL DEFAULT TRUE,
+    fechacreacion TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
-INSERT INTO sede (nombre, direccion, ciudad, departamento) VALUES
-    ('PlayZone Principal', 'Por definir', 'Por definir', 'Por definir');
+INSERT INTO sede (nombre, direccion, ciudad, departamento)
+VALUES ('PlayZone Principal', 'Por definir', 'Por definir', 'Por definir');

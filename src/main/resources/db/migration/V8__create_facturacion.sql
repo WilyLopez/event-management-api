@@ -1,27 +1,30 @@
--- V7: Facturación electrónica SUNAT
+-- V8: Facturación electrónica SUNAT
 
+-- ─── Series de comprobante por sede ──────────────────────────────────────────
 CREATE TABLE seriecomprobante (
-    idserie            BIGSERIAL      PRIMARY KEY,
-    idsede             INT         NOT NULL REFERENCES sede(idsede),
-    idtipo             VARCHAR(30) NOT NULL REFERENCES tipocomprobante(codigo),
-    serie              VARCHAR(4)  NOT NULL,
-    correlativoactual  INT         NOT NULL DEFAULT 0,
-    activo             BOOLEAN     NOT NULL DEFAULT TRUE,
+    idserie           BIGSERIAL   PRIMARY KEY,
+    idsede            BIGINT      NOT NULL REFERENCES sede(idsede),
+    idtipo            VARCHAR(30) NOT NULL REFERENCES tipocomprobante(codigo),
+    serie             VARCHAR(4)  NOT NULL,
+    correlativoactual INT         NOT NULL DEFAULT 0,
+    activo            BOOLEAN     NOT NULL DEFAULT TRUE,
     UNIQUE (idsede, serie)
 );
 
+-- ─── Comprobantes electrónicos emitidos ───────────────────────────────────────
 CREATE TABLE comprobante (
-    idcomprobante       BIGSERIAL        PRIMARY KEY,
-    idpago              INT           NOT NULL UNIQUE REFERENCES pago(idpago),
+    idcomprobante       BIGSERIAL     PRIMARY KEY,
+    idpago              BIGINT        NOT NULL UNIQUE REFERENCES pago(idpago),
     idtipo              VARCHAR(30)   NOT NULL REFERENCES tipocomprobante(codigo),
     idestado            VARCHAR(40)   NOT NULL REFERENCES estadocomprobante(codigo),
-    idserie             INT           NOT NULL REFERENCES seriecomprobante(idserie),
+    idserie             BIGINT        NOT NULL REFERENCES seriecomprobante(idserie),
     serienum            VARCHAR(4)    NOT NULL,
     correlativo         VARCHAR(8)    NOT NULL,
     numerocompleto      VARCHAR(20)   NOT NULL UNIQUE,
     rucemisor           VARCHAR(11)   NOT NULL,
     razonsocialemisor   VARCHAR(200)  NOT NULL,
-    tipodocreceptor     VARCHAR(20)   NOT NULL CHECK (tipodocreceptor IN ('DNI','RUC','CE','PASAPORTE','SIN_DOC')),
+    tipodocreceptor     VARCHAR(20)   NOT NULL
+                            CHECK (tipodocreceptor IN ('DNI', 'RUC', 'CE', 'PASAPORTE', 'SIN_DOC')),
     nrodocreceptor      VARCHAR(20),
     razonsocialreceptor VARCHAR(200),
     direccionreceptor   VARCHAR(300),
@@ -34,7 +37,7 @@ CREATE TABLE comprobante (
     cdrestado           VARCHAR(50),
     cdrdescripcion      VARCHAR(500),
     motivoanulacion     VARCHAR(300),
-    idcomprobantenta    INT           REFERENCES comprobante(idcomprobante),
+    idcomprobantenta    BIGINT        REFERENCES comprobante(idcomprobante),
     fechaemision        TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     fechaactualizacion  TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );
