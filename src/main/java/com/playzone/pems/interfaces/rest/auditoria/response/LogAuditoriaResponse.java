@@ -15,7 +15,12 @@ public class LogAuditoriaResponse {
     private final String        modulo;
     private final String        entidadAfectada;
     private final Long          idEntidad;
+    private final String        valorAnterior;
+    private final String        valorNuevo;
     private final String        descripcion;
     private final String        ipOrigen;
-    private final LocalDateTime timestamp;
+    private final String        userAgent;
+    private final String        nivel;
+    private final String        resultado;
+    private final LocalDateTime fechaLog;
 }

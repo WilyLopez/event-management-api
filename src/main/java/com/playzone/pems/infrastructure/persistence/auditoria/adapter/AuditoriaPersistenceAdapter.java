@@ -12,13 +12,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
 public class AuditoriaPersistenceAdapter implements LogAuditoriaRepository {
 
-    private final LogAuditoriaJpaRepository  logJpa;
-    private final UsuarioAdminJpaRepository  adminJpa;
+    private final LogAuditoriaJpaRepository logJpa;
+    private final UsuarioAdminJpaRepository adminJpa;
 
     @Override
     @Transactional
@@ -37,48 +38,50 @@ public class AuditoriaPersistenceAdapter implements LogAuditoriaRepository {
                 .descripcion(log.getDescripcion())
                 .ipOrigen(log.getIpOrigen())
                 .userAgent(log.getUserAgent())
+                .nivel(log.getNivel() != null ? log.getNivel() : "INFO")
+                .resultado(log.getResultado() != null ? log.getResultado() : "EXITOSO")
                 .build();
 
-        LogAuditoriaEntity saved = logJpa.save(entity);
+        return toDomain(logJpa.save(entity));
+    }
 
-        return LogAuditoria.builder()
-                .id(saved.getId())
-                .idUsuarioAdmin(saved.getUsuarioAdmin() != null ? saved.getUsuarioAdmin().getId() : null)
-                .accion(saved.getAccion())
-                .modulo(saved.getModulo())
-                .entidadAfectada(saved.getEntidadAfectada())
-                .idEntidad(saved.getIdEntidad())
-                .valorAnterior(saved.getValorAnterior())
-                .valorNuevo(saved.getValorNuevo())
-                .descripcion(saved.getDescripcion())
-                .ipOrigen(saved.getIpOrigen())
-                .userAgent(saved.getUserAgent())
-                .timestamp(saved.getTimestamp())
-                .build();
+    @Override
+    public Optional<LogAuditoria> findById(Long id) {
+        return logJpa.findById(id).map(this::toDomain);
     }
 
     @Override
     public Page<LogAuditoria> findByUsuario(Long idUsuarioAdmin, Pageable pageable) {
-        return logJpa.findByUsuarioAdmin_IdOrderByTimestampDesc(idUsuarioAdmin, pageable)
+        return logJpa.findByUsuarioAdmin_IdOrderByFechaLogDesc(idUsuarioAdmin, pageable)
                 .map(this::toDomain);
     }
 
     @Override
     public Page<LogAuditoria> findByModuloAndEntidad(String modulo, String entidad, Pageable pageable) {
-        return logJpa.findByModuloAndEntidadAfectadaOrderByTimestampDesc(modulo, entidad, pageable)
+        return logJpa.findByModuloAndEntidadAfectadaOrderByFechaLogDesc(modulo, entidad, pageable)
                 .map(this::toDomain);
     }
 
     @Override
     public Page<LogAuditoria> findByFechasBetween(LocalDateTime desde, LocalDateTime hasta, Pageable pageable) {
-        return logJpa.findByTimestampBetweenOrderByTimestampDesc(desde, hasta, pageable)
+        return logJpa.findByFechaLogBetweenOrderByFechaLogDesc(desde, hasta, pageable)
+                .map(this::toDomain);
+    }
+
+    @Override
+    public Page<LogAuditoria> findByFiltros(LocalDateTime desde, LocalDateTime hasta,
+                                             Long idUsuario, String modulo, String accion,
+                                             String entidad, Pageable pageable) {
+        return logJpa.findByFiltros(desde, hasta, idUsuario, modulo, accion, entidad, pageable)
                 .map(this::toDomain);
     }
 
     private LogAuditoria toDomain(LogAuditoriaEntity e) {
+        var admin = e.getUsuarioAdmin();
         return LogAuditoria.builder()
                 .id(e.getId())
-                .idUsuarioAdmin(e.getUsuarioAdmin() != null ? e.getUsuarioAdmin().getId() : null)
+                .idUsuarioAdmin(admin != null ? admin.getId() : null)
+                .nombreUsuario(admin != null ? admin.getNombre() : null)
                 .accion(e.getAccion())
                 .modulo(e.getModulo())
                 .entidadAfectada(e.getEntidadAfectada())
@@ -88,7 +91,9 @@ public class AuditoriaPersistenceAdapter implements LogAuditoriaRepository {
                 .descripcion(e.getDescripcion())
                 .ipOrigen(e.getIpOrigen())
                 .userAgent(e.getUserAgent())
-                .timestamp(e.getTimestamp())
+                .nivel(e.getNivel())
+                .resultado(e.getResultado())
+                .fechaLog(e.getFechaLog())
                 .build();
     }
 }

@@ -11,6 +11,7 @@ public class LogAuditoria {
 
     private final Long          id;
     private final Long          idUsuarioAdmin;
+    private final String        nombreUsuario;
     private final String        accion;
     private final String        modulo;
     private final String        entidadAfectada;
@@ -20,5 +21,7 @@ public class LogAuditoria {
     private final String        descripcion;
     private final String        ipOrigen;
     private final String        userAgent;
-    private final LocalDateTime timestamp;
+    private final String        nivel;
+    private final String        resultado;
+    private final LocalDateTime fechaLog;
 }

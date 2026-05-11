@@ -56,7 +56,15 @@ public class LogAuditoriaEntity {
     @Column(name = "useragent", length = 300)
     private String userAgent;
 
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private String nivel = "INFO";
+
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private String resultado = "EXITOSO";
+
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime timestamp;
+    @Column(name = "fechalog", nullable = false, updatable = false)
+    private LocalDateTime fechaLog;
 }
