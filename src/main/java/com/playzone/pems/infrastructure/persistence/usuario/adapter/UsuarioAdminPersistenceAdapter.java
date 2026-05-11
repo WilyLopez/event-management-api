@@ -24,6 +24,13 @@ public class UsuarioAdminPersistenceAdapter implements UsuarioAdminRepository {
     private final SedeEntityMapper          mapper;
 
     @Override
+    public List<UsuarioAdmin> findAll() {
+        return adminJpa.findAllByOrderByFechaCreacionDesc().stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
+
+    @Override
     public Optional<UsuarioAdmin> findById(Long id) {
         return adminJpa.findById(id).map(mapper::toDomain);
     }
@@ -50,10 +57,16 @@ public class UsuarioAdminPersistenceAdapter implements UsuarioAdminRepository {
                 .nombre(admin.getNombre())
                 .correo(admin.getCorreo())
                 .contrasenaHash(admin.getContrasenaHash())
+                .rol(admin.getRol() != null ? admin.getRol() : "ADMINISTRATIVO")
+                .fotoPerfilUrl(admin.getFotoPerfilUrl())
+                .telefono(admin.getTelefono())
                 .activo(admin.isActivo())
+                .debeCambiarContrasena(admin.isDebeCambiarContrasena())
                 .intentosFallidos(admin.getIntentosFallidos())
                 .bloqueadoHasta(admin.getBloqueadoHasta())
                 .ultimoAcceso(admin.getUltimoAcceso())
+                .ultimoCambioContrasena(admin.getUltimoCambioContrasena())
+                .creadoPor(admin.getCreadoPor())
                 .build();
 
         return mapper.toDomain(adminJpa.save(entity));

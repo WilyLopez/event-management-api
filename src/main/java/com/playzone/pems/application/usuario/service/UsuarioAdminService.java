@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -65,6 +66,17 @@ public class UsuarioAdminService
     }
 
     @Override
+    public List<UsuarioAdmin> listar() {
+        return usuarioAdminRepository.findAll();
+    }
+
+    @Override
+    public UsuarioAdmin obtener(Long idAdmin) {
+        return usuarioAdminRepository.findById(idAdmin)
+                .orElseThrow(() -> new ResourceNotFoundException("UsuarioAdmin", idAdmin));
+    }
+
+    @Override
     @Transactional
     public UsuarioAdmin crear(CrearCommand command) {
         if (usuarioAdminRepository.existsByCorreo(command.correo())) {
@@ -76,11 +88,45 @@ public class UsuarioAdminService
                 .nombre(command.nombre())
                 .correo(command.correo())
                 .contrasenaHash(EncriptacionUtil.hashear(command.contrasena()))
+                .rol(command.rol() != null ? command.rol() : "ADMINISTRATIVO")
+                .telefono(command.telefono())
                 .activo(true)
+                .debeCambiarContrasena(true)
                 .intentosFallidos(0)
                 .build();
 
         return usuarioAdminRepository.save(nuevo);
+    }
+
+    @Override
+    @Transactional
+    public UsuarioAdmin actualizarPerfil(Long idAdmin, ActualizarPerfilCommand command) {
+        UsuarioAdmin admin = usuarioAdminRepository.findById(idAdmin)
+                .orElseThrow(() -> new ResourceNotFoundException("UsuarioAdmin", idAdmin));
+
+        UsuarioAdmin actualizado = admin.toBuilder()
+                .nombre(command.nombre() != null ? command.nombre() : admin.getNombre())
+                .telefono(command.telefono())
+                .build();
+
+        return usuarioAdminRepository.save(actualizado);
+    }
+
+    @Override
+    @Transactional
+    public void cambiarContrasena(Long idAdmin, CambiarContrasenaCommand command) {
+        UsuarioAdmin admin = usuarioAdminRepository.findById(idAdmin)
+                .orElseThrow(() -> new ResourceNotFoundException("UsuarioAdmin", idAdmin));
+
+        if (!EncriptacionUtil.verificar(command.contrasenaActual(), admin.getContrasenaHash())) {
+            throw new ValidationException("contrasenaActual", "La contraseña actual es incorrecta.");
+        }
+
+        usuarioAdminRepository.save(admin.toBuilder()
+                .contrasenaHash(EncriptacionUtil.hashear(command.contrasenaNueva()))
+                .debeCambiarContrasena(false)
+                .ultimoCambioContrasena(FechaUtil.ahoraPeru())
+                .build());
     }
 
     @Override

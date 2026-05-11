@@ -11,6 +11,8 @@ import java.util.Optional;
 
 public interface UsuarioAdminJpaRepository extends JpaRepository<UsuarioAdminEntity, Long> {
 
+    List<UsuarioAdminEntity> findAllByOrderByFechaCreacionDesc();
+
     Optional<UsuarioAdminEntity> findByCorreo(String correo);
 
     List<UsuarioAdminEntity> findBySede_Id(Long idSede);

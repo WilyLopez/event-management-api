@@ -7,6 +7,8 @@ import java.util.Optional;
 
 public interface UsuarioAdminRepository {
 
+    List<UsuarioAdmin> findAll();
+
     Optional<UsuarioAdmin> findById(Long id);
 
     Optional<UsuarioAdmin> findByCorreo(String correo);

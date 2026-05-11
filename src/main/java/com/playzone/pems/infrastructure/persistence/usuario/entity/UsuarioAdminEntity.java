@@ -34,8 +34,22 @@ public class UsuarioAdminEntity {
     @Column(name = "contresenahash", nullable = false, length = 255)
     private String contrasenaHash;
 
+    @Column(nullable = false, length = 30)
+    @Builder.Default
+    private String rol = "ADMINISTRATIVO";
+
+    @Column(name = "fotoperfilurl", length = 500)
+    private String fotoPerfilUrl;
+
+    @Column(length = 20)
+    private String telefono;
+
     @Column(nullable = false)
     private boolean activo = true;
+
+    @Column(name = "debecambiarcontrasena", nullable = false)
+    @Builder.Default
+    private boolean debeCambiarContrasena = true;
 
     @Column(name = "intentosfallidos", nullable = false)
     private int intentosFallidos = 0;
@@ -45,6 +59,12 @@ public class UsuarioAdminEntity {
 
     @Column(name = "ultimoacceso")
     private LocalDateTime ultimoAcceso;
+
+    @Column(name = "ultimocambiocontrasena")
+    private LocalDateTime ultimoCambioContrasena;
+
+    @Column(name = "creado_por")
+    private Long creadoPor;
 
     @CreationTimestamp
     @Column(name = "fechacreacion", nullable = false, updatable = false)
