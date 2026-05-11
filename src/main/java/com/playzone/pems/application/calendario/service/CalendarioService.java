@@ -11,6 +11,10 @@ import com.playzone.pems.domain.calendario.model.enums.TipoDia;
 import com.playzone.pems.domain.calendario.repository.BloqueCalendarioRepository;
 import com.playzone.pems.domain.calendario.repository.DisponibilidadDiariaRepository;
 import com.playzone.pems.domain.calendario.repository.FeriadoRepository;
+import com.playzone.pems.domain.evento.model.EventoPrivado;
+import com.playzone.pems.domain.evento.model.ReservaPublica;
+import com.playzone.pems.domain.evento.repository.EventoPrivadoRepository;
+import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
 import com.playzone.pems.shared.exception.ValidationException;
 import com.playzone.pems.shared.util.FechaUtil;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +37,8 @@ public class CalendarioService
     private final DisponibilidadDiariaRepository disponibilidadRepository;
     private final BloqueCalendarioRepository     bloqueRepository;
     private final FeriadoRepository              feriadoRepository;
+    private final ReservaPublicaRepository       reservaRepository;
+    private final EventoPrivadoRepository        eventoRepository;
 
     @Value("${playzone.negocio.aforo-maximo:60}")
     private int aforoMaximo;
@@ -45,7 +51,15 @@ public class CalendarioService
                 .orElseGet(() -> buildDefaultDisponibilidad(idSede, fecha));
 
         boolean bloqueado = bloqueRepository.existsBloqueActivoEnFecha(idSede, fecha);
-        return toQuery(disp, resolverTipoDia(fecha), bloqueado);
+        
+        int totalReservas = (int) reservaRepository.findBySedeAndFecha(idSede, fecha).stream()
+                .filter(r -> !r.getEstado().name().equals("CANCELADA"))
+                .count();
+        int totalEventos = (int) eventoRepository.findBySedeAndFecha(idSede, fecha).stream()
+                .filter(e -> !e.getEstado().name().equals("CANCELADA"))
+                .count();
+
+        return toQuery(disp, resolverTipoDia(fecha), bloqueado, totalReservas, totalEventos);
     }
 
     @Override
@@ -57,12 +71,24 @@ public class CalendarioService
         Map<LocalDate, DisponibilidadDiaria> map = existentes.stream()
                 .collect(Collectors.toMap(DisponibilidadDiaria::getFecha, d -> d));
 
+        Map<LocalDate, Long> reservasMap = reservaRepository.findBySedeAndFechaBetween(idSede, inicio, fin).stream()
+                .filter(r -> !r.getEstado().name().equals("CANCELADA"))
+                .collect(Collectors.groupingBy(ReservaPublica::getFechaEvento, Collectors.counting()));
+
+        Map<LocalDate, Long> eventosMap = eventoRepository.findBySedeAndFechaBetween(idSede, inicio, fin).stream()
+                .filter(e -> !e.getEstado().name().equals("CANCELADA"))
+                .collect(Collectors.groupingBy(EventoPrivado::getFechaEvento, Collectors.counting()));
+
         List<DisponibilidadQuery> result = new ArrayList<>();
         LocalDate current = inicio;
         while (!current.isAfter(fin)) {
             DisponibilidadDiaria d = map.getOrDefault(current, buildDefaultDisponibilidad(idSede, current));
             boolean bloqueado = bloqueRepository.existsBloqueActivoEnFecha(idSede, current);
-            result.add(toQuery(d, resolverTipoDia(current), bloqueado));
+            
+            int totalReservas = reservasMap.getOrDefault(current, 0L).intValue();
+            int totalEventos = eventosMap.getOrDefault(current, 0L).intValue();
+
+            result.add(toQuery(d, resolverTipoDia(current), bloqueado, totalReservas, totalEventos));
             current = current.plusDays(1);
         }
         return result;
@@ -95,6 +121,7 @@ public class CalendarioService
                 .fechaInicio(command.getFechaInicio())
                 .fechaFin(command.getFechaFin())
                 .motivo(command.getMotivo())
+                .idUsuarioCreador(command.getIdUsuarioAdmin())
                 .activo(true)
                 .build();
 
@@ -114,7 +141,7 @@ public class CalendarioService
                 : TipoDia.SEMANA;
     }
 
-    private DisponibilidadQuery toQuery(DisponibilidadDiaria d, TipoDia tipoDia, boolean bloqueado) {
+    private DisponibilidadQuery toQuery(DisponibilidadDiaria d, TipoDia tipoDia, boolean bloqueado, int totalReservas, int totalEventos) {
         return DisponibilidadQuery.builder()
                 .idSede(d.getIdSede())
                 .fecha(d.getFecha())
@@ -127,6 +154,8 @@ public class CalendarioService
                 .aforoCompleto(!d.admiteReservaPublica(aforoMaximo))
                 .bloqueadoManualmente(bloqueado)
                 .tipoDia(tipoDia.getCodigo())
+                .totalReservas(totalReservas)
+                .totalEventos(totalEventos)
                 .build();
     }
 }

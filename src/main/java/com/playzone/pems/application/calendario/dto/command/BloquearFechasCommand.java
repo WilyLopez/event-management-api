@@ -17,6 +17,9 @@ public class BloquearFechasCommand {
     private final Long idSede;
 
     @NotNull
+    private final Long idUsuarioAdmin;
+
+    @NotNull
     @FutureOrPresent
     private final LocalDate fechaInicio;
 

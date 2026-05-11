@@ -74,6 +74,7 @@ public class CalendarioController {
 
         bloquearUseCase.ejecutar(BloquearFechasCommand.builder()
                 .idSede(idSede)
+                .idUsuarioAdmin(idUsuarioAdmin)
                 .fechaInicio(request.getFechaInicio())
                 .fechaFin(request.getFechaFin())
                 .tipoBloqueo(request.getTipoBloqueo())
