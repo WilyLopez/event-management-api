@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ticket de Ingreso</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .ticket-wrapper {
+            width: 480px;
+            background: #ffffff;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        }
+
+        .ticket-header {
+            background: linear-gradient(135deg, #00AEEF 0%, #0086c3 100%);
+            padding: 28px 30px 22px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .ticket-header img {
+            height: 52px;
+            width: auto;
+            object-fit: contain;
+            filter: brightness(0) invert(1);
+        }
+
+        .ticket-header-text h1 {
+            color: #ffffff;
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+        }
+
+        .ticket-header-text p {
+            color: rgba(255,255,255,0.80);
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        /* ── Numero de ticket ── */
+        .ticket-number-band {
+            background: #FFD84D;
+            padding: 10px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .ticket-number-band .label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #7a6500;
+        }
+
+        .ticket-number-band .value {
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: 900;
+            color: #3d3100;
+            letter-spacing: 1px;
+        }
+
+        /* ── Estado badge ── */
+        .estado-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .estado-confirmada  { background: #dcfce7; color: #166534; }
+        .estado-pendiente   { background: #fef9c3; color: #713f12; }
+        .estado-cancelada   { background: #fee2e2; color: #991b1b; }
+        .estado-completada  { background: #e0e7ff; color: #3730a3; }
+        .estado-reprogramada{ background: #ede9fe; color: #5b21b6; }
+        .dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+            background: currentColor;
+        }
+
+        /* ── Cuerpo ── */
+        .ticket-body {
+            padding: 24px 30px;
+        }
+
+        /* Seccion de nino */
+        .nino-section {
+            background: linear-gradient(135deg, #FFF5F9 0%, #FFF0F6 100%);
+            border: 1.5px solid #F64B8A20;
+            border-radius: 14px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .nino-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #F64B8A, #ff8fb1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: white;
+            font-weight: 900;
+            flex-shrink: 0;
+        }
+
+        .nino-info h2 {
+            font-size: 16px;
+            font-weight: 800;
+            color: #1a1a2e;
+        }
+
+        .nino-info p {
+            font-size: 12px;
+            color: #F64B8A;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        /* Grid de datos */
+        .data-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .data-item {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+
+        .data-item .di-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #94a3b8;
+            margin-bottom: 3px;
+        }
+
+        .data-item .di-value {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .data-item.accent {
+            background: #eff6ff;
+        }
+
+        .data-item.accent .di-value {
+            color: #00AEEF;
+        }
+
+        /* Seccion pago */
+        .pago-section {
+            background: #f0fdf4;
+            border: 1.5px solid #86efac;
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pago-section .pago-left .label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #166534;
+        }
+
+        .pago-section .pago-left .monto {
+            font-size: 22px;
+            font-weight: 900;
+            color: #15803d;
+            margin-top: 2px;
+        }
+
+        .pago-section .pago-right {
+            text-align: right;
+        }
+
+        .pago-section .pago-right .medio {
+            font-size: 11px;
+            font-weight: 700;
+            color: #166534;
+            background: #bbf7d0;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        .pago-section .pago-right .referencia {
+            font-size: 10px;
+            font-family: 'Courier New', monospace;
+            color: #4ade80;
+            margin-top: 4px;
+        }
+
+        /* Consentimiento */
+        .consentimiento {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #fefce8;
+            border: 1px solid #fde047;
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-bottom: 20px;
+        }
+
+        .consentimiento .icon { font-size: 16px; }
+
+        .consentimiento p {
+            font-size: 11px;
+            color: #713f12;
+            font-weight: 600;
+        }
+
+        /* Zona QR */
+        .qr-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 18px 0 4px;
+            border-top: 1.5px dashed #e2e8f0;
+        }
+
+        .qr-section .qr-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #94a3b8;
+            margin-bottom: 10px;
+        }
+
+        .qr-placeholder {
+            width: 100px;
+            height: 100px;
+            background: #1e293b;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .qr-placeholder img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .qr-codigo {
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            color: #64748b;
+            margin-top: 8px;
+            letter-spacing: 1px;
+        }
+
+        /* Footer */
+        .ticket-footer {
+            background: #f8fafc;
+            padding: 16px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .ticket-footer p {
+            font-size: 10px;
+            color: #94a3b8;
+        }
+
+        .ticket-footer .fecha-emision {
+            font-size: 10px;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        /* Linea perforada */
+        .perforation {
+            display: flex;
+            align-items: center;
+            padding: 0 -5px;
+            overflow: hidden;
+        }
+
+        .perf-circle {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #f0f2f5;
+            flex-shrink: 0;
+            margin: 0 -11px;
+        }
+
+        .perf-line {
+            flex: 1;
+            border-top: 2px dashed #e2e8f0;
+            margin: 0 4px;
+        }
+    </style>
+</head>
+<body>
+<div class="ticket-wrapper">
+
+    <!-- Cabecera -->
+    <div class="ticket-header">
+        <img th:src="@{/logo.png}" alt="Kiki y Lala" />
+        <div class="ticket-header-text">
+            <h1>Ticket de Ingreso</h1>
+            <p>Kiki y Lala — Zona de Juegos</p>
+        </div>
+    </div>
+
+    <!-- Banda del numero de ticket -->
+    <div class="ticket-number-band">
+        <span class="label">Numero de ticket</span>
+        <span class="value" th:text="${reserva.numeroTicket}">TKT-1-20250601-0001</span>
+        <span class="estado-badge"
+              th:classappend="${'estado-' + reserva.estado.toString().toLowerCase()}"
+              th:remove="tag">
+            <span class="dot"></span>
+            <span th:text="${reserva.estado}">CONFIRMADA</span>
+        </span>
+    </div>
+
+    <!-- Cuerpo -->
+    <div class="ticket-body">
+
+        <!-- Seccion del nino -->
+        <div class="nino-section">
+            <div class="nino-avatar"
+                 th:text="${#strings.substring(reserva.nombreNino, 0, 1)}">A</div>
+            <div class="nino-info">
+                <h2 th:text="${reserva.nombreNino}">Nombre del Nino</h2>
+                <p th:text="${reserva.edadNino + ' anos de edad'}">5 anos de edad</p>
+            </div>
+        </div>
+
+        <!-- Grid de datos -->
+        <div class="data-grid">
+            <div class="data-item accent">
+                <p class="di-label">Fecha del evento</p>
+                <p class="di-value"
+                   th:text="${#temporals.format(reserva.fechaEvento, 'dd/MM/yyyy')}">
+                   01/06/2025
+                </p>
+            </div>
+            <div class="data-item accent">
+                <p class="di-label">Sede</p>
+                <p class="di-value" th:text="${sede ?: 'Principal'}">Sede Principal</p>
+            </div>
+            <div class="data-item">
+                <p class="di-label">Acompanante</p>
+                <p class="di-value" th:text="${reserva.nombreAcompanante}">Juan Perez</p>
+            </div>
+            <div class="data-item">
+                <p class="di-label">DNI Acompanante</p>
+                <p class="di-value" th:text="${reserva.dniAcompanante}">12345678</p>
+            </div>
+            <div class="data-item">
+                <p class="di-label">Canal de reserva</p>
+                <p class="di-value" th:text="${reserva.canalReserva}">WEB</p>
+            </div>
+            <div class="data-item">
+                <p class="di-label">Tipo de dia</p>
+                <p class="di-value" th:text="${reserva.tipoDia}">FIN_SEMANA</p>
+            </div>
+        </div>
+
+        <!-- Pago -->
+        <div class="pago-section">
+            <div class="pago-left">
+                <p class="label">Total pagado</p>
+                <p class="monto"
+                   th:text="${'S/ ' + #numbers.formatDecimal(reserva.totalPagado, 1, 2)}">
+                   S/ 50.00
+                </p>
+            </div>
+            <div class="pago-right">
+                <span class="medio"
+                      th:text="${reserva.medioPago ?: 'EFECTIVO'}"
+                      th:if="${reserva.medioPago != null}">YAPE</span>
+                <p class="referencia"
+                   th:text="${reserva.referenciaPago}"
+                   th:if="${reserva.referenciaPago != null}">PAY-1-1234567890</p>
+            </div>
+        </div>
+
+        <!-- Consentimiento -->
+        <div class="consentimiento" th:if="${reserva.firmoConsentimiento}">
+            <span class="icon">&#10003;</span>
+            <p>Consentimiento informado firmado correctamente</p>
+        </div>
+
+        <!-- Linea perforada -->
+        <div class="perforation">
+            <div class="perf-circle"></div>
+            <div class="perf-line"></div>
+            <div class="perf-circle"></div>
+        </div>
+
+        <!-- QR -->
+        <div class="qr-section">
+            <p class="qr-label">Codigo de validacion</p>
+            <div class="qr-placeholder">
+                <img th:src="${'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=' + reserva.numeroTicket}"
+                     th:alt="${reserva.numeroTicket}"
+                     alt="QR Code" />
+            </div>
+            <p class="qr-codigo" th:text="${reserva.codigoQr ?: reserva.numeroTicket}">
+                TKT-1-20250601-0001
+            </p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="ticket-footer">
+        <p>Presentar este ticket en recepcion al momento del ingreso</p>
+        <p class="fecha-emision"
+           th:text="${'Emitido: ' + #temporals.format(reserva.fechaCreacion, 'dd/MM/yyyy HH:mm')}">
+           Emitido: 01/06/2025 10:30
+        </p>
+    </div>
+
+</div>
+</body>
+</html>

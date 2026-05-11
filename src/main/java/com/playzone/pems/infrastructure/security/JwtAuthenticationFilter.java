@@ -48,6 +48,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(auth);
 
+                request.setAttribute("idUsuario", idUsuario);
+                request.setAttribute("idUsuarioAdmin", idUsuario);
+
             } catch (Exception e) {
                 log.warn("No se pudo establecer la autenticación del token: {}", e.getMessage());
                 SecurityContextHolder.clearContext();

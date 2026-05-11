@@ -44,7 +44,7 @@ public class ImagenGaleriaEntity {
     private boolean activo = true;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "idusuarisubio")
+    @JoinColumn(name = "idusuariosubio")
     private UsuarioAdminEntity usuarioSubio;
 
     @CreationTimestamp
