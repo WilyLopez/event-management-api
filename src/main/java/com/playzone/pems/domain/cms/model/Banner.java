@@ -16,11 +16,18 @@ public class Banner {
     private String        titulo;
     private String        descripcion;
     private String        imagenUrl;
+    private String        imagenMovilUrl;
     private String        enlaceDestino;
+    private String        textoBoton;
+    private String        colorOverlay;
+    private String        tipoBanner;
     private LocalDate     fechaInicio;
     private LocalDate     fechaFin;
     private boolean       activo;
     private int           orden;
+    private int           prioridad;
+    private boolean       soloMovil;
+    private boolean       soloDesktop;
     private Long          idUsuarioCreador;
     private LocalDateTime fechaCreacion;
 

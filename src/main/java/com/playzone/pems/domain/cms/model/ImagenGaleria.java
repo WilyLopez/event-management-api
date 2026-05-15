@@ -15,9 +15,15 @@ public class ImagenGaleria {
     private Long             idSede;
     private String           urlImagen;
     private String           altTexto;
+    private String           titulo;
+    private String           descripcion;
     private CategoriaImagen  categoriaImagen;
+    private String           tipoMime;
+    private Long             tamanioBytes;
     private int              ordenVisualizacion;
     private boolean          activo;
+    private boolean          destacada;
+    private boolean          eliminada;
     private Long             idUsuarioSubio;
     private LocalDateTime    fechaSubida;
 

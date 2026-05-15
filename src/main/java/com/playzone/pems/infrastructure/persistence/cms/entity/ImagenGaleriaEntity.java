@@ -33,15 +33,33 @@ public class ImagenGaleriaEntity {
     @Column(name = "alttexto", length = 200)
     private String altTexto;
 
+    @Column(length = 150)
+    private String titulo;
+
+    @Column(length = 300)
+    private String descripcion;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "categoriaimagen", nullable = false, length = 20)
     private CategoriaImagen categoriaImagen;
+
+    @Column(name = "tipomime", length = 50)
+    private String tipoMime;
+
+    @Column(name = "tamanobytes")
+    private Long tamanioBytes;
 
     @Column(name = "ordenvisualizacion", nullable = false)
     private int ordenVisualizacion = 0;
 
     @Column(nullable = false)
     private boolean activo = true;
+
+    @Column(nullable = false)
+    private boolean destacada = false;
+
+    @Column(nullable = false)
+    private boolean eliminada = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "idusuariosubio")

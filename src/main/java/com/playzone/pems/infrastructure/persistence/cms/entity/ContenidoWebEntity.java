@@ -37,6 +37,24 @@ public class ContenidoWebEntity {
     @Column(name = "valoren", columnDefinition = "TEXT")
     private String valorEn;
 
+    @Column(name = "imagenurl", length = 500)
+    private String imagenUrl;
+
+    @Column(length = 300)
+    private String descripcion;
+
+    @Column(name = "ordenvisualizacion", nullable = false)
+    private int ordenVisualizacion = 0;
+
+    @Column(nullable = false)
+    private boolean visible = true;
+
+    @Column(nullable = false)
+    private int version = 1;
+
+    @Column(name = "metadatos", columnDefinition = "jsonb")
+    private String metadatos;
+
     @Column(nullable = false)
     private boolean activo = true;
 

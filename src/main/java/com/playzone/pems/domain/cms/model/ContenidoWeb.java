@@ -16,6 +16,12 @@ public class ContenidoWeb {
     private String        clave;
     private String        valorEs;
     private String        valorEn;
+    private String        imagenUrl;
+    private String        descripcion;
+    private int           ordenVisualizacion;
+    private boolean       visible;
+    private int           version;
+    private String        metadatos;
     private boolean       activo;
     private Long          idUsuarioEditor;
     private LocalDateTime fechaActualizacion;
