@@ -4,6 +4,7 @@ import com.playzone.pems.domain.cms.model.Resena;
 import com.playzone.pems.domain.cms.repository.ResenaRepository;
 import com.playzone.pems.infrastructure.persistence.cms.jpa.ResenaJpaRepository;
 import com.playzone.pems.infrastructure.persistence.cms.mapper.CmsEntityMapper;
+import com.playzone.pems.infrastructure.persistence.evento.jpa.EventoPrivadoJpaRepository;
 import com.playzone.pems.infrastructure.persistence.usuario.jpa.ClienteJpaRepository;
 import com.playzone.pems.infrastructure.persistence.usuario.jpa.UsuarioAdminJpaRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,10 +19,11 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ResenaPersistenceAdapter implements ResenaRepository {
 
-    private final ResenaJpaRepository       resenaJpa;
-    private final ClienteJpaRepository      clienteJpa;
-    private final UsuarioAdminJpaRepository adminJpa;
-    private final CmsEntityMapper           mapper;
+    private final ResenaJpaRepository          resenaJpa;
+    private final ClienteJpaRepository         clienteJpa;
+    private final UsuarioAdminJpaRepository    adminJpa;
+    private final EventoPrivadoJpaRepository   eventoJpa;
+    private final CmsEntityMapper              mapper;
 
     @Override
     public Optional<Resena> findById(Long id) {
@@ -50,7 +52,9 @@ public class ResenaPersistenceAdapter implements ResenaRepository {
                 ? clienteJpa.findById(r.getIdCliente()).orElse(null) : null;
         var aprueba = r.getIdUsuarioAprueba() != null
                 ? adminJpa.findById(r.getIdUsuarioAprueba()).orElse(null) : null;
-        return mapper.toDomain(resenaJpa.save(mapper.toEntity(r, cliente, aprueba)));
+        var evento  = r.getIdEventoPrivado() != null
+                ? eventoJpa.findById(r.getIdEventoPrivado()).orElse(null) : null;
+        return mapper.toDomain(resenaJpa.save(mapper.toEntity(r, cliente, aprueba, evento)));
     }
 
     @Override
