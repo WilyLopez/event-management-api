@@ -39,6 +39,12 @@ public class ContenidoWebService implements EditarContenidoWebUseCase {
                 .clave(c.getClave())
                 .valorEs(c.getValorEs())
                 .valorEn(c.getValorEn())
+                .imagenUrl(c.getImagenUrl())
+                .descripcion(c.getDescripcion())
+                .ordenVisualizacion(c.getOrdenVisualizacion())
+                .visible(c.isVisible())
+                .version(c.getVersion())
+                .metadatos(c.getMetadatos())
                 .activo(c.isActivo())
                 .fechaActualizacion(c.getFechaActualizacion())
                 .build();

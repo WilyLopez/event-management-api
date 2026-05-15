@@ -14,10 +14,17 @@ public interface GestionarBannerUseCase {
             String    titulo,
             String    descripcion,
             String    imagenUrl,
+            String    imagenMovilUrl,
             String    enlaceDestino,
+            String    textoBoton,
+            String    colorOverlay,
+            String    tipoBanner,
             LocalDate fechaInicio,
             LocalDate fechaFin,
             int       orden,
+            int       prioridad,
+            boolean   soloMovil,
+            boolean   soloDesktop,
             Long      idUsuario
     ) {}
 
@@ -27,21 +34,28 @@ public interface GestionarBannerUseCase {
             String    titulo,
             String    descripcion,
             String    imagenUrl,
+            String    imagenMovilUrl,
             String    enlaceDestino,
+            String    textoBoton,
+            String    colorOverlay,
+            String    tipoBanner,
             LocalDate fechaInicio,
             LocalDate fechaFin,
-            int       orden
+            int       orden,
+            int       prioridad,
+            boolean   soloMovil,
+            boolean   soloDesktop
     ) {}
 
     record ReordenarCommand(List<Long> idsOrdenados) {}
 
-    BannerQuery    crear(CrearCommand command);
-    BannerQuery    actualizar(ActualizarCommand command);
+    BannerQuery       crear(CrearCommand command);
+    BannerQuery       actualizar(ActualizarCommand command);
     Page<BannerQuery> listar(Pageable pageable);
     List<BannerQuery> listarPublicos(Long idSede);
-    void           activar(Long idBanner);
-    void           desactivar(Long idBanner);
-    BannerQuery    duplicar(Long idBanner, Long idUsuario);
-    void           reordenar(ReordenarCommand command);
-    void           eliminar(Long idBanner);
+    void              activar(Long idBanner);
+    void              desactivar(Long idBanner);
+    BannerQuery       duplicar(Long idBanner, Long idUsuario);
+    void              reordenar(ReordenarCommand command);
+    void              eliminar(Long idBanner);
 }

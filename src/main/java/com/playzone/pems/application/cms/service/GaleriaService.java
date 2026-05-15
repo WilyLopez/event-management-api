@@ -30,8 +30,12 @@ public class GaleriaService implements GestionarGaleriaUseCase {
                 .urlImagen(url)
                 .altTexto(altTexto)
                 .categoriaImagen(categoria)
+                .tipoMime(contentType)
+                .tamanioBytes((long) contenido.length)
                 .ordenVisualizacion(orden)
                 .activo(true)
+                .destacada(false)
+                .eliminada(false)
                 .idUsuarioSubio(idUsuario)
                 .build();
 
