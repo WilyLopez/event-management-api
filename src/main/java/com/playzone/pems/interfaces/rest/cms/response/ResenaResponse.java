@@ -13,5 +13,10 @@ public class ResenaResponse {
     private final String        contenido;
     private final int           calificacion;
     private final boolean       aprobada;
+    private final String        fotoUrl;
+    private final String        respuestaAdmin;
+    private final LocalDateTime fechaRespuesta;
+    private final boolean       destacada;
+    private final boolean       mostrarHome;
     private final LocalDateTime fechaCreacion;
 }

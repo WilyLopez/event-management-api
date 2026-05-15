@@ -16,11 +16,18 @@ public class BannerQuery {
     private String        titulo;
     private String        descripcion;
     private String        imagenUrl;
+    private String        imagenMovilUrl;
     private String        enlaceDestino;
+    private String        textoBoton;
+    private String        colorOverlay;
+    private String        tipoBanner;
     private LocalDate     fechaInicio;
     private LocalDate     fechaFin;
     private boolean       activo;
     private int           orden;
+    private int           prioridad;
+    private boolean       soloMovil;
+    private boolean       soloDesktop;
     private LocalDateTime fechaCreacion;
 
     public static BannerQuery from(Banner b) {
@@ -30,11 +37,18 @@ public class BannerQuery {
                 .titulo(b.getTitulo())
                 .descripcion(b.getDescripcion())
                 .imagenUrl(b.getImagenUrl())
+                .imagenMovilUrl(b.getImagenMovilUrl())
                 .enlaceDestino(b.getEnlaceDestino())
+                .textoBoton(b.getTextoBoton())
+                .colorOverlay(b.getColorOverlay())
+                .tipoBanner(b.getTipoBanner())
                 .fechaInicio(b.getFechaInicio())
                 .fechaFin(b.getFechaFin())
                 .activo(b.isActivo())
                 .orden(b.getOrden())
+                .prioridad(b.getPrioridad())
+                .soloMovil(b.isSoloMovil())
+                .soloDesktop(b.isSoloDesktop())
                 .fechaCreacion(b.getFechaCreacion())
                 .build();
     }
