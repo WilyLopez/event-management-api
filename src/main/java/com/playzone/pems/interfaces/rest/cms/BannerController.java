@@ -64,10 +64,17 @@ public class BannerController {
                         request.getTitulo(),
                         request.getDescripcion(),
                         request.getImagenUrl(),
+                        request.getImagenMovilUrl(),
                         request.getEnlaceDestino(),
+                        request.getTextoBoton(),
+                        request.getColorOverlay(),
+                        request.getTipoBanner(),
                         request.getFechaInicio(),
                         request.getFechaFin(),
                         request.getOrden() != null ? request.getOrden() : 0,
+                        request.getPrioridad() != null ? request.getPrioridad() : 0,
+                        Boolean.TRUE.equals(request.getSoloMovil()),
+                        Boolean.TRUE.equals(request.getSoloDesktop()),
                         idUsuarioAdmin)));
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(response));
     }
@@ -84,10 +91,17 @@ public class BannerController {
                         request.getTitulo(),
                         request.getDescripcion(),
                         request.getImagenUrl(),
+                        request.getImagenMovilUrl(),
                         request.getEnlaceDestino(),
+                        request.getTextoBoton(),
+                        request.getColorOverlay(),
+                        request.getTipoBanner(),
                         request.getFechaInicio(),
                         request.getFechaFin(),
-                        request.getOrden() != null ? request.getOrden() : 0)));
+                        request.getOrden() != null ? request.getOrden() : 0,
+                        request.getPrioridad() != null ? request.getPrioridad() : 0,
+                        Boolean.TRUE.equals(request.getSoloMovil()),
+                        Boolean.TRUE.equals(request.getSoloDesktop()))));
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
@@ -139,12 +153,19 @@ public class BannerController {
         @NotBlank  private String    titulo;
         private String    descripcion;
         @NotBlank  private String    imagenUrl;
+        private String    imagenMovilUrl;
         private String    enlaceDestino;
+        private String    textoBoton;
+        private String    colorOverlay;
+        private String    tipoBanner;
         @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
         private LocalDate fechaInicio;
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
         private LocalDate fechaFin;
         private Integer   orden;
+        private Integer   prioridad;
+        private Boolean   soloMovil;
+        private Boolean   soloDesktop;
     }
 
     @Getter
@@ -154,12 +175,19 @@ public class BannerController {
         @NotBlank  private String    titulo;
         private String    descripcion;
         @NotBlank  private String    imagenUrl;
+        private String    imagenMovilUrl;
         private String    enlaceDestino;
+        private String    textoBoton;
+        private String    colorOverlay;
+        private String    tipoBanner;
         @NotNull @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
         private LocalDate fechaInicio;
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
         private LocalDate fechaFin;
         private Integer   orden;
+        private Integer   prioridad;
+        private Boolean   soloMovil;
+        private Boolean   soloDesktop;
     }
 
     @Getter
@@ -176,11 +204,18 @@ public class BannerController {
         private String        titulo;
         private String        descripcion;
         private String        imagenUrl;
+        private String        imagenMovilUrl;
         private String        enlaceDestino;
+        private String        textoBoton;
+        private String        colorOverlay;
+        private String        tipoBanner;
         private LocalDate     fechaInicio;
         private LocalDate     fechaFin;
         private boolean       activo;
         private int           orden;
+        private int           prioridad;
+        private boolean       soloMovil;
+        private boolean       soloDesktop;
         private LocalDateTime fechaCreacion;
 
         public static BannerResponse from(BannerQuery q) {
@@ -190,11 +225,18 @@ public class BannerController {
                     .titulo(q.getTitulo())
                     .descripcion(q.getDescripcion())
                     .imagenUrl(q.getImagenUrl())
+                    .imagenMovilUrl(q.getImagenMovilUrl())
                     .enlaceDestino(q.getEnlaceDestino())
+                    .textoBoton(q.getTextoBoton())
+                    .colorOverlay(q.getColorOverlay())
+                    .tipoBanner(q.getTipoBanner())
                     .fechaInicio(q.getFechaInicio())
                     .fechaFin(q.getFechaFin())
                     .activo(q.isActivo())
                     .orden(q.getOrden())
+                    .prioridad(q.getPrioridad())
+                    .soloMovil(q.isSoloMovil())
+                    .soloDesktop(q.isSoloDesktop())
                     .fechaCreacion(q.getFechaCreacion())
                     .build();
         }
