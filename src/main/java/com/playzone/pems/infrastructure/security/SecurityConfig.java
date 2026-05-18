@@ -50,7 +50,22 @@ public class SecurityConfig {
                                 "/api/v1/contenido/**",
                                 "/api/v1/galeria/**",
                                 "/api/v1/banners/**",
-                                "/api/v1/resenas/**"
+                                "/api/v1/resenas/**",
+                                "/api/v1/cms/**",
+                                "/api/v1/promociones/**",
+                                "/api/v1/api/v1/public/**",
+                                "/api/v1/api/v1/calendario/**",
+                                "/api/v1/api/v1/contenido/**",
+                                "/api/v1/api/v1/galeria/**",
+                                "/api/v1/api/v1/banners/**",
+                                "/api/v1/api/v1/resenas/**",
+                                "/api/v1/api/v1/cms/**",
+                                "/api/v1/api/v1/promociones/**"
+                        ).permitAll()
+
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/v1/resenas",
+                                "/api/v1/api/v1/resenas"
                         ).permitAll()
 
                         .requestMatchers(
