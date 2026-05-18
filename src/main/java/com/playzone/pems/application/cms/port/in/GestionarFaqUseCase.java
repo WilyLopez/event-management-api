@@ -8,9 +8,9 @@ import java.util.List;
 
 public interface GestionarFaqUseCase {
 
-    record CrearCommand(String pregunta, String respuesta, int ordenVisualizacion, Long idUsuario) {}
+    record CrearCommand(String pregunta, String respuesta, int ordenVisualizacion, boolean visible, Long idUsuario) {}
 
-    record ActualizarCommand(Long idFaq, String pregunta, String respuesta, int ordenVisualizacion, Long idUsuario) {}
+    record ActualizarCommand(Long idFaq, String pregunta, String respuesta, int ordenVisualizacion, boolean visible, Long idUsuario) {}
 
     record ReordenarCommand(List<Long> idsOrdenados) {}
 

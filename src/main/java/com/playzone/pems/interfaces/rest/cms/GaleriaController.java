@@ -1,9 +1,17 @@
 package com.playzone.pems.interfaces.rest.cms;
 
 import com.playzone.pems.application.cms.port.in.GestionarGaleriaUseCase;
+import com.playzone.pems.application.usuario.port.in.GestionarUsuarioAdminUseCase;
+import com.playzone.pems.domain.cms.model.ImagenGaleria;
 import com.playzone.pems.domain.cms.model.enums.CategoriaImagen;
+import com.playzone.pems.domain.usuario.model.UsuarioAdmin;
 import com.playzone.pems.shared.response.ApiResponse;
-import lombok.RequiredArgsConstructor;
+import com.playzone.pems.shared.response.PagedResponse;
+import lombok.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -11,17 +19,63 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/v1/galeria")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class GaleriaController {
 
-    private final GestionarGaleriaUseCase galeriaUseCase;
+    private final GestionarGaleriaUseCase      galeriaUseCase;
+    private final GestionarUsuarioAdminUseCase usuarioUseCase;
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<PagedResponse<GaleriaResponse>>> listar(
+            @RequestParam(required = false) Long idSede,
+            @RequestParam(defaultValue = "false") boolean soloDestacadas,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestAttribute(required = false) Long idUsuarioAdmin) {
+
+        Long sedeId = idSede;
+        if (sedeId == null && idUsuarioAdmin != null) {
+            UsuarioAdmin admin = usuarioUseCase.obtener(idUsuarioAdmin);
+            sedeId = admin.getIdSede();
+        }
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("ordenVisualizacion").ascending());
+        Page<GaleriaResponse> resultado = galeriaUseCase.listar(sedeId, soloDestacadas, pageable)
+                .map(this::toResponse);
+
+        return ResponseEntity.ok(ApiResponse.ok(PagedResponse.of(resultado)));
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<GaleriaResponse>> subir(
+            @RequestParam MultipartFile archivo,
+            @RequestParam(defaultValue = "GENERAL") CategoriaImagen categoria,
+            @RequestParam(required = false) String altTexto,
+            @RequestParam(defaultValue = "0") int orden,
+            @RequestAttribute Long idUsuarioAdmin) throws IOException {
+
+        UsuarioAdmin admin = usuarioUseCase.obtener(idUsuarioAdmin);
+
+        ImagenGaleria imagen = galeriaUseCase.subir(
+                admin.getIdSede(),
+                archivo.getBytes(),
+                archivo.getOriginalFilename(),
+                archivo.getContentType(),
+                altTexto,
+                categoria,
+                orden,
+                idUsuarioAdmin);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(imagen)));
+    }
 
     @PostMapping("/sedes/{idSede}")
-    public ResponseEntity<ApiResponse<Void>> subir(
+    public ResponseEntity<ApiResponse<GaleriaResponse>> subirConSede(
             @PathVariable Long idSede,
             @RequestParam MultipartFile archivo,
             @RequestParam(defaultValue = "GENERAL") CategoriaImagen categoria,
@@ -29,7 +83,7 @@ public class GaleriaController {
             @RequestParam(defaultValue = "0") int orden,
             @RequestAttribute Long idUsuarioAdmin) throws IOException {
 
-        galeriaUseCase.subir(
+        ImagenGaleria imagen = galeriaUseCase.subir(
                 idSede,
                 archivo.getBytes(),
                 archivo.getOriginalFilename(),
@@ -39,7 +93,18 @@ public class GaleriaController {
                 orden,
                 idUsuarioAdmin);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.noContent());
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(imagen)));
+    }
+
+    @PutMapping("/{idImagen}")
+    public ResponseEntity<ApiResponse<GaleriaResponse>> actualizar(
+            @PathVariable Long idImagen,
+            @RequestBody ActualizarGaleriaRequest request) {
+
+        ImagenGaleria imagen = galeriaUseCase.actualizar(
+                idImagen, request.getAltTexto(), request.getCategoria(), request.getOrden());
+
+        return ResponseEntity.ok(ApiResponse.ok(toResponse(imagen)));
     }
 
     @DeleteMapping("/{idImagen}")
@@ -54,5 +119,52 @@ public class GaleriaController {
             @RequestParam int nuevoOrden) {
         galeriaUseCase.reordenar(idImagen, nuevoOrden);
         return ResponseEntity.ok(ApiResponse.noContent());
+    }
+
+    @PatchMapping("/{idImagen}/destacar")
+    public ResponseEntity<ApiResponse<Void>> destacar(@PathVariable Long idImagen) {
+        galeriaUseCase.destacar(idImagen);
+        return ResponseEntity.ok(ApiResponse.noContent());
+    }
+
+    @PatchMapping("/{idImagen}/quitar-destacado")
+    public ResponseEntity<ApiResponse<Void>> quitarDestacado(@PathVariable Long idImagen) {
+        galeriaUseCase.quitarDestacado(idImagen);
+        return ResponseEntity.ok(ApiResponse.noContent());
+    }
+
+    private GaleriaResponse toResponse(ImagenGaleria i) {
+        return GaleriaResponse.builder()
+                .id(i.getId())
+                .idSede(i.getIdSede())
+                .url(i.getUrlImagen())
+                .altTexto(i.getAltTexto())
+                .categoria(i.getCategoriaImagen())
+                .orden(i.getOrdenVisualizacion())
+                .destacada(i.isDestacada())
+                .fechaCreacion(i.getFechaSubida())
+                .build();
+    }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    public static class ActualizarGaleriaRequest {
+        private String          altTexto;
+        private CategoriaImagen categoria;
+        private Integer         orden;
+    }
+
+    @Getter
+    @Builder
+    public static class GaleriaResponse {
+        private Long            id;
+        private Long            idSede;
+        private String          url;
+        private String          altTexto;
+        private CategoriaImagen categoria;
+        private int             orden;
+        private boolean         destacada;
+        private LocalDateTime   fechaCreacion;
     }
 }

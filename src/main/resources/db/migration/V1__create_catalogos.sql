@@ -1,8 +1,6 @@
--- V1: Catálogos (tablas de valores controlados) y extensión pgcrypto
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- ─── Estados de reserva pública ──────────────────────────────────────────────
 CREATE TABLE estadoreservapublica (
     idestadoreservapublica BIGSERIAL    PRIMARY KEY,
     codigo                 VARCHAR(40)  NOT NULL UNIQUE,
@@ -15,7 +13,6 @@ INSERT INTO estadoreservapublica (codigo, descripcion) VALUES
     ('COMPLETADA',   'Visita realizada'),
     ('CANCELADA',    'Reserva cancelada');
 
--- ─── Estados de evento privado ────────────────────────────────────────────────
 CREATE TABLE estadoeventoprivado (
     idestadoeventoprivado BIGSERIAL    PRIMARY KEY,
     codigo                VARCHAR(40)  NOT NULL UNIQUE,
@@ -27,7 +24,6 @@ INSERT INTO estadoeventoprivado (codigo, descripcion) VALUES
     ('COMPLETADA', 'Evento realizado exitosamente'),
     ('CANCELADA',  'Evento cancelado con justificación');
 
--- ─── Estados del ciclo de vida de un contrato ────────────────────────────────
 CREATE TABLE estadocontrato (
     idestadocontrato BIGSERIAL    PRIMARY KEY,
     codigo           VARCHAR(40)  NOT NULL UNIQUE,
@@ -41,8 +37,7 @@ INSERT INTO estadocontrato (codigo, descripcion) VALUES
     ('VENCIDO',         'Contrato expirado sin firma'),
     ('CANCELADO',       'Contrato cancelado'),
     ('ARCHIVADO',       'Contrato archivado');
-
--- ─── Tipos de comprobante de pago (SUNAT) ────────────────────────────────────
+    
 CREATE TABLE tipocomprobante (
     idtipocomprobante BIGSERIAL    PRIMARY KEY,
     codigo            VARCHAR(30)  NOT NULL UNIQUE,

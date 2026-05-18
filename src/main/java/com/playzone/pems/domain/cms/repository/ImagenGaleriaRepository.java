@@ -19,6 +19,8 @@ public interface ImagenGaleriaRepository {
 
     Page<ImagenGaleria> findBySede(Long idSede, Pageable pageable);
 
+    Page<ImagenGaleria> findBySedeAndDestacada(Long idSede, boolean destacada, Pageable pageable);
+
     ImagenGaleria save(ImagenGaleria imagen);
 
     void deleteById(Long id);

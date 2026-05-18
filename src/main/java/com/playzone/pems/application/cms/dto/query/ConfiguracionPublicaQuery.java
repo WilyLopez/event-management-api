@@ -45,7 +45,7 @@ public class ConfiguracionPublicaQuery {
 
     public static ConfiguracionPublicaQuery from(ConfiguracionPublica c) {
         return ConfiguracionPublicaQuery.builder()
-                .id(c.getId())
+                .id(c.getIdConfiguracionPublica())
                 .nombreNegocio(c.getNombreNegocio())
                 .slogan(c.getSlogan())
                 .logoUrl(c.getLogoUrl())

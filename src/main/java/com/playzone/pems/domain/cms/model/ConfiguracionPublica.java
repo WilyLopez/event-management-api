@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class ConfiguracionPublica {
 
-    private Long          id;
+    private Long          idConfiguracionPublica;
 
     private String        nombreNegocio;
     private String        slogan;

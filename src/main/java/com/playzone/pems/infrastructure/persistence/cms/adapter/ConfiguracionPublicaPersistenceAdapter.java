@@ -18,7 +18,7 @@ public class ConfiguracionPublicaPersistenceAdapter implements ConfiguracionPubl
 
     @Override
     public Optional<ConfiguracionPublica> findFirst() {
-        return configJpa.findFirstByOrderByIdAsc().map(mapper::toDomain);
+        return configJpa.findTopByOrderByIdConfiguracionPublicaAsc().map(mapper::toDomain);
     }
 
     @Override

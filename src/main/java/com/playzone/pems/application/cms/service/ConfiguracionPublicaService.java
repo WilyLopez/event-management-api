@@ -4,7 +4,6 @@ import com.playzone.pems.application.cms.dto.query.ConfiguracionPublicaQuery;
 import com.playzone.pems.application.cms.port.in.GestionarConfiguracionPublicaUseCase;
 import com.playzone.pems.domain.cms.model.ConfiguracionPublica;
 import com.playzone.pems.domain.cms.repository.ConfiguracionPublicaRepository;
-import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,18 +15,15 @@ public class ConfiguracionPublicaService implements GestionarConfiguracionPublic
     private final ConfiguracionPublicaRepository configRepository;
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public ConfiguracionPublicaQuery obtener() {
-        return ConfiguracionPublicaQuery.from(
-                configRepository.findFirst()
-                        .orElseThrow(() -> new ResourceNotFoundException("ConfiguracionPublica", 1L)));
+        return ConfiguracionPublicaQuery.from(obtenerOAutocrear());
     }
 
     @Override
     @Transactional
     public ConfiguracionPublicaQuery actualizar(ActualizarCommand cmd) {
-        ConfiguracionPublica existente = configRepository.findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("ConfiguracionPublica", 1L));
+        ConfiguracionPublica existente = obtenerOAutocrear();
 
         ConfiguracionPublica actualizado = existente.toBuilder()
                 .nombreNegocio(cmd.nombreNegocio())
@@ -63,5 +59,17 @@ public class ConfiguracionPublicaService implements GestionarConfiguracionPublic
                 .build();
 
         return ConfiguracionPublicaQuery.from(configRepository.save(actualizado));
+    }
+
+    private ConfiguracionPublica obtenerOAutocrear() {
+        return configRepository.findFirst()
+                .orElseGet(() -> configRepository.save(ConfiguracionPublica.builder()
+                        .nombreNegocio("Mi Negocio")
+                        .slogan("Slogan por defecto")
+                        .mantenimientoActivo(false)
+                        .mensajeMantenimiento("Estamos en mantenimiento, por favor regrese más tarde.")
+                        .colorTema("#000000")
+                        .colorSecundario("#FFFFFF")
+                        .build()));
     }
 }

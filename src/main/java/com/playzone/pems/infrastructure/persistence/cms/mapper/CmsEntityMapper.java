@@ -232,7 +232,7 @@ public class CmsEntityMapper {
     public ConfiguracionPublica toDomain(ConfiguracionPublicaEntity e) {
         if (e == null) return null;
         return ConfiguracionPublica.builder()
-                .id(e.getId())
+                .idConfiguracionPublica(e.getIdConfiguracionPublica())
                 .nombreNegocio(e.getNombreNegocio())
                 .slogan(e.getSlogan())
                 .logoUrl(e.getLogoUrl())
@@ -270,7 +270,7 @@ public class CmsEntityMapper {
     public ConfiguracionPublicaEntity toEntity(ConfiguracionPublica d) {
         if (d == null) return null;
         return ConfiguracionPublicaEntity.builder()
-                .id(d.getId())
+                .idConfiguracionPublica(d.getIdConfiguracionPublica())
                 .nombreNegocio(d.getNombreNegocio())
                 .slogan(d.getSlogan())
                 .logoUrl(d.getLogoUrl())

@@ -60,6 +60,7 @@ public class FaqController {
                         request.getPregunta(),
                         request.getRespuesta(),
                         request.getOrden() != null ? request.getOrden() : 0,
+                        request.getVisible() != null ? request.getVisible() : true,
                         idUsuarioAdmin)));
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(response));
     }
@@ -76,6 +77,7 @@ public class FaqController {
                         request.getPregunta(),
                         request.getRespuesta(),
                         request.getOrden() != null ? request.getOrden() : 0,
+                        request.getVisible() != null ? request.getVisible() : true,
                         idUsuarioAdmin)));
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
@@ -116,6 +118,7 @@ public class FaqController {
         @NotBlank private String  pregunta;
         @NotBlank private String  respuesta;
         private           Integer orden;
+        private           Boolean visible;
     }
 
     @Getter
@@ -124,6 +127,7 @@ public class FaqController {
         @NotBlank private String  pregunta;
         @NotBlank private String  respuesta;
         private           Integer orden;
+        private           Boolean visible;
     }
 
     @Getter

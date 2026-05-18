@@ -18,7 +18,7 @@ public class ConfiguracionPublicaEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "idconfiguracionpublica")
-    private Long id;
+    private Long idConfiguracionPublica;
 
     @Column(name = "nombrenegocio", nullable = false, length = 150)
     private String nombreNegocio;

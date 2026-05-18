@@ -7,6 +7,8 @@ import com.playzone.pems.domain.cms.model.enums.CategoriaImagen;
 import com.playzone.pems.domain.cms.repository.ImagenGaleriaRepository;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +18,15 @@ public class GaleriaService implements GestionarGaleriaUseCase {
 
     private final ImagenGaleriaRepository galeriaRepository;
     private final SubirImagenStoragePort  storagePort;
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ImagenGaleria> listar(Long idSede, Boolean destacada, Pageable pageable) {
+        if (Boolean.TRUE.equals(destacada)) {
+            return galeriaRepository.findBySedeAndDestacada(idSede, true, pageable);
+        }
+        return galeriaRepository.findBySede(idSede, pageable);
+    }
 
     @Override
     @Transactional
@@ -59,5 +70,35 @@ public class GaleriaService implements GestionarGaleriaUseCase {
                 .orElseThrow(() -> new ResourceNotFoundException("ImagenGaleria", idImagen));
 
         galeriaRepository.save(imagen.toBuilder().ordenVisualizacion(nuevoOrden).build());
+    }
+
+    @Override
+    @Transactional
+    public void destacar(Long idImagen) {
+        ImagenGaleria imagen = galeriaRepository.findById(idImagen)
+                .orElseThrow(() -> new ResourceNotFoundException("ImagenGaleria", idImagen));
+        galeriaRepository.save(imagen.toBuilder().destacada(true).build());
+    }
+
+    @Override
+    @Transactional
+    public void quitarDestacado(Long idImagen) {
+        ImagenGaleria imagen = galeriaRepository.findById(idImagen)
+                .orElseThrow(() -> new ResourceNotFoundException("ImagenGaleria", idImagen));
+        galeriaRepository.save(imagen.toBuilder().destacada(false).build());
+    }
+
+    @Override
+    @Transactional
+    public ImagenGaleria actualizar(Long idImagen, String altTexto, CategoriaImagen categoria, Integer orden) {
+        ImagenGaleria imagen = galeriaRepository.findById(idImagen)
+                .orElseThrow(() -> new ResourceNotFoundException("ImagenGaleria", idImagen));
+        
+        ImagenGaleria.ImagenGaleriaBuilder builder = imagen.toBuilder();
+        if (altTexto != null) builder.altTexto(altTexto);
+        if (categoria != null) builder.categoriaImagen(categoria);
+        if (orden != null) builder.ordenVisualizacion(orden);
+        
+        return galeriaRepository.save(builder.build());
     }
 }

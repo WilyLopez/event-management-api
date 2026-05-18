@@ -7,12 +7,10 @@ import com.playzone.pems.infrastructure.persistence.cms.jpa.ImagenGaleriaJpaRepo
 import com.playzone.pems.infrastructure.persistence.cms.mapper.CmsEntityMapper;
 import com.playzone.pems.infrastructure.persistence.usuario.jpa.SedeJpaRepository;
 import com.playzone.pems.infrastructure.persistence.usuario.jpa.UsuarioAdminJpaRepository;
-import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,45 +19,51 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ImagenGaleriaPersistenceAdapter implements ImagenGaleriaRepository {
 
-    private final ImagenGaleriaJpaRepository galeriaJpa;
-    private final SedeJpaRepository          sedeJpa;
-    private final UsuarioAdminJpaRepository  adminJpa;
+    private final ImagenGaleriaJpaRepository jpaRepository;
+    private final SedeJpaRepository          sedeRepository;
+    private final UsuarioAdminJpaRepository  usuarioRepository;
     private final CmsEntityMapper            mapper;
 
     @Override
     public Optional<ImagenGaleria> findById(Long id) {
-        return galeriaJpa.findById(id).map(mapper::toDomain);
+        return jpaRepository.findById(id).map(mapper::toDomain);
     }
 
     @Override
     public List<ImagenGaleria> findActivasBySede(Long idSede) {
-        return galeriaJpa.findBySede_IdAndActivoTrueOrderByOrdenVisualizacionAsc(idSede)
+        return jpaRepository.findBySede_IdAndActivoTrueOrderByOrdenVisualizacionAsc(idSede)
                 .stream().map(mapper::toDomain).toList();
     }
 
     @Override
     public List<ImagenGaleria> findActivasBySedeAndCategoria(Long idSede, CategoriaImagen categoria) {
-        return galeriaJpa.findBySede_IdAndCategoriaImagenAndActivoTrueOrderByOrdenVisualizacionAsc(idSede, categoria)
+        return jpaRepository.findBySede_IdAndCategoriaImagenAndActivoTrueOrderByOrdenVisualizacionAsc(idSede, categoria)
                 .stream().map(mapper::toDomain).toList();
     }
 
     @Override
     public Page<ImagenGaleria> findBySede(Long idSede, Pageable pageable) {
-        return galeriaJpa.findBySede_Id(idSede, pageable).map(mapper::toDomain);
+        return jpaRepository.findBySede_Id(idSede, pageable).map(mapper::toDomain);
     }
 
     @Override
-    @Transactional
-    public ImagenGaleria save(ImagenGaleria img) {
-        var sede    = sedeJpa.findById(img.getIdSede())
-                .orElseThrow(() -> new ResourceNotFoundException("Sede", img.getIdSede()));
-        var usuario = img.getIdUsuarioSubio() != null
-                ? adminJpa.findById(img.getIdUsuarioSubio()).orElse(null) : null;
-        return mapper.toDomain(galeriaJpa.save(mapper.toEntity(img, sede, usuario)));
+    public Page<ImagenGaleria> findBySedeAndDestacada(Long idSede, boolean destacada, Pageable pageable) {
+        return jpaRepository.findBySede_IdAndDestacada(idSede, destacada, pageable).map(mapper::toDomain);
+    }
+
+    @Override
+    public ImagenGaleria save(ImagenGaleria imagen) {
+        var sedeEntity = sedeRepository.getReferenceById(imagen.getIdSede());
+        var usuarioEntity = imagen.getIdUsuarioSubio() != null 
+                ? usuarioRepository.getReferenceById(imagen.getIdUsuarioSubio()) 
+                : null;
+        
+        var entity = mapper.toEntity(imagen, sedeEntity, usuarioEntity);
+        return mapper.toDomain(jpaRepository.save(entity));
     }
 
     @Override
     public void deleteById(Long id) {
-        galeriaJpa.deleteById(id);
+        jpaRepository.deleteById(id);
     }
 }

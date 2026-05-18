@@ -27,7 +27,7 @@ public class FaqService implements GestionarFaqUseCase {
                 .pregunta(command.pregunta())
                 .respuesta(command.respuesta())
                 .ordenVisualizacion(command.ordenVisualizacion())
-                .visible(true)
+                .visible(command.visible())
                 .idUsuarioEditor(command.idUsuario())
                 .build();
         return FaqQuery.from(faqRepository.save(faq));
@@ -41,6 +41,7 @@ public class FaqService implements GestionarFaqUseCase {
                 .pregunta(command.pregunta())
                 .respuesta(command.respuesta())
                 .ordenVisualizacion(command.ordenVisualizacion())
+                .visible(command.visible())
                 .idUsuarioEditor(command.idUsuario())
                 .build();
         return FaqQuery.from(faqRepository.save(actualizado));
