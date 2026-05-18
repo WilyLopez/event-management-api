@@ -20,7 +20,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/promociones")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class PromocionController {
 
     private final CrearPromocionUseCase      crearUseCase;
@@ -36,7 +35,18 @@ public class PromocionController {
         return ResponseEntity.ok(ApiResponse.ok(lista));
     }
 
+    @GetMapping("/publicas")
+    public ResponseEntity<ApiResponse<List<PromocionResponse>>> listarPublicas() {
+        List<PromocionResponse> lista = listarUseCase.listar()
+                .stream()
+                .filter(PromocionQuery::isActivo)
+                .map(this::toResponse)
+                .toList();
+        return ResponseEntity.ok(ApiResponse.ok(lista));
+    }
+
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PromocionResponse>> crear(
             @Valid @RequestBody CrearPromocionRequest request,
             @RequestAttribute Long idUsuarioAdmin) {
