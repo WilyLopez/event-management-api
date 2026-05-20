@@ -1,14 +1,9 @@
 package com.playzone.pems.application.venta.service;
 
-import com.playzone.pems.application.inventario.dto.command.MovimientoInventarioCommand;
-import com.playzone.pems.application.inventario.port.in.RegistrarSalidaStockUseCase;
 import com.playzone.pems.application.venta.dto.command.ProcesarVentaCommand;
 import com.playzone.pems.application.venta.dto.query.VentaQuery;
 import com.playzone.pems.application.venta.port.in.ConsultarVentasUseCase;
 import com.playzone.pems.application.venta.port.in.ProcesarVentaUseCase;
-import com.playzone.pems.domain.inventario.exception.ProductoNotFoundException;
-import com.playzone.pems.domain.inventario.model.enums.TipoMovimiento;
-import com.playzone.pems.domain.inventario.repository.ProductoRepository;
 import com.playzone.pems.domain.venta.exception.VentaNotFoundException;
 import com.playzone.pems.domain.venta.model.DetalleVenta;
 import com.playzone.pems.domain.venta.model.Venta;
@@ -30,10 +25,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class VentaService implements ProcesarVentaUseCase, ConsultarVentasUseCase {
 
-    private final VentaRepository            ventaRepository;
-    private final DetalleVentaRepository     detalleRepository;
-    private final ProductoRepository         productoRepository;
-    private final RegistrarSalidaStockUseCase salidaStockUseCase;
+    private final VentaRepository        ventaRepository;
+    private final DetalleVentaRepository detalleRepository;
 
     @Override
     @Transactional
@@ -41,15 +34,13 @@ public class VentaService implements ProcesarVentaUseCase, ConsultarVentasUseCas
         BigDecimal subtotal = BigDecimal.ZERO;
 
         List<DetalleVenta> detalles = command.getLineas().stream()
-                .map(linea -> {
-                    var producto = productoRepository.findById(linea.getIdProducto())
-                            .orElseThrow(() -> new ProductoNotFoundException(linea.getIdProducto()));
-                    BigDecimal subtotalLinea = producto.getPrecio()
+                .map((ProcesarVentaCommand.LineaVentaCommand linea) -> {
+                    BigDecimal subtotalLinea = linea.getPrecioUnitario()
                             .multiply(BigDecimal.valueOf(linea.getCantidad()));
                     return DetalleVenta.builder()
                             .idProducto(linea.getIdProducto())
                             .cantidad(linea.getCantidad())
-                            .precioUnitario(producto.getPrecio())
+                            .precioUnitario(linea.getPrecioUnitario())
                             .subtotalLinea(subtotalLinea)
                             .build();
                 })
@@ -59,8 +50,7 @@ public class VentaService implements ProcesarVentaUseCase, ConsultarVentasUseCas
             subtotal = subtotal.add(d.getSubtotalLinea());
         }
 
-        BigDecimal descuento = command.getDescuento() != null
-                ? command.getDescuento() : BigDecimal.ZERO;
+        BigDecimal descuento = command.getDescuento() != null ? command.getDescuento() : BigDecimal.ZERO;
         BigDecimal total = subtotal.subtract(descuento);
 
         Venta venta = Venta.builder()
@@ -76,19 +66,8 @@ public class VentaService implements ProcesarVentaUseCase, ConsultarVentasUseCas
         Venta guardada = ventaRepository.save(venta);
 
         List<DetalleVenta> detallesGuardados = detalles.stream()
-                .map(d -> detalleRepository.save(
-                        d.toBuilder().idVenta(guardada.getId()).build()))
+                .map(d -> detalleRepository.save(d.toBuilder().idVenta(guardada.getId()).build()))
                 .toList();
-
-        detallesGuardados.forEach(d ->
-                salidaStockUseCase.ejecutar(MovimientoInventarioCommand.builder()
-                        .idProducto(d.getIdProducto())
-                        .tipoMovimiento(TipoMovimiento.SALIDA)
-                        .cantidad(d.getCantidad())
-                        .motivo("Venta #" + guardada.getId())
-                        .idVenta(guardada.getId())
-                        .idUsuario(command.getIdUsuario())
-                        .build()));
 
         return toQuery(guardada, detallesGuardados);
     }

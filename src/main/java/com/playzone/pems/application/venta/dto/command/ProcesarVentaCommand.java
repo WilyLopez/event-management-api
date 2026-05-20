@@ -39,5 +39,10 @@ public class ProcesarVentaCommand {
         @NotNull
         @Min(1)
         private final Integer cantidad;
+
+        @NotNull
+        @DecimalMin("0.01")
+        @Digits(integer = 10, fraction = 2)
+        private final BigDecimal precioUnitario;
     }
 }

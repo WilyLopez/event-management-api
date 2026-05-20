@@ -2,7 +2,6 @@ package com.playzone.pems.infrastructure.persistence.venta.adapter;
 
 import com.playzone.pems.domain.venta.model.DetalleVenta;
 import com.playzone.pems.domain.venta.repository.DetalleVentaRepository;
-import com.playzone.pems.infrastructure.persistence.inventario.jpa.ProductoJpaRepository;
 import com.playzone.pems.infrastructure.persistence.venta.jpa.DetalleVentaJpaRepository;
 import com.playzone.pems.infrastructure.persistence.venta.jpa.VentaJpaRepository;
 import com.playzone.pems.infrastructure.persistence.venta.mapper.VentaEntityMapper;
@@ -20,7 +19,6 @@ public class DetalleVentaPersistenceAdapter implements DetalleVentaRepository {
 
     private final DetalleVentaJpaRepository detalleJpa;
     private final VentaJpaRepository        ventaJpa;
-    private final ProductoJpaRepository     productoJpa;
     private final VentaEntityMapper         mapper;
 
     @Override
@@ -36,11 +34,9 @@ public class DetalleVentaPersistenceAdapter implements DetalleVentaRepository {
     @Override
     @Transactional
     public DetalleVenta save(DetalleVenta detalle) {
-        var venta    = ventaJpa.findById(detalle.getIdVenta())
+        var venta = ventaJpa.findById(detalle.getIdVenta())
                 .orElseThrow(() -> new ResourceNotFoundException("Venta", detalle.getIdVenta()));
-        var producto = productoJpa.findById(detalle.getIdProducto())
-                .orElseThrow(() -> new ResourceNotFoundException("Producto", detalle.getIdProducto()));
-        return mapper.toDomain(detalleJpa.save(mapper.toEntity(detalle, venta, producto)));
+        return mapper.toDomain(detalleJpa.save(mapper.toEntity(detalle, venta)));
     }
 
     @Override

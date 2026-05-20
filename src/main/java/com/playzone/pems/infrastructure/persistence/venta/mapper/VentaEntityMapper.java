@@ -4,7 +4,6 @@ import com.playzone.pems.domain.venta.model.DetalleVenta;
 import com.playzone.pems.domain.venta.model.Venta;
 import com.playzone.pems.infrastructure.persistence.evento.entity.EventoPrivadoEntity;
 import com.playzone.pems.infrastructure.persistence.evento.entity.ReservaPublicaEntity;
-import com.playzone.pems.infrastructure.persistence.inventario.entity.ProductoEntity;
 import com.playzone.pems.infrastructure.persistence.usuario.entity.SedeEntity;
 import com.playzone.pems.infrastructure.persistence.usuario.entity.UsuarioAdminEntity;
 import com.playzone.pems.infrastructure.persistence.venta.entity.DetalleVentaEntity;
@@ -52,19 +51,19 @@ public class VentaEntityMapper {
         return DetalleVenta.builder()
                 .id(e.getId())
                 .idVenta(e.getVenta().getId())
-                .idProducto(e.getProducto().getId())
+                .idProducto(e.getIdProducto())
                 .cantidad(e.getCantidad())
                 .precioUnitario(e.getPrecioUnitario())
                 .subtotalLinea(e.getSubtotalLinea())
                 .build();
     }
 
-    public DetalleVentaEntity toEntity(DetalleVenta d, VentaEntity venta, ProductoEntity producto) {
+    public DetalleVentaEntity toEntity(DetalleVenta d, VentaEntity venta) {
         if (d == null) return null;
         return DetalleVentaEntity.builder()
                 .id(d.getId())
                 .venta(venta)
-                .producto(producto)
+                .idProducto(d.getIdProducto())
                 .cantidad(d.getCantidad())
                 .precioUnitario(d.getPrecioUnitario())
                 .subtotalLinea(d.getSubtotalLinea())

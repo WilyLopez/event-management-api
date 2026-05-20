@@ -1,6 +1,5 @@
 package com.playzone.pems.infrastructure.persistence.venta.entity;
 
-import com.playzone.pems.infrastructure.persistence.inventario.entity.ProductoEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -24,9 +23,8 @@ public class DetalleVentaEntity {
     @JoinColumn(name = "idventa", nullable = false)
     private VentaEntity venta;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "idproducto", nullable = false)
-    private ProductoEntity producto;
+    @Column(name = "idproducto")
+    private Long idProducto;
 
     @Column(nullable = false)
     private int cantidad;
