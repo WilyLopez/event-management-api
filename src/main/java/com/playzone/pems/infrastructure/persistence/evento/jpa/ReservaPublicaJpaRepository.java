@@ -69,4 +69,12 @@ public interface ReservaPublicaJpaRepository extends JpaRepository<ReservaPublic
     BigDecimal sumIngresosBySedeAndFecha(@Param("idSede") Long idSede, @Param("fecha") LocalDate fecha);
 
     boolean existsByNumeroTicket(String numeroTicket);
+
+    @Query("SELECT COALESCE(SUM(r.totalPagado), 0) FROM ReservaPublicaEntity r " +
+           "WHERE r.sede.id = :idSede AND YEAR(r.fechaEvento) = :anio " +
+           "AND MONTH(r.fechaEvento) = :mes AND r.estado <> 'CANCELADA'")
+    BigDecimal sumIngresosBySedeAndPeriodo(
+            @Param("idSede") Long idSede,
+            @Param("anio") int anio,
+            @Param("mes") int mes);
 }

@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -52,4 +53,12 @@ public interface EventoPrivadoJpaRepository extends JpaRepository<EventoPrivadoE
             @Param("idSede") Long idSede,
             @Param("fecha")  LocalDate fecha,
             @Param("idTurno")Long idTurno);
+
+    @Query("SELECT COALESCE(SUM(e.montoAdelanto), 0) FROM EventoPrivadoEntity e " +
+           "WHERE e.sede.id = :idSede AND YEAR(e.fechaEvento) = :anio " +
+           "AND MONTH(e.fechaEvento) = :mes AND e.estado <> 'CANCELADA'")
+    BigDecimal sumAdelantosBySedeAndPeriodo(
+            @Param("idSede") Long idSede,
+            @Param("anio") int anio,
+            @Param("mes") int mes);
 }
