@@ -1,6 +1,3 @@
--- V4: Feriados, bloqueos de calendario, disponibilidad diaria y tarifas
-
--- ─── Feriados nacionales y regionales ────────────────────────────────────────
 CREATE TABLE feriado (
     idferiado     BIGSERIAL    PRIMARY KEY,
     idtipoferiado VARCHAR(20)  NOT NULL REFERENCES tipoferiado(idtipoferiado),
@@ -14,7 +11,6 @@ CREATE TABLE feriado (
 CREATE INDEX idx_feriado_fecha ON feriado(fecha);
 CREATE INDEX idx_feriado_anio  ON feriado(anio);
 
--- ─── Bloqueos manuales del calendario ────────────────────────────────────────
 CREATE TABLE bloquecalendario (
     idbloquecalendario BIGSERIAL    PRIMARY KEY,
     idsede             BIGINT       NOT NULL REFERENCES sede(idsede),
@@ -29,7 +25,6 @@ CREATE TABLE bloquecalendario (
 
 CREATE INDEX idx_bloque_sede_fechas ON bloquecalendario(idsede, fechainicio, fechafin);
 
--- ─── Disponibilidad diaria (aforo y turnos) ───────────────────────────────────
 CREATE TABLE disponibilidaddiaria (
     iddisponibilidad    BIGSERIAL   PRIMARY KEY,
     idsede              BIGINT      NOT NULL REFERENCES sede(idsede),
@@ -44,7 +39,6 @@ CREATE TABLE disponibilidaddiaria (
 
 CREATE INDEX idx_disp_sede_fecha ON disponibilidaddiaria(idsede, fecha);
 
--- ─── Tarifas por tipo de día ──────────────────────────────────────────────────
 CREATE TABLE tarifa (
     idtarifa         BIGSERIAL     PRIMARY KEY,
     idsede           BIGINT        NOT NULL REFERENCES sede(idsede),

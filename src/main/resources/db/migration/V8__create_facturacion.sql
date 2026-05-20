@@ -1,6 +1,3 @@
--- V8: Facturación electrónica SUNAT
-
--- ─── Series de comprobante por sede ──────────────────────────────────────────
 CREATE TABLE seriecomprobante (
     idserie           BIGSERIAL   PRIMARY KEY,
     idsede            BIGINT      NOT NULL REFERENCES sede(idsede),
@@ -11,7 +8,6 @@ CREATE TABLE seriecomprobante (
     UNIQUE (idsede, serie)
 );
 
--- ─── Comprobantes electrónicos emitidos ───────────────────────────────────────
 CREATE TABLE comprobante (
     idcomprobante       BIGSERIAL     PRIMARY KEY,
     idpago              BIGINT        NOT NULL UNIQUE REFERENCES pago(idpago),

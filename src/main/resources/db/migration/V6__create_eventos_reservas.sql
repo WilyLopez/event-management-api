@@ -1,6 +1,3 @@
--- V6: Reservas públicas, eventos privados, checklist, proveedores y contratos
-
--- ─── Reservas públicas (acceso general) ──────────────────────────────────────
 CREATE TABLE reservapublica (
     idreservapublica    BIGSERIAL     PRIMARY KEY,
     idcliente           BIGINT        NOT NULL REFERENCES cliente(idcliente),
@@ -41,7 +38,6 @@ CREATE INDEX idx_reservapub_sede_fecha ON reservapublica(idsede, fechaevento);
 CREATE INDEX idx_reservapub_original   ON reservapublica(idreservaoriginal) WHERE idreservaoriginal IS NOT NULL;
 CREATE INDEX idx_reservapub_ingresado  ON reservapublica(ingresado) WHERE ingresado = TRUE;
 
--- ─── Eventos privados (celebraciones, cumpleaños, etc.) ───────────────────────
 CREATE TABLE eventoprivado (
     ideventoprivado     BIGSERIAL     PRIMARY KEY,
     idcliente           BIGINT        NOT NULL REFERENCES cliente(idcliente),
@@ -72,7 +68,6 @@ CREATE INDEX idx_eventopri_cliente    ON eventoprivado(idcliente);
 CREATE INDEX idx_eventopri_sede_fecha ON eventoprivado(idsede, fechaevento);
 CREATE INDEX idx_eventopri_estado     ON eventoprivado(idestado);
 
--- ─── Checklist operativo del evento privado ───────────────────────────────────
 CREATE TABLE checklistevento (
     idchecklist       BIGSERIAL    PRIMARY KEY,
     ideventoprivado   BIGINT       NOT NULL REFERENCES eventoprivado(ideventoprivado) ON DELETE CASCADE,
@@ -86,7 +81,6 @@ CREATE TABLE checklistevento (
 
 CREATE INDEX idx_checklist_evento ON checklistevento(ideventoprivado);
 
--- ─── Proveedores de servicios externos ────────────────────────────────────────
 CREATE TABLE proveedor (
     idproveedor        BIGSERIAL    PRIMARY KEY,
     nombre             VARCHAR(200) NOT NULL,
@@ -101,7 +95,6 @@ CREATE TABLE proveedor (
     fechaactualizacion TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
--- ─── Contrato del evento privado ──────────────────────────────────────────────
 CREATE TABLE contrato (
     idcontrato         BIGSERIAL    PRIMARY KEY,
     ideventoprivado    BIGINT       NOT NULL UNIQUE REFERENCES eventoprivado(ideventoprivado),
@@ -117,7 +110,6 @@ CREATE TABLE contrato (
     fechaactualizacion TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
--- ─── Proveedores asociados al contrato ────────────────────────────────────────
 CREATE TABLE contratoproveedor (
     idcontratoproveedor BIGSERIAL     PRIMARY KEY,
     idcontrato          BIGINT        NOT NULL REFERENCES contrato(idcontrato),
@@ -129,7 +121,6 @@ CREATE TABLE contratoproveedor (
     UNIQUE (idcontrato, idproveedor)
 );
 
--- ─── Documentos adjuntos al contrato ──────────────────────────────────────────
 CREATE TABLE documentocontrato (
     iddocumento    BIGSERIAL    PRIMARY KEY,
     idcontrato     BIGINT       NOT NULL REFERENCES contrato(idcontrato) ON DELETE CASCADE,
@@ -143,7 +134,6 @@ CREATE TABLE documentocontrato (
 
 CREATE INDEX idx_doccontrato_contrato ON documentocontrato(idcontrato);
 
--- ─── Historial de actividad del contrato ──────────────────────────────────────
 CREATE TABLE actividadcontrato (
     idactividad BIGSERIAL    PRIMARY KEY,
     idcontrato  BIGINT       NOT NULL REFERENCES contrato(idcontrato) ON DELETE CASCADE,

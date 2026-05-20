@@ -1,5 +1,3 @@
--- V2: Configuración del sistema y sede principal
-
 CREATE TABLE configuracionsistema (
     idconfiguracion    BIGSERIAL    PRIMARY KEY,
     clave              VARCHAR(80)  NOT NULL UNIQUE,

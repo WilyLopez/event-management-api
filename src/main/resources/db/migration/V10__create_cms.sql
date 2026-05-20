@@ -8,17 +8,16 @@ CREATE TABLE seccionweb (
 );
 
 INSERT INTO seccionweb (codigo, nombre, descripcion) VALUES
-('HOME',        'Página principal',     'Contenido principal del home'),
-('HEADER',      'Cabecera',             'Navbar público'),
-('FOOTER',      'Pie de página',        'Footer del sitio'),
-('CONTACTO',    'Contacto',             'Información de contacto'),
-('NOSOTROS',    'Nosotros',             'Contenido institucional'),
-('PROMOCIONES', 'Promociones',          'Promociones públicas'),
-('GALERIA',     'Galería',              'Galería pública'),
-('FAQ',         'Preguntas frecuentes', 'FAQs del sitio'),
-('LEGAL',       'Contenido legal',      'Políticas y términos')
+    ('HOME',        'Página principal',     'Contenido principal del home'),
+    ('HEADER',      'Cabecera',             'Navbar público'),
+    ('FOOTER',      'Pie de página',        'Footer del sitio'),
+    ('CONTACTO',    'Contacto',             'Información de contacto'),
+    ('NOSOTROS',    'Nosotros',             'Contenido institucional'),
+    ('PROMOCIONES', 'Promociones',          'Promociones públicas'),
+    ('GALERIA',     'Galería',              'Galería pública'),
+    ('FAQ',         'Preguntas frecuentes', 'FAQs del sitio'),
+    ('LEGAL',       'Contenido legal',      'Políticas y términos')
 ON CONFLICT DO NOTHING;
-
 
 CREATE TABLE tipocontenido (
     idtipocontenido BIGSERIAL    PRIMARY KEY,
@@ -27,17 +26,16 @@ CREATE TABLE tipocontenido (
 );
 
 INSERT INTO tipocontenido (codigo, descripcion) VALUES
-('TEXTO',    'Texto simple'),
-('HTML',     'Contenido HTML'),
-('URL',      'Enlace URL'),
-('JSON',     'Contenido JSON'),
-('EMAIL',    'Correo electrónico'),
-('TELEFONO', 'Número telefónico'),
-('COLOR',    'Color hexadecimal'),
-('IMAGEN',   'Imagen'),
-('BOOLEANO', 'Valor booleano')
+    ('TEXTO',    'Texto simple'),
+    ('HTML',     'Contenido HTML'),
+    ('URL',      'Enlace URL'),
+    ('JSON',     'Contenido JSON'),
+    ('EMAIL',    'Correo electrónico'),
+    ('TELEFONO', 'Número telefónico'),
+    ('COLOR',    'Color hexadecimal'),
+    ('IMAGEN',   'Imagen'),
+    ('BOOLEANO', 'Valor booleano')
 ON CONFLICT DO NOTHING;
-
 
 CREATE TABLE contenidoweb (
     idcontenidoweb     BIGSERIAL    PRIMARY KEY,
@@ -62,7 +60,6 @@ CREATE INDEX idx_contenido_seccion         ON contenidoweb(idseccion);
 CREATE INDEX idx_contenido_clave           ON contenidoweb(clave);
 CREATE INDEX idx_contenido_visible         ON contenidoweb(visible);
 CREATE INDEX idx_contenido_seccion_visible ON contenidoweb(idseccion, visible);
-
 
 CREATE TABLE configuracionpublica (
     idconfiguracionpublica BIGSERIAL    PRIMARY KEY,
@@ -99,7 +96,6 @@ CREATE TABLE configuracionpublica (
     fechaactualizacion     TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
-
 CREATE TABLE imagengaleria (
     idimagengaleria    BIGSERIAL    PRIMARY KEY,
     idsede             BIGINT       NOT NULL REFERENCES sede(idsede),
@@ -122,7 +118,6 @@ CREATE TABLE imagengaleria (
 CREATE INDEX idx_imagen_sede_cat  ON imagengaleria(idsede, categoriaimagen);
 CREATE INDEX idx_imagen_orden     ON imagengaleria(ordenvisualizacion);
 CREATE INDEX idx_imagen_destacada ON imagengaleria(destacada);
-
 
 CREATE TABLE banner (
     idbanner         BIGSERIAL    PRIMARY KEY,
@@ -151,11 +146,10 @@ CREATE INDEX idx_banner_fechas ON banner(fechainicio, fechafin);
 CREATE INDEX idx_banner_activo ON banner(activo);
 CREATE INDEX idx_banner_tipo   ON banner(tipobanner);
 
-
 CREATE TABLE resena (
     idresena         BIGSERIAL    PRIMARY KEY,
     idcliente        BIGINT       REFERENCES cliente(idcliente),
-    ideventoprivado  BIGINT,
+    ideventoprivado  BIGINT       REFERENCES eventoprivado(ideventoprivado),
     nombreautor      VARCHAR(120) NOT NULL,
     contenido        TEXT         NOT NULL,
     calificacion     INT          NOT NULL CHECK (calificacion BETWEEN 1 AND 5),
@@ -172,7 +166,6 @@ CREATE TABLE resena (
 CREATE INDEX idx_resena_aprobada  ON resena(aprobada);
 CREATE INDEX idx_resena_destacada ON resena(destacada);
 
-
 CREATE TABLE faq (
     idfaq              BIGSERIAL    PRIMARY KEY,
     pregunta           VARCHAR(300) NOT NULL,
@@ -182,7 +175,6 @@ CREATE TABLE faq (
     idusuarioeditor    BIGINT       REFERENCES usuarioadmin(idusuarioadmin),
     fechaactualizacion TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
-
 
 CREATE TABLE contenidolegal (
     idcontenidolegal   BIGSERIAL    PRIMARY KEY,
@@ -196,8 +188,8 @@ CREATE TABLE contenidolegal (
 );
 
 INSERT INTO contenidolegal (tipo, titulo, contenido) VALUES
-('TERMINOS',   'Términos y Condiciones',    'Pendiente de redacción.'),
-('PRIVACIDAD', 'Política de Privacidad',    'Pendiente de redacción.'),
-('REEMBOLSO',  'Política de Reembolso',     'Pendiente de redacción.'),
-('MENORES',    'Protección de Menores',     'Pendiente de redacción.')
+    ('TERMINOS',   'Términos y Condiciones',  'Pendiente de redacción.'),
+    ('PRIVACIDAD', 'Política de Privacidad',  'Pendiente de redacción.'),
+    ('REEMBOLSO',  'Política de Reembolso',   'Pendiente de redacción.'),
+    ('MENORES',    'Protección de Menores',   'Pendiente de redacción.')
 ON CONFLICT DO NOTHING;

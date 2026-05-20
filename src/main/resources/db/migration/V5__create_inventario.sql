@@ -1,6 +1,3 @@
--- V5: Inventario de productos
--- Definido antes de ventas para que detalleventa pueda referenciar producto directamente.
-
 CREATE TABLE producto (
     idproducto         BIGSERIAL     PRIMARY KEY,
     idcategoria        BIGINT        NOT NULL REFERENCES categoriaproducto(idcategoriaproducto),

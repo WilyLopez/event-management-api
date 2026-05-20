@@ -1,4 +1,3 @@
-
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 CREATE TABLE estadoreservapublica (
@@ -37,7 +36,7 @@ INSERT INTO estadocontrato (codigo, descripcion) VALUES
     ('VENCIDO',         'Contrato expirado sin firma'),
     ('CANCELADO',       'Contrato cancelado'),
     ('ARCHIVADO',       'Contrato archivado');
-    
+
 CREATE TABLE tipocomprobante (
     idtipocomprobante BIGSERIAL    PRIMARY KEY,
     codigo            VARCHAR(30)  NOT NULL UNIQUE,
@@ -49,7 +48,6 @@ INSERT INTO tipocomprobante (codigo, descripcion, validosunat) VALUES
     ('FACTURA',    'Factura Electrónica',           TRUE),
     ('NOTA_VENTA', 'Nota de Venta (uso interno)',   FALSE);
 
--- ─── Estados del comprobante electrónico SUNAT ───────────────────────────────
 CREATE TABLE estadocomprobante (
     idestadocomprobante BIGSERIAL    PRIMARY KEY,
     codigo              VARCHAR(40)  NOT NULL UNIQUE,
@@ -61,7 +59,6 @@ INSERT INTO estadocomprobante (codigo, descripcion) VALUES
     ('RECHAZADO', 'Rechazado por SUNAT, requiere corrección'),
     ('ANULADO',   'Anulado mediante nota de crédito');
 
--- ─── Medios de pago aceptados ────────────────────────────────────────────────
 CREATE TABLE mediopago (
     idmediopago BIGSERIAL    PRIMARY KEY,
     codigo      VARCHAR(30)  NOT NULL UNIQUE,
@@ -74,7 +71,6 @@ INSERT INTO mediopago (codigo, descripcion) VALUES
     ('TRANSFERENCIA', 'Transferencia bancaria'),
     ('TARJETA',       'Pago con tarjeta (uso futuro)');
 
--- ─── Tipo de día para cálculo de tarifas ─────────────────────────────────────
 CREATE TABLE tipodia (
     idtipodiacod VARCHAR(30) PRIMARY KEY,
     descripcion  VARCHAR(80) NOT NULL
@@ -83,7 +79,6 @@ INSERT INTO tipodia (idtipodiacod, descripcion) VALUES
     ('SEMANA',             'Lunes a viernes (tarifa A)'),
     ('FIN_SEMANA_FERIADO', 'Sábado, domingo y feriados (tarifa B)');
 
--- ─── Canal de origen de la reserva ───────────────────────────────────────────
 CREATE TABLE canalreserva (
     idcanalreserva VARCHAR(30) PRIMARY KEY,
     descripcion    VARCHAR(80) NOT NULL
@@ -92,7 +87,6 @@ INSERT INTO canalreserva (idcanalreserva, descripcion) VALUES
     ('ONLINE',     'Reserva realizada desde el sitio web'),
     ('PRESENCIAL', 'Registro realizado en el local');
 
--- ─── Turnos disponibles del local ────────────────────────────────────────────
 CREATE TABLE turno (
     idturno     BIGSERIAL   PRIMARY KEY,
     codigo      VARCHAR(10) NOT NULL UNIQUE,
@@ -104,7 +98,6 @@ INSERT INTO turno (codigo, descripcion, horainicio, horafin) VALUES
     ('T1', 'Turno mañana', '10:00', '14:00'),
     ('T2', 'Turno tarde',  '16:00', '20:00');
 
--- ─── Clasificación de feriados ────────────────────────────────────────────────
 CREATE TABLE tipoferiado (
     idtipoferiado VARCHAR(20) PRIMARY KEY,
     descripcion   VARCHAR(80) NOT NULL
@@ -113,7 +106,6 @@ INSERT INTO tipoferiado (idtipoferiado, descripcion) VALUES
     ('NACIONAL', 'Feriado oficial nacional del Perú'),
     ('REGIONAL', 'Feriado regional o local');
 
--- ─── Tipos de promoción para el módulo de fidelización ───────────────────────
 CREATE TABLE tipopromocion (
     idtipopromocion VARCHAR(40)  PRIMARY KEY,
     descripcion     VARCHAR(120) NOT NULL
@@ -125,7 +117,6 @@ INSERT INTO tipopromocion (idtipopromocion, descripcion) VALUES
     ('ENTRADA_GRATUITA',     'Entrada sin costo (fidelización)'),
     ('CLIENTE_FRECUENTE',    'Beneficio acumulativo por visitas');
 
--- ─── Categorías de productos del inventario ───────────────────────────────────
 CREATE TABLE categoriaproducto (
     idcategoriaproducto BIGSERIAL    PRIMARY KEY,
     nombre              VARCHAR(80)  NOT NULL UNIQUE,

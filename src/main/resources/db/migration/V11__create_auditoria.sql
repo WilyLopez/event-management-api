@@ -1,7 +1,3 @@
--- V11: Auditoría del sistema
--- La columna se nombra directamente "fechalog" (evita la palabra reservada "timestamp").
--- Se incluyen "nivel" y "resultado" desde el inicio (no como parche posterior).
-
 CREATE TABLE logauditoria (
     idlog           BIGSERIAL    PRIMARY KEY,
     idusuarioadmin  BIGINT       REFERENCES usuarioadmin(idusuarioadmin),

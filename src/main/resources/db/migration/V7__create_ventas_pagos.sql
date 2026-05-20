@@ -1,7 +1,3 @@
--- V7: Ventas, pagos y movimientos de inventario
--- movimientoinventario se incluye aquí porque depende de venta (creada en esta misma migración).
-
--- ─── Ventas (cabecera) ────────────────────────────────────────────────────────
 CREATE TABLE venta (
     idventa          BIGSERIAL     PRIMARY KEY,
     idsede           BIGINT        NOT NULL REFERENCES sede(idsede),
@@ -18,7 +14,6 @@ CREATE TABLE venta (
 CREATE INDEX idx_venta_sede_fecha ON venta(idsede, fechaventa);
 CREATE INDEX idx_venta_usuario    ON venta(idusuario);
 
--- ─── Líneas de detalle de cada venta ─────────────────────────────────────────
 CREATE TABLE detalleventa (
     iddetalleventa BIGSERIAL     PRIMARY KEY,
     idventa        BIGINT        NOT NULL REFERENCES venta(idventa),
@@ -32,7 +27,6 @@ CREATE TABLE detalleventa (
 CREATE INDEX idx_detalle_venta    ON detalleventa(idventa);
 CREATE INDEX idx_detalle_producto ON detalleventa(idproducto);
 
--- ─── Pagos (asociados a reserva, evento o venta) ──────────────────────────────
 CREATE TABLE pago (
     idpago            BIGSERIAL     PRIMARY KEY,
     idmediopago       VARCHAR(30)   NOT NULL REFERENCES mediopago(codigo),
@@ -58,7 +52,6 @@ CREATE INDEX idx_pago_evento  ON pago(ideventoprivado)  WHERE ideventoprivado  I
 CREATE INDEX idx_pago_venta   ON pago(idventa)          WHERE idventa           IS NOT NULL;
 CREATE INDEX idx_pago_fecha   ON pago(fechapago);
 
--- ─── Movimientos de inventario ────────────────────────────────────────────────
 CREATE TABLE movimientoinventario (
     idmovimiento    BIGSERIAL    PRIMARY KEY,
     idproducto      BIGINT       NOT NULL REFERENCES producto(idproducto),
