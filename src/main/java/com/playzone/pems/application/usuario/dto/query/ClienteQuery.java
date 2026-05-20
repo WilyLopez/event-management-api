@@ -4,6 +4,8 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
+
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 
@@ -28,5 +30,15 @@ public class ClienteQuery {
     private int        contadorVisitas;
     private boolean    correoVerificado;
     private boolean    activo;
+
+    private String     origenRegistro;
+    private boolean    tieneAccesoWeb;
+    private boolean    aceptaComunicaciones;
+    private String     observaciones;
+    private Instant    fechaMigracionWeb;
+    private Instant    ultimaVisita;
+    private BigDecimal totalGastado;
+    private String     segmentoCliente;
+
     private Instant    fechaCreacion;
 }

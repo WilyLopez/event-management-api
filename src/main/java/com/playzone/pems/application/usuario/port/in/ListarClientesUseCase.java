@@ -13,4 +13,17 @@ public interface ListarClientesUseCase {
             Boolean  frecuente,
             Pageable pageable
     );
+
+    ClientePageQuery ejecutar(
+            String   search,
+            Boolean  esVip,
+            Boolean  activo,
+            Boolean  verificado,
+            Boolean  frecuente,
+            Boolean  tieneAccesoWeb,
+            Boolean  aceptaComunicaciones,
+            String   origenRegistro,
+            String   segmentoCliente,
+            Pageable pageable
+    );
 }

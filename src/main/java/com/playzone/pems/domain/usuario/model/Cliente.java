@@ -46,6 +46,15 @@ public class Cliente {
 
     private boolean activo;
 
+    private String  origenRegistro;
+    private boolean tieneAccesoWeb;
+    private boolean aceptaComunicaciones;
+    private String  observaciones;
+    private Instant fechaMigracionWeb;
+    private Instant ultimaVisita;
+    private BigDecimal totalGastado;
+    private String  segmentoCliente;
+
     private Instant fechaCreacion;
 
     private Instant fechaActualizacion;
@@ -80,7 +89,15 @@ public class Cliente {
     }
 
     public boolean puedeAcceder() {
-        return activo && correoVerificado;
+        return activo && correoVerificado && tieneAccesoWeb;
+    }
+
+    public boolean esPresencial() {
+        return "PRESENCIAL".equals(origenRegistro) || "ADMIN".equals(origenRegistro);
+    }
+
+    public boolean puedeRecibirComunicaciones() {
+        return activo && aceptaComunicaciones;
     }
 
     public String nombreParaMostrar() {

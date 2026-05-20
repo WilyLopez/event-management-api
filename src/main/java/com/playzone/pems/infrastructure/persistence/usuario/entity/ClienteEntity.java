@@ -38,7 +38,7 @@ public class ClienteEntity {
     @Column(nullable = false, unique = true, length = 150)
     private String correo;
 
-    @Column(name = "contresenahash", nullable = false)
+    @Column(name = "contresenahash")
     private String contrasenaHash;
 
     @Column(length = 20)
@@ -90,6 +90,35 @@ public class ClienteEntity {
     @Column(nullable = false)
     @Builder.Default
     private boolean activo = true;
+
+    @Column(name = "origenregistro", nullable = false, length = 20)
+    @Builder.Default
+    private String origenRegistro = "WEB";
+
+    @Column(name = "tieneaccesoweb", nullable = false)
+    @Builder.Default
+    private boolean tieneAccesoWeb = true;
+
+    @Column(name = "aceptacomunicaciones", nullable = false)
+    @Builder.Default
+    private boolean aceptaComunicaciones = true;
+
+    @Column(name = "observaciones", length = 500)
+    private String observaciones;
+
+    @Column(name = "fechamigracionweb")
+    private Instant fechaMigracionWeb;
+
+    @Column(name = "ultimavisita")
+    private Instant ultimaVisita;
+
+    @Column(name = "totalgastado", precision = 12, scale = 2)
+    @Builder.Default
+    private java.math.BigDecimal totalGastado = java.math.BigDecimal.ZERO;
+
+    @Column(name = "segmentocliente", nullable = false, length = 30)
+    @Builder.Default
+    private String segmentoCliente = "NUEVO";
 
     @CreationTimestamp
     @Column(name = "fechacreacion", updatable = false)

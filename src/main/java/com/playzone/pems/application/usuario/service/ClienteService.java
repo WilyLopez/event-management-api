@@ -1,17 +1,22 @@
 package com.playzone.pems.application.usuario.service;
 
 import com.playzone.pems.application.usuario.dto.command.ActualizarClienteCommand;
+import com.playzone.pems.application.usuario.dto.command.MigrarClienteWebCommand;
+import com.playzone.pems.application.usuario.dto.command.RegistrarClienteAdminCommand;
 import com.playzone.pems.application.usuario.dto.command.RegistrarClienteCommand;
 import com.playzone.pems.application.usuario.dto.query.ClientePageQuery;
 import com.playzone.pems.application.usuario.dto.query.ClienteQuery;
 import com.playzone.pems.application.usuario.port.in.ActualizarClienteUseCase;
 import com.playzone.pems.application.usuario.port.in.ActivarClienteUseCase;
+import com.playzone.pems.application.usuario.port.in.ActualizarSegmentoClienteUseCase;
 import com.playzone.pems.application.usuario.port.in.AutenticarClienteUseCase;
 import com.playzone.pems.application.usuario.port.in.DesactivarClienteUseCase;
 import com.playzone.pems.application.usuario.port.in.HacerVipUseCase;
 import com.playzone.pems.application.usuario.port.in.ListarClientesUseCase;
+import com.playzone.pems.application.usuario.port.in.MigrarClienteWebUseCase;
 import com.playzone.pems.application.usuario.port.in.ObtenerClienteUseCase;
 import com.playzone.pems.application.usuario.port.in.QuitarVipUseCase;
+import com.playzone.pems.application.usuario.port.in.RegistrarClienteAdminUseCase;
 import com.playzone.pems.application.usuario.port.in.RegistrarClienteUseCase;
 import com.playzone.pems.application.usuario.port.in.RegistrarVisitaManualUseCase;
 import com.playzone.pems.application.usuario.port.in.AutenticarClienteUseCase.Command;
@@ -30,11 +35,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 @Service
 @RequiredArgsConstructor
 public class ClienteService
         implements RegistrarClienteUseCase,
+        RegistrarClienteAdminUseCase,
+        MigrarClienteWebUseCase,
         AutenticarClienteUseCase,
         ActualizarClienteUseCase,
         ListarClientesUseCase,
@@ -43,7 +51,8 @@ public class ClienteService
         DesactivarClienteUseCase,
         HacerVipUseCase,
         QuitarVipUseCase,
-        RegistrarVisitaManualUseCase {
+        RegistrarVisitaManualUseCase,
+        ActualizarSegmentoClienteUseCase {
 
     private final ClienteRepository            clienteRepository;
     private final GenerarTokenPort             generarTokenPort;
@@ -73,11 +82,89 @@ public class ClienteService
                 .contadorVisitas(0)
                 .correoVerificado(true)
                 .activo(true)
+                .origenRegistro("WEB")
+                .tieneAccesoWeb(true)
+                .aceptaComunicaciones(true)
+                .segmentoCliente("NUEVO")
+                .totalGastado(BigDecimal.ZERO)
                 .build();
 
         Cliente guardado = clienteRepository.save(cliente);
         correoPort.enviarBienvenida(guardado.getCorreo(), guardado.getNombre());
         return toQuery(guardado);
+    }
+
+    @Override
+    @Transactional
+    public ClienteQuery ejecutar(RegistrarClienteAdminCommand command) {
+        if (command.getCorreo() != null && clienteRepository.existsByCorreo(command.getCorreo())) {
+            throw new ValidationException("correo", "Ya existe una cuenta con ese correo.");
+        }
+        if (command.getDni() != null && clienteRepository.existsByDni(command.getDni())) {
+            throw new ValidationException("dni", "Ya existe una cuenta con ese DNI.");
+        }
+
+        Cliente cliente = Cliente.builder()
+                .nombre(command.getNombre())
+                .correo(command.getCorreo())
+                .telefono(command.getTelefono())
+                .dni(command.getDni())
+                .fechaNacimiento(command.getFechaNacimiento())
+                .observaciones(command.getObservaciones())
+                .tipoCliente(command.getTipoCliente() != null ? command.getTipoCliente() : "PERSONA")
+                .aceptaComunicaciones(command.isAceptaComunicaciones())
+                .origenRegistro("ADMIN")
+                .tieneAccesoWeb(false)
+                .correoVerificado(false)
+                .activo(true)
+                .esVip(false)
+                .contadorVisitas(0)
+                .segmentoCliente("NUEVO")
+                .totalGastado(BigDecimal.ZERO)
+                .build();
+
+        return toQuery(clienteRepository.save(cliente));
+    }
+
+    @Override
+    @Transactional
+    public ClienteQuery ejecutar(MigrarClienteWebCommand command) {
+        return clienteRepository.findByCorreo(command.getCorreo())
+                .map(existente -> {
+                    if (existente.isTieneAccesoWeb()) {
+                        throw new ValidationException("correo", "Ya existe una cuenta registrada con este correo.");
+                    }
+                    return toQuery(clienteRepository.save(existente.toBuilder()
+                            .nombre(command.getNombre())
+                            .telefono(command.getTelefono())
+                            .contrasenaHash(EncriptacionUtil.hashear(command.getContrasena()))
+                            .tieneAccesoWeb(true)
+                            .correoVerificado(true)
+                            .fechaMigracionWeb(Instant.now())
+                            .activo(true)
+                            .build()));
+                })
+                .orElseGet(() -> {
+                    Cliente nuevo = Cliente.builder()
+                            .nombre(command.getNombre())
+                            .correo(command.getCorreo())
+                            .contrasenaHash(EncriptacionUtil.hashear(command.getContrasena()))
+                            .telefono(command.getTelefono())
+                            .tipoCliente("PERSONA")
+                            .origenRegistro("WEB")
+                            .tieneAccesoWeb(true)
+                            .correoVerificado(true)
+                            .aceptaComunicaciones(true)
+                            .activo(true)
+                            .esVip(false)
+                            .contadorVisitas(0)
+                            .segmentoCliente("NUEVO")
+                            .totalGastado(BigDecimal.ZERO)
+                            .build();
+                    Cliente guardado = clienteRepository.save(nuevo);
+                    correoPort.enviarBienvenida(guardado.getCorreo(), guardado.getNombre());
+                    return toQuery(guardado);
+                });
     }
 
     @Override
@@ -125,10 +212,30 @@ public class ClienteService
             Boolean frecuente,
             Pageable pageable) {
 
+        return ejecutar(search, esVip, activo, verificado, frecuente,
+                null, null, null, null, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ClientePageQuery ejecutar(
+            String search,
+            Boolean esVip,
+            Boolean activo,
+            Boolean verificado,
+            Boolean frecuente,
+            Boolean tieneAccesoWeb,
+            Boolean aceptaComunicaciones,
+            String origenRegistro,
+            String segmentoCliente,
+            Pageable pageable) {
+
         final int MIN_VISITAS_FRECUENTE = 5;
 
-        Page<Cliente> pagina = clienteRepository.buscarConFiltros(
+        Page<Cliente> pagina = clienteRepository.buscarConFiltrosCrm(
                 search, esVip, activo, verificado, frecuente,
+                tieneAccesoWeb, aceptaComunicaciones,
+                origenRegistro, segmentoCliente,
                 MIN_VISITAS_FRECUENTE, pageable);
 
         return ClientePageQuery.builder()
@@ -205,6 +312,15 @@ public class ClienteService
                 .build());
     }
 
+    @Override
+    @Transactional
+    public void ejecutar(Long idCliente, String segmento) {
+        if (!clienteRepository.findById(idCliente).isPresent()) {
+            throw new ClienteNotFoundException(idCliente);
+        }
+        clienteRepository.actualizarSegmento(idCliente, segmento);
+    }
+
     private ClienteQuery toQuery(Cliente c) {
         return ClienteQuery.builder()
                 .id(c.getId())
@@ -224,6 +340,14 @@ public class ClienteService
                 .contadorVisitas(c.getContadorVisitas())
                 .correoVerificado(c.isCorreoVerificado())
                 .activo(c.isActivo())
+                .origenRegistro(c.getOrigenRegistro())
+                .tieneAccesoWeb(c.isTieneAccesoWeb())
+                .aceptaComunicaciones(c.isAceptaComunicaciones())
+                .observaciones(c.getObservaciones())
+                .fechaMigracionWeb(c.getFechaMigracionWeb())
+                .ultimaVisita(c.getUltimaVisita())
+                .totalGastado(c.getTotalGastado())
+                .segmentoCliente(c.getSegmentoCliente())
                 .fechaCreacion(c.getFechaCreacion())
                 .build();
     }

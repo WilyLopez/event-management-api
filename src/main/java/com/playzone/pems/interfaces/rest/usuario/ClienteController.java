@@ -1,20 +1,27 @@
 package com.playzone.pems.interfaces.rest.usuario;
 
 import com.playzone.pems.application.usuario.dto.command.ActualizarClienteCommand;
+import com.playzone.pems.application.usuario.dto.command.MigrarClienteWebCommand;
+import com.playzone.pems.application.usuario.dto.command.RegistrarClienteAdminCommand;
 import com.playzone.pems.application.usuario.dto.command.RegistrarClienteCommand;
 import com.playzone.pems.application.usuario.dto.query.ClientePageQuery;
 import com.playzone.pems.application.usuario.dto.query.ClienteQuery;
 import com.playzone.pems.application.usuario.port.in.ActualizarClienteUseCase;
+import com.playzone.pems.application.usuario.port.in.ActualizarSegmentoClienteUseCase;
 import com.playzone.pems.application.usuario.port.in.ActivarClienteUseCase;
 import com.playzone.pems.application.usuario.port.in.DesactivarClienteUseCase;
 import com.playzone.pems.application.usuario.port.in.HacerVipUseCase;
 import com.playzone.pems.application.usuario.port.in.ListarClientesUseCase;
+import com.playzone.pems.application.usuario.port.in.MigrarClienteWebUseCase;
 import com.playzone.pems.application.usuario.port.in.ObtenerClienteUseCase;
 import com.playzone.pems.application.usuario.port.in.QuitarVipUseCase;
+import com.playzone.pems.application.usuario.port.in.RegistrarClienteAdminUseCase;
 import com.playzone.pems.application.usuario.port.in.RegistrarClienteUseCase;
 import com.playzone.pems.application.usuario.port.in.RegistrarVisitaManualUseCase;
 import com.playzone.pems.interfaces.rest.usuario.request.ActualizarClienteRequest;
 import com.playzone.pems.interfaces.rest.usuario.request.HacerVipRequest;
+import com.playzone.pems.interfaces.rest.usuario.request.MigrarClienteWebRequest;
+import com.playzone.pems.interfaces.rest.usuario.request.RegistrarClienteAdminRequest;
 import com.playzone.pems.interfaces.rest.usuario.request.RegistrarClienteRequest;
 import com.playzone.pems.interfaces.rest.usuario.response.ClienteResponse;
 import com.playzone.pems.shared.response.ApiResponse;
@@ -41,15 +48,18 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class ClienteController {
 
-    private final RegistrarClienteUseCase      registrarUseCase;
-    private final ActualizarClienteUseCase     actualizarUseCase;
-    private final ListarClientesUseCase        listarUseCase;
-    private final ObtenerClienteUseCase        obtenerUseCase;
-    private final ActivarClienteUseCase        activarUseCase;
-    private final DesactivarClienteUseCase     desactivarUseCase;
-    private final HacerVipUseCase              hacerVipUseCase;
-    private final QuitarVipUseCase             quitarVipUseCase;
-    private final RegistrarVisitaManualUseCase visitaManualUseCase;
+    private final RegistrarClienteUseCase        registrarUseCase;
+    private final RegistrarClienteAdminUseCase   registrarAdminUseCase;
+    private final MigrarClienteWebUseCase        migrarWebUseCase;
+    private final ActualizarClienteUseCase       actualizarUseCase;
+    private final ListarClientesUseCase          listarUseCase;
+    private final ObtenerClienteUseCase          obtenerUseCase;
+    private final ActivarClienteUseCase          activarUseCase;
+    private final DesactivarClienteUseCase       desactivarUseCase;
+    private final HacerVipUseCase                hacerVipUseCase;
+    private final QuitarVipUseCase               quitarVipUseCase;
+    private final RegistrarVisitaManualUseCase   visitaManualUseCase;
+    private final ActualizarSegmentoClienteUseCase segmentoUseCase;
 
     @PostMapping("/registro")
     public ResponseEntity<ApiResponse<ClienteResponse>> registrar(
@@ -72,6 +82,41 @@ public class ClienteController {
                 .body(ApiResponse.created(toResponse(query)));
     }
 
+    @PostMapping("/admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<ClienteResponse>> registrarAdmin(
+            @Valid @RequestBody RegistrarClienteAdminRequest request) {
+
+        ClienteQuery query = registrarAdminUseCase.ejecutar(
+                RegistrarClienteAdminCommand.builder()
+                        .nombre(request.getNombre())
+                        .correo(request.getCorreo())
+                        .telefono(request.getTelefono())
+                        .dni(request.getDni())
+                        .fechaNacimiento(request.getFechaNacimiento())
+                        .observaciones(request.getObservaciones())
+                        .tipoCliente(request.getTipoCliente())
+                        .aceptaComunicaciones(request.isAceptaComunicaciones())
+                        .build());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(query)));
+    }
+
+    @PostMapping("/migrar-web")
+    public ResponseEntity<ApiResponse<ClienteResponse>> migrarWeb(
+            @Valid @RequestBody MigrarClienteWebRequest request) {
+
+        ClienteQuery query = migrarWebUseCase.ejecutar(
+                MigrarClienteWebCommand.builder()
+                        .correo(request.getCorreo())
+                        .contrasena(request.getContrasena())
+                        .nombre(request.getNombre())
+                        .telefono(request.getTelefono())
+                        .build());
+
+        return ResponseEntity.ok(ApiResponse.ok(toResponse(query)));
+    }
+
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<PagedResponse<ClienteResponse>>> listar(
@@ -82,7 +127,11 @@ public class ClienteController {
             @RequestParam(required = false)                    Boolean esVip,
             @RequestParam(required = false)                    Boolean activo,
             @RequestParam(required = false)                    Boolean verificado,
-            @RequestParam(required = false)                    Boolean frecuente) {
+            @RequestParam(required = false)                    Boolean frecuente,
+            @RequestParam(required = false)                    Boolean tieneAccesoWeb,
+            @RequestParam(required = false)                    Boolean aceptaComunicaciones,
+            @RequestParam(required = false)                    String  origenRegistro,
+            @RequestParam(required = false)                    String  segmentoCliente) {
 
         String[]       parts = sort.split(",");
         Sort.Direction dir   = parts.length > 1 && "asc".equalsIgnoreCase(parts[1])
@@ -90,6 +139,7 @@ public class ClienteController {
 
         ClientePageQuery resultado = listarUseCase.ejecutar(
                 search, esVip, activo, verificado, frecuente,
+                tieneAccesoWeb, aceptaComunicaciones, origenRegistro, segmentoCliente,
                 PageRequest.of(page, size, Sort.by(dir, parts[0])));
 
         PagedResponse<ClienteResponse> paginado = PagedResponse.<ClienteResponse>builder()
@@ -166,6 +216,15 @@ public class ClienteController {
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
+    @PutMapping("/{id}/segmento")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> actualizarSegmento(
+            @PathVariable Long id,
+            @RequestParam String segmento) {
+        segmentoUseCase.ejecutar(id, segmento);
+        return ResponseEntity.ok(ApiResponse.ok(null));
+    }
+
     private ClienteResponse toResponse(ClienteQuery q) {
         return ClienteResponse.builder()
                 .id(q.getId())
@@ -185,6 +244,14 @@ public class ClienteController {
                 .contadorVisitas(q.getContadorVisitas())
                 .correoVerificado(q.isCorreoVerificado())
                 .activo(q.isActivo())
+                .origenRegistro(q.getOrigenRegistro())
+                .tieneAccesoWeb(q.isTieneAccesoWeb())
+                .aceptaComunicaciones(q.isAceptaComunicaciones())
+                .observaciones(q.getObservaciones())
+                .fechaMigracionWeb(q.getFechaMigracionWeb())
+                .ultimaVisita(q.getUltimaVisita())
+                .totalGastado(q.getTotalGastado())
+                .segmentoCliente(q.getSegmentoCliente())
                 .fechaCreacion(q.getFechaCreacion())
                 .build();
     }

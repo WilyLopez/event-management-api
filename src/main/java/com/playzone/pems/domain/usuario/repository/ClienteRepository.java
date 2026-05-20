@@ -4,6 +4,7 @@ import com.playzone.pems.domain.usuario.model.Cliente;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ClienteRepository {
@@ -32,4 +33,25 @@ public interface ClienteRepository {
     boolean existsByDni(String dni);
 
     void incrementarContadorVisitas(Long idCliente);
+
+    Optional<Cliente> findByTelefono(String telefono);
+
+    Page<Cliente> buscarConFiltrosCrm(
+            String search, Boolean esVip, Boolean activo,
+            Boolean verificado, Boolean frecuente,
+            Boolean tieneAccesoWeb, Boolean aceptaComunicaciones,
+            String origenRegistro, String segmentoCliente,
+            int minVisitas, Pageable pageable);
+
+    List<Cliente> findDestinatariosCampana(
+            Boolean soloVip, Boolean soloFrecuentes, Boolean soloNuevos,
+            Boolean soloInactivos, Boolean soloCorporativos,
+            Boolean soloConAccesoWeb, Boolean soloPresenciales,
+            int minVisitas);
+
+    void actualizarSegmento(Long id, String segmento);
+
+    void actualizarTotalGastado(Long id, java.math.BigDecimal monto);
+
+    void actualizarUltimaVisita(Long id);
 }

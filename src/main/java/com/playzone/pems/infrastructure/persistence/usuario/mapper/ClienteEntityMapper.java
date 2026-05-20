@@ -28,6 +28,14 @@ public class ClienteEntityMapper {
             .contadorVisitas(c.getContadorVisitas())
             .correoVerificado(c.isCorreoVerificado())
             .activo(c.isActivo())
+            .origenRegistro(c.getOrigenRegistro())
+            .tieneAccesoWeb(c.isTieneAccesoWeb())
+            .aceptaComunicaciones(c.isAceptaComunicaciones())
+            .observaciones(c.getObservaciones())
+            .fechaMigracionWeb(c.getFechaMigracionWeb())
+            .ultimaVisita(c.getUltimaVisita())
+            .totalGastado(c.getTotalGastado())
+            .segmentoCliente(c.getSegmentoCliente())
             .fechaCreacion(c.getFechaCreacion())
             .build();
     }
@@ -53,11 +61,19 @@ public class ClienteEntityMapper {
             .correoVerificado(e.isCorreoVerificado())
             .tokenVerificacion(e.getTokenVerificacion())
             .activo(e.isActivo())
+            .origenRegistro(e.getOrigenRegistro())
+            .tieneAccesoWeb(e.isTieneAccesoWeb())
+            .aceptaComunicaciones(e.isAceptaComunicaciones())
+            .observaciones(e.getObservaciones())
+            .fechaMigracionWeb(e.getFechaMigracionWeb())
+            .ultimaVisita(e.getUltimaVisita())
+            .totalGastado(e.getTotalGastado())
+            .segmentoCliente(e.getSegmentoCliente())
             .fechaCreacion(e.getFechaCreacion())
             .fechaActualizacion(e.getFechaActualizacion())
             .build();
     }
-    
+
     public ClienteEntity toEntity(Cliente c) {
         return ClienteEntity.builder()
             .id(c.getId())
@@ -79,6 +95,14 @@ public class ClienteEntityMapper {
             .correoVerificado(c.isCorreoVerificado())
             .tokenVerificacion(c.getTokenVerificacion())
             .activo(c.isActivo())
+            .origenRegistro(c.getOrigenRegistro() != null ? c.getOrigenRegistro() : "WEB")
+            .tieneAccesoWeb(c.isTieneAccesoWeb())
+            .aceptaComunicaciones(c.isAceptaComunicaciones())
+            .observaciones(c.getObservaciones())
+            .fechaMigracionWeb(c.getFechaMigracionWeb())
+            .ultimaVisita(c.getUltimaVisita())
+            .totalGastado(c.getTotalGastado())
+            .segmentoCliente(c.getSegmentoCliente() != null ? c.getSegmentoCliente() : "NUEVO")
             .build();
     }
 }
