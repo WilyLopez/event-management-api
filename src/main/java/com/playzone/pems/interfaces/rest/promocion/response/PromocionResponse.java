@@ -24,4 +24,30 @@ public class PromocionResponse {
     private final boolean     activo;
     private final boolean     esAutomatica;
     private final LocalDateTime fechaCreacion;
+
+    // CMS / display
+    private final String  imagenUrl;
+    private final String  bannerUrl;
+    private final String  colorDestacado;
+    private final int     prioridad;
+    private final String  textoPublicitario;
+    private final String  textoBoton;
+    private final String  urlBoton;
+    private final boolean mostrarEnInicio;
+    private final boolean mostrarEnCarrusel;
+    private final boolean mostrarEnPaginaPromociones;
+    private final boolean mostrarEnCheckout;
+    private final boolean mostrarDestacado;
+    private final boolean soloMovil;
+
+    // Reglas de negocio
+    private final Integer    limiteUsos;
+    private final Integer    limitePorCliente;
+    private final Integer    minimoAsistentes;
+    private final BigDecimal montoMinimo;
+
+    // Estadísticas
+    private final int        vecesUsado;
+    private final BigDecimal montoAhorrado;
+    private final int        clientesAtraidos;
 }

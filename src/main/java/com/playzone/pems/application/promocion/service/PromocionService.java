@@ -51,7 +51,19 @@ public class PromocionService
             throw new ValidationException("fechaFin", "La fecha de fin no puede ser anterior a la de inicio.");
         }
 
+        boolean existente = command.getId() != null;
+        boolean activoActual = true;
+        Long creadorActual = command.getIdUsuarioCreador();
+
+        if (existente) {
+            Promocion actual = promocionRepository.findById(command.getId())
+                    .orElseThrow(() -> new PromocionNotFoundException(command.getId()));
+            activoActual = actual.isActivo();
+            creadorActual = actual.getIdUsuarioCreador();
+        }
+
         Promocion promocion = Promocion.builder()
+                .id(command.getId())
                 .tipoPromocion(command.getTipoPromocion())
                 .idSede(command.getIdSede())
                 .nombre(command.getNombre())
@@ -62,9 +74,26 @@ public class PromocionService
                 .soloTipoDia(command.getSoloTipoDia())
                 .fechaInicio(command.getFechaInicio())
                 .fechaFin(command.getFechaFin())
-                .activo(true)
+                .activo(activoActual)
                 .esAutomatica(command.getEsAutomatica())
-                .idUsuarioCreador(command.getIdUsuarioCreador())
+                .idUsuarioCreador(creadorActual)
+                .imagenUrl(command.getImagenUrl())
+                .bannerUrl(command.getBannerUrl())
+                .colorDestacado(command.getColorDestacado())
+                .prioridad(command.getPrioridad() != null ? command.getPrioridad() : 0)
+                .textoPublicitario(command.getTextoPublicitario())
+                .textoBoton(command.getTextoBoton())
+                .urlBoton(command.getUrlBoton())
+                .mostrarEnInicio(Boolean.TRUE.equals(command.getMostrarEnInicio()))
+                .mostrarEnCarrusel(Boolean.TRUE.equals(command.getMostrarEnCarrusel()))
+                .mostrarEnPaginaPromociones(command.getMostrarEnPaginaPromociones() == null || command.getMostrarEnPaginaPromociones())
+                .mostrarEnCheckout(Boolean.TRUE.equals(command.getMostrarEnCheckout()))
+                .mostrarDestacado(Boolean.TRUE.equals(command.getMostrarDestacado()))
+                .soloMovil(Boolean.TRUE.equals(command.getSoloMovil()))
+                .limiteUsos(command.getLimiteUsos())
+                .limitePorCliente(command.getLimitePorCliente())
+                .minimoAsistentes(command.getMinimoAsistentes())
+                .montoMinimo(command.getMontoMinimo())
                 .build();
 
         return toQuery(promocionRepository.save(promocion));
@@ -118,6 +147,26 @@ public class PromocionService
                 .activo(p.isActivo())
                 .esAutomatica(p.isEsAutomatica())
                 .fechaCreacion(p.getFechaCreacion())
+                .imagenUrl(p.getImagenUrl())
+                .bannerUrl(p.getBannerUrl())
+                .colorDestacado(p.getColorDestacado())
+                .prioridad(p.getPrioridad())
+                .textoPublicitario(p.getTextoPublicitario())
+                .textoBoton(p.getTextoBoton())
+                .urlBoton(p.getUrlBoton())
+                .mostrarEnInicio(p.isMostrarEnInicio())
+                .mostrarEnCarrusel(p.isMostrarEnCarrusel())
+                .mostrarEnPaginaPromociones(p.isMostrarEnPaginaPromociones())
+                .mostrarEnCheckout(p.isMostrarEnCheckout())
+                .mostrarDestacado(p.isMostrarDestacado())
+                .soloMovil(p.isSoloMovil())
+                .limiteUsos(p.getLimiteUsos())
+                .limitePorCliente(p.getLimitePorCliente())
+                .minimoAsistentes(p.getMinimoAsistentes())
+                .montoMinimo(p.getMontoMinimo())
+                .vecesUsado(0)
+                .montoAhorrado(BigDecimal.ZERO)
+                .clientesAtraidos(0)
                 .build();
     }
 }

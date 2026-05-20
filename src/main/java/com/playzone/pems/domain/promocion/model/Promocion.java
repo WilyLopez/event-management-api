@@ -25,11 +25,31 @@ public class Promocion {
     private TipoDia        soloTipoDia;
     private LocalDate      fechaInicio;
     private LocalDate      fechaFin;
-
     private boolean        activo;
     private boolean        esAutomatica;
     private Long           idUsuarioCreador;
     private LocalDateTime  fechaCreacion;
+
+    // CMS / display
+    private String         imagenUrl;
+    private String         bannerUrl;
+    private String         colorDestacado;
+    private int            prioridad;
+    private String         textoPublicitario;
+    private String         textoBoton;
+    private String         urlBoton;
+    private boolean        mostrarEnInicio;
+    private boolean        mostrarEnCarrusel;
+    private boolean        mostrarEnPaginaPromociones;
+    private boolean        mostrarEnCheckout;
+    private boolean        mostrarDestacado;
+    private boolean        soloMovil;
+
+    // Reglas de negocio
+    private Integer        limiteUsos;
+    private Integer        limitePorCliente;
+    private Integer        minimoAsistentes;
+    private BigDecimal     montoMinimo;
 
     public boolean estaVigenteEn(LocalDate fecha) {
         if (!activo) return false;

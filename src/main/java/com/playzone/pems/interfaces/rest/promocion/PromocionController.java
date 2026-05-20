@@ -64,10 +64,70 @@ public class PromocionController {
                 .fechaFin(request.getFechaFin())
                 .esAutomatica(request.getEsAutomatica())
                 .idUsuarioCreador(idUsuarioAdmin)
+                .imagenUrl(request.getImagenUrl())
+                .bannerUrl(request.getBannerUrl())
+                .colorDestacado(request.getColorDestacado())
+                .prioridad(request.getPrioridad())
+                .textoPublicitario(request.getTextoPublicitario())
+                .textoBoton(request.getTextoBoton())
+                .urlBoton(request.getUrlBoton())
+                .mostrarEnInicio(request.getMostrarEnInicio())
+                .mostrarEnCarrusel(request.getMostrarEnCarrusel())
+                .mostrarEnPaginaPromociones(request.getMostrarEnPaginaPromociones())
+                .mostrarEnCheckout(request.getMostrarEnCheckout())
+                .mostrarDestacado(request.getMostrarDestacado())
+                .soloMovil(request.getSoloMovil())
+                .limiteUsos(request.getLimiteUsos())
+                .limitePorCliente(request.getLimitePorCliente())
+                .minimoAsistentes(request.getMinimoAsistentes())
+                .montoMinimo(request.getMontoMinimo())
                 .build());
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(toResponse(query)));
+    }
+
+    @PutMapping("/{idPromocion}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<PromocionResponse>> actualizar(
+            @PathVariable Long idPromocion,
+            @Valid @RequestBody CrearPromocionRequest request,
+            @RequestAttribute Long idUsuarioAdmin) {
+
+        PromocionQuery query = crearUseCase.ejecutar(CrearPromocionCommand.builder()
+                .id(idPromocion)
+                .tipoPromocion(request.getTipoPromocion())
+                .idSede(request.getIdSede())
+                .nombre(request.getNombre())
+                .descripcion(request.getDescripcion())
+                .valorDescuento(request.getValorDescuento())
+                .condicion(request.getCondicion())
+                .minimoPersonas(request.getMinimoPersonas())
+                .soloTipoDia(request.getSoloTipoDia())
+                .fechaInicio(request.getFechaInicio())
+                .fechaFin(request.getFechaFin())
+                .esAutomatica(request.getEsAutomatica())
+                .idUsuarioCreador(idUsuarioAdmin)
+                .imagenUrl(request.getImagenUrl())
+                .bannerUrl(request.getBannerUrl())
+                .colorDestacado(request.getColorDestacado())
+                .prioridad(request.getPrioridad())
+                .textoPublicitario(request.getTextoPublicitario())
+                .textoBoton(request.getTextoBoton())
+                .urlBoton(request.getUrlBoton())
+                .mostrarEnInicio(request.getMostrarEnInicio())
+                .mostrarEnCarrusel(request.getMostrarEnCarrusel())
+                .mostrarEnPaginaPromociones(request.getMostrarEnPaginaPromociones())
+                .mostrarEnCheckout(request.getMostrarEnCheckout())
+                .mostrarDestacado(request.getMostrarDestacado())
+                .soloMovil(request.getSoloMovil())
+                .limiteUsos(request.getLimiteUsos())
+                .limitePorCliente(request.getLimitePorCliente())
+                .minimoAsistentes(request.getMinimoAsistentes())
+                .montoMinimo(request.getMontoMinimo())
+                .build());
+
+        return ResponseEntity.ok(ApiResponse.ok(toResponse(query)));
     }
 
     @DeleteMapping("/{idPromocion}")
@@ -92,6 +152,26 @@ public class PromocionController {
                 .activo(q.isActivo())
                 .esAutomatica(q.isEsAutomatica())
                 .fechaCreacion(q.getFechaCreacion())
+                .imagenUrl(q.getImagenUrl())
+                .bannerUrl(q.getBannerUrl())
+                .colorDestacado(q.getColorDestacado())
+                .prioridad(q.getPrioridad())
+                .textoPublicitario(q.getTextoPublicitario())
+                .textoBoton(q.getTextoBoton())
+                .urlBoton(q.getUrlBoton())
+                .mostrarEnInicio(q.isMostrarEnInicio())
+                .mostrarEnCarrusel(q.isMostrarEnCarrusel())
+                .mostrarEnPaginaPromociones(q.isMostrarEnPaginaPromociones())
+                .mostrarEnCheckout(q.isMostrarEnCheckout())
+                .mostrarDestacado(q.isMostrarDestacado())
+                .soloMovil(q.isSoloMovil())
+                .limiteUsos(q.getLimiteUsos())
+                .limitePorCliente(q.getLimitePorCliente())
+                .minimoAsistentes(q.getMinimoAsistentes())
+                .montoMinimo(q.getMontoMinimo())
+                .vecesUsado(q.getVecesUsado())
+                .montoAhorrado(q.getMontoAhorrado())
+                .clientesAtraidos(q.getClientesAtraidos())
                 .build();
     }
 }

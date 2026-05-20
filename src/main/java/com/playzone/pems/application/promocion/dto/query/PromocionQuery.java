@@ -11,18 +11,44 @@ import java.time.LocalDateTime;
 @Builder
 public class PromocionQuery {
 
-    private final Long       id;
-    private final String     tipoPromocion;
-    private final Long       idSede;
-    private final String     nombre;
-    private final String     descripcion;
-    private final BigDecimal valorDescuento;
-    private final String     condicion;
-    private final Integer    minimoPersonas;
-    private final String     soloTipoDia;
-    private final LocalDate  fechaInicio;
-    private final LocalDate  fechaFin;
-    private final boolean    activo;
-    private final boolean    esAutomatica;
+    private final Long        id;
+    private final String      tipoPromocion;
+    private final Long        idSede;
+    private final String      nombre;
+    private final String      descripcion;
+    private final BigDecimal  valorDescuento;
+    private final String      condicion;
+    private final Integer     minimoPersonas;
+    private final String      soloTipoDia;
+    private final LocalDate   fechaInicio;
+    private final LocalDate   fechaFin;
+    private final boolean     activo;
+    private final boolean     esAutomatica;
     private final LocalDateTime fechaCreacion;
+
+    // CMS / display
+    private final String  imagenUrl;
+    private final String  bannerUrl;
+    private final String  colorDestacado;
+    private final int     prioridad;
+    private final String  textoPublicitario;
+    private final String  textoBoton;
+    private final String  urlBoton;
+    private final boolean mostrarEnInicio;
+    private final boolean mostrarEnCarrusel;
+    private final boolean mostrarEnPaginaPromociones;
+    private final boolean mostrarEnCheckout;
+    private final boolean mostrarDestacado;
+    private final boolean soloMovil;
+
+    // Reglas de negocio
+    private final Integer    limiteUsos;
+    private final Integer    limitePorCliente;
+    private final Integer    minimoAsistentes;
+    private final BigDecimal montoMinimo;
+
+    // Estadísticas (calculadas externamente, por defecto 0)
+    private final int        vecesUsado;
+    private final BigDecimal montoAhorrado;
+    private final int        clientesAtraidos;
 }

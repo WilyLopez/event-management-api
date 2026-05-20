@@ -60,9 +60,11 @@ public class PromocionEntity {
     private LocalDate fechaFin;
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean activo = true;
 
     @Column(name = "esautomatica", nullable = false)
+    @Builder.Default
     private boolean esAutomatica = true;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -72,4 +74,64 @@ public class PromocionEntity {
     @CreationTimestamp
     @Column(name = "fechacreacion", nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;
+
+    // CMS / display
+    @Column(name = "imagenurl", length = 500)
+    private String imagenUrl;
+
+    @Column(name = "bannerurl", length = 500)
+    private String bannerUrl;
+
+    @Column(name = "colordestacado", length = 20)
+    private String colorDestacado;
+
+    @Column(name = "prioridad", nullable = false)
+    @Builder.Default
+    private int prioridad = 0;
+
+    @Column(name = "textopublicitario", length = 300)
+    private String textoPublicitario;
+
+    @Column(name = "textoboton", length = 100)
+    private String textoBoton;
+
+    @Column(name = "urlboton", length = 500)
+    private String urlBoton;
+
+    @Column(name = "mostrarennicio", nullable = false)
+    @Builder.Default
+    private boolean mostrarEnInicio = false;
+
+    @Column(name = "mostrarencarrusel", nullable = false)
+    @Builder.Default
+    private boolean mostrarEnCarrusel = false;
+
+    @Column(name = "mostrareenpaginapromociones", nullable = false)
+    @Builder.Default
+    private boolean mostrarEnPaginaPromociones = true;
+
+    @Column(name = "mostarencheckout", nullable = false)
+    @Builder.Default
+    private boolean mostrarEnCheckout = false;
+
+    @Column(name = "mostrardestacado", nullable = false)
+    @Builder.Default
+    private boolean mostrarDestacado = false;
+
+    @Column(name = "solomovil", nullable = false)
+    @Builder.Default
+    private boolean soloMovil = false;
+
+    // Reglas de negocio
+    @Column(name = "limiteusos")
+    private Integer limiteUsos;
+
+    @Column(name = "limitepocliente")
+    private Integer limitePorCliente;
+
+    @Column(name = "minimoasistentes")
+    private Integer minimoAsistentes;
+
+    @Column(name = "montominimo", precision = 10, scale = 2)
+    private BigDecimal montoMinimo;
 }

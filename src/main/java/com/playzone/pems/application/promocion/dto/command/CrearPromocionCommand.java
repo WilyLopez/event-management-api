@@ -13,6 +13,8 @@ import java.time.LocalDate;
 @Builder
 public class CrearPromocionCommand {
 
+    private final Long id; // null = crear, non-null = actualizar
+
     @NotNull
     private final TipoPromocion tipoPromocion;
 
@@ -48,4 +50,25 @@ public class CrearPromocionCommand {
 
     @NotNull
     private final Long idUsuarioCreador;
+
+    // CMS / display
+    private final String  imagenUrl;
+    private final String  bannerUrl;
+    private final String  colorDestacado;
+    private final Integer prioridad;
+    private final String  textoPublicitario;
+    private final String  textoBoton;
+    private final String  urlBoton;
+    private final Boolean mostrarEnInicio;
+    private final Boolean mostrarEnCarrusel;
+    private final Boolean mostrarEnPaginaPromociones;
+    private final Boolean mostrarEnCheckout;
+    private final Boolean mostrarDestacado;
+    private final Boolean soloMovil;
+
+    // Reglas de negocio
+    private final Integer    limiteUsos;
+    private final Integer    limitePorCliente;
+    private final Integer    minimoAsistentes;
+    private final BigDecimal montoMinimo;
 }
