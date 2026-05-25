@@ -26,6 +26,11 @@ public class ContenidoLegalPersistenceAdapter implements ContenidoLegalRepositor
     }
 
     @Override
+    public Optional<ContenidoLegal> findByTipo(String tipo) {
+        return legalJpa.findByTipo(tipo).map(mapper::toDomain);
+    }
+
+    @Override
     public Optional<ContenidoLegal> findActivoByTipo(String tipo) {
         return legalJpa.findByTipoAndActivoTrue(tipo).map(mapper::toDomain);
     }
@@ -41,5 +46,11 @@ public class ContenidoLegalPersistenceAdapter implements ContenidoLegalRepositor
         var editor = legal.getIdUsuarioEditor() != null
                 ? adminJpa.findById(legal.getIdUsuarioEditor()).orElse(null) : null;
         return mapper.toDomain(legalJpa.save(mapper.toEntity(legal, editor)));
+    }
+
+    @Override
+    @Transactional
+    public void deleteByTipo(String tipo) {
+        legalJpa.deleteByTipo(tipo);
     }
 }

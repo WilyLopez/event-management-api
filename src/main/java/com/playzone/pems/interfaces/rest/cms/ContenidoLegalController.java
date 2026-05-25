@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +27,7 @@ public class ContenidoLegalController {
     // ── Público ──────────────────────────────────────────────────────────
 
     @GetMapping("/publico/{tipo}")
-    public ResponseEntity<ApiResponse<ContenidoLegalResponse>> obtenerPorTipo(
+    public ResponseEntity<ApiResponse<ContenidoLegalResponse>> obtenerPublico(
             @PathVariable String tipo) {
         return ResponseEntity.ok(ApiResponse.ok(
                 ContenidoLegalResponse.from(legalUseCase.obtenerPorTipo(tipo))));
@@ -42,22 +43,67 @@ public class ContenidoLegalController {
         return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
-    @PutMapping("/{idContenidoLegal}")
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<ContenidoLegalResponse>> crear(
+            @Valid @RequestBody CrearLegalRequest request,
+            @RequestAttribute Long idUsuarioAdmin) {
+        ContenidoLegalResponse response = ContenidoLegalResponse.from(
+                legalUseCase.crear(new GestionarContenidoLegalUseCase.CrearCommand(
+                        request.getTipo(),
+                        request.getTitulo(),
+                        request.getContenido(),
+                        idUsuarioAdmin)));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(response));
+    }
+
+    @PutMapping("/{tipo}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ContenidoLegalResponse>> actualizar(
-            @PathVariable Long idContenidoLegal,
+            @PathVariable String tipo,
             @Valid @RequestBody ActualizarLegalRequest request,
             @RequestAttribute Long idUsuarioAdmin) {
         ContenidoLegalResponse response = ContenidoLegalResponse.from(
                 legalUseCase.actualizar(new GestionarContenidoLegalUseCase.ActualizarCommand(
-                        idContenidoLegal,
+                        tipo,
                         request.getTitulo(),
                         request.getContenido(),
                         idUsuarioAdmin)));
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
+    @PatchMapping("/{tipo}/activar")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<ContenidoLegalResponse>> activar(
+            @PathVariable String tipo) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                ContenidoLegalResponse.from(legalUseCase.activar(tipo))));
+    }
+
+    @PatchMapping("/{tipo}/desactivar")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<ContenidoLegalResponse>> desactivar(
+            @PathVariable String tipo) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                ContenidoLegalResponse.from(legalUseCase.desactivar(tipo))));
+    }
+
+    @DeleteMapping("/{tipo}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> eliminar(@PathVariable String tipo) {
+        legalUseCase.eliminar(tipo);
+        return ResponseEntity.noContent().build();
+    }
+
     // ── Request / Response DTOs ───────────────────────────────────────────
+
+    @Getter
+    @NoArgsConstructor
+    public static class CrearLegalRequest {
+        @NotBlank private String tipo;
+        @NotBlank private String titulo;
+                  private String contenido;
+    }
 
     @Getter
     @NoArgsConstructor

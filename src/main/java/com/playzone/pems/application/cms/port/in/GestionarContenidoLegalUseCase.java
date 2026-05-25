@@ -6,8 +6,15 @@ import java.util.List;
 
 public interface GestionarContenidoLegalUseCase {
 
+    record CrearCommand(
+            String tipo,
+            String titulo,
+            String contenido,
+            Long   idUsuario
+    ) {}
+
     record ActualizarCommand(
-            Long   idContenidoLegal,
+            String tipo,
             String titulo,
             String contenido,
             Long   idUsuario
@@ -17,5 +24,13 @@ public interface GestionarContenidoLegalUseCase {
 
     List<ContenidoLegalQuery> listar();
 
+    ContenidoLegalQuery crear(CrearCommand command);
+
     ContenidoLegalQuery actualizar(ActualizarCommand command);
+
+    ContenidoLegalQuery activar(String tipo);
+
+    ContenidoLegalQuery desactivar(String tipo);
+
+    void eliminar(String tipo);
 }
