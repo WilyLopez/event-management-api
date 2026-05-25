@@ -11,6 +11,7 @@ import com.playzone.pems.infrastructure.persistence.usuario.jpa.ClienteJpaReposi
 import com.playzone.pems.infrastructure.persistence.usuario.jpa.SedeJpaRepository;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
@@ -29,6 +30,9 @@ public class ReservaPublicaPersistenceAdapter implements ReservaPublicaRepositor
     private final ClienteJpaRepository        clienteJpa;
     private final SedeJpaRepository           sedeJpa;
     private final ReservaPublicaEntityMapper  mapper;
+
+    @Value("${playzone.negocio.aforo-maximo:60}")
+    private int aforoMaximo;
 
     @Override public Optional<ReservaPublica> findById(Long id) {
         return reservaJpa.findById(id).map(mapper::toDomain);
@@ -67,6 +71,10 @@ public class ReservaPublicaPersistenceAdapter implements ReservaPublicaRepositor
         return reservaJpa.countConfirmadasBySedeAndFecha(idSede, fecha);
     }
 
+    @Override public int countActivasBySedeAndFecha(Long idSede, LocalDate fecha) {
+        return reservaJpa.countActivasBySedeAndFecha(idSede, fecha);
+    }
+
     @Override
     public Page<ReservaPublica> buscarAdmin(
             Long idSede, EstadoReservaPublica estadoEnum, LocalDate fecha,
@@ -96,9 +104,9 @@ public class ReservaPublicaPersistenceAdapter implements ReservaPublicaRepositor
                 .confirmadas(confirmadas)
                 .canceladas(canceladas)
                 .ingresados(ingresados)
-                .aforoMaximo(60)
+                .aforoMaximo(aforoMaximo)
                 .aforoOcupado(confirmadas)
-                .aforoRestante(Math.max(0, 60 - confirmadas))
+                .aforoRestante(Math.max(0, aforoMaximo - confirmadas))
                 .ingresosDia(reservaJpa.sumIngresosBySedeAndFecha(idSede, dia))
                 .build();
     }

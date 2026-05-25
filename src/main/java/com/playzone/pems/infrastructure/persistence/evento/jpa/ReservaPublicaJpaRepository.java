@@ -56,6 +56,9 @@ public interface ReservaPublicaJpaRepository extends JpaRepository<ReservaPublic
     @Query("SELECT COUNT(r) FROM ReservaPublicaEntity r WHERE r.sede.id = :idSede AND r.fechaEvento = :fecha AND r.estado IN ('CONFIRMADA', 'COMPLETADA')")
     int countConfirmadasBySedeAndFecha(@Param("idSede") Long idSede, @Param("fecha") LocalDate fecha);
 
+    @Query("SELECT COUNT(r) FROM ReservaPublicaEntity r WHERE r.sede.id = :idSede AND r.fechaEvento = :fecha AND r.estado <> 'CANCELADA'")
+    int countActivasBySedeAndFecha(@Param("idSede") Long idSede, @Param("fecha") LocalDate fecha);
+
     @Query("SELECT COUNT(r) FROM ReservaPublicaEntity r WHERE r.sede.id = :idSede AND r.fechaEvento = :fecha AND r.estado = :estado")
     int countBySedeAndFechaAndEstado(
             @Param("idSede") Long idSede,

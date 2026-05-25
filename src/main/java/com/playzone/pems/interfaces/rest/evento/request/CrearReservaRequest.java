@@ -34,4 +34,10 @@ public class CrearReservaRequest {
     private Boolean firmoConsentimiento;
 
     private Long idPromocionManual;
+
+    @NotBlank
+    private String medioPago;
+
+    @Size(max = 100)
+    private String referenciaPago;
 }

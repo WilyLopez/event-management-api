@@ -5,10 +5,15 @@ import com.playzone.pems.application.evento.dto.command.ReprogramarReservaComman
 import com.playzone.pems.application.evento.dto.query.MetricasReservaQuery;
 import com.playzone.pems.application.evento.dto.query.ReservaPublicaQuery;
 import com.playzone.pems.application.evento.port.in.*;
+import com.playzone.pems.domain.evento.model.ReservaPublica;
+import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
+import com.playzone.pems.domain.storage.StoragePort;
 import com.playzone.pems.interfaces.rest.evento.request.CrearReservaRequest;
 import com.playzone.pems.interfaces.rest.evento.request.ReprogramarReservaRequest;
 import com.playzone.pems.interfaces.rest.evento.response.MetricasReservaResponse;
 import com.playzone.pems.interfaces.rest.evento.response.ReservaPublicaResponse;
+import com.playzone.pems.shared.exception.ResourceNotFoundException;
+import com.playzone.pems.shared.exception.ValidationException;
 import com.playzone.pems.shared.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +26,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 
@@ -35,6 +41,8 @@ public class ReservaPublicaController {
     private final ConsultarReservasUseCase    consultarUseCase;
     private final BuscarReservasAdminUseCase  buscarAdminUseCase;
     private final ConfirmarIngresoUseCase     ingresoUseCase;
+    private final ReservaPublicaRepository    reservaRepository;
+    private final StoragePort                 storagePort;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('CLIENTE','ADMIN')")
@@ -44,6 +52,7 @@ public class ReservaPublicaController {
             @RequestParam(required = false) String estado,
             @RequestParam(required = false)
                 @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
+            @RequestAttribute("idUsuario") Long idUsuario,
             Pageable pageable) {
 
         Page<ReservaPublicaQuery> result;
@@ -54,7 +63,7 @@ public class ReservaPublicaController {
         } else if (idSede != null && estado != null) {
             result = consultarUseCase.consultarPorSedeYEstado(idSede, estado, pageable);
         } else {
-            return ResponseEntity.ok(ApiResponse.ok(Page.empty(pageable)));
+            result = consultarUseCase.consultarPorCliente(idUsuario, pageable);
         }
         return ResponseEntity.ok(ApiResponse.ok(result.map(this::toResponse)));
     }
@@ -123,6 +132,8 @@ public class ReservaPublicaController {
                         .dniAcompanante(request.getDniAcompanante())
                         .firmoConsentimiento(request.getFirmoConsentimiento())
                         .idPromocionManual(request.getIdPromocionManual())
+                        .medioPago(request.getMedioPago())
+                        .referenciaPago(request.getReferenciaPago())
                         .build());
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -160,6 +171,60 @@ public class ReservaPublicaController {
 
         return ResponseEntity.ok(ApiResponse.ok(
                 toResponse(ingresoUseCase.ejecutar(idReserva, idUsuarioAdmin))));
+    }
+
+    @PostMapping("/{idReserva}/comprobante")
+    @PreAuthorize("hasAnyRole('CLIENTE','ADMIN')")
+    public ResponseEntity<ApiResponse<ReservaPublicaResponse>> subirComprobante(
+            @PathVariable Long idReserva,
+            @RequestParam("archivo") MultipartFile archivo) {
+
+        String tipo = archivo.getContentType();
+        if (tipo == null || (!tipo.startsWith("image/") && !tipo.equals("application/pdf"))) {
+            throw new ValidationException("El archivo debe ser una imagen o PDF.");
+        }
+        if (archivo.getSize() > 10L * 1024 * 1024) {
+            throw new ValidationException("El archivo no puede superar 10 MB.");
+        }
+
+        String urlComprobante = storagePort.guardar(archivo, "comprobantes");
+
+        ReservaPublica reserva = reservaRepository.findById(idReserva)
+                .orElseThrow(() -> new ResourceNotFoundException("Reserva", idReserva));
+
+        ReservaPublica actualizada = reserva.toBuilder()
+                .referenciaPago(urlComprobante)
+                .build();
+
+        ReservaPublica guardada = reservaRepository.save(actualizada);
+
+        return ResponseEntity.ok(ApiResponse.ok(
+                toResponse(ReservaPublicaQuery.builder()
+                        .id(guardada.getId())
+                        .idCliente(guardada.getIdCliente())
+                        .idSede(guardada.getIdSede())
+                        .estado(guardada.getEstado().getCodigo())
+                        .canalReserva(guardada.getCanalReserva() != null ? guardada.getCanalReserva().getCodigo() : null)
+                        .tipoDia(guardada.getTipoDia() != null ? guardada.getTipoDia().getCodigo() : null)
+                        .fechaEvento(guardada.getFechaEvento())
+                        .numeroTicket(guardada.getNumeroTicket())
+                        .precioHistorico(guardada.getPrecioHistorico())
+                        .descuentoAplicado(guardada.getDescuentoAplicado())
+                        .totalPagado(guardada.getTotalPagado())
+                        .nombreNino(guardada.getNombreNino())
+                        .edadNino(guardada.getEdadNino())
+                        .nombreAcompanante(guardada.getNombreAcompanante())
+                        .dniAcompanante(guardada.getDniAcompanante())
+                        .firmoConsentimiento(guardada.isFirmoConsentimiento())
+                        .medioPago(guardada.getMedioPago())
+                        .referenciaPago(guardada.getReferenciaPago())
+                        .esReprogramacion(guardada.isEsReprogramacion())
+                        .vecesReprogramada(guardada.getVecesReprogramada())
+                        .ingresado(guardada.isIngresado())
+                        .fechaIngreso(guardada.getFechaIngreso())
+                        .codigoQr(guardada.getCodigoQr())
+                        .fechaCreacion(guardada.getFechaCreacion())
+                        .build())));
     }
 
     private ReservaPublicaResponse toResponse(ReservaPublicaQuery q) {

@@ -45,4 +45,10 @@ public class CrearReservaPublicaCommand {
     private final Boolean firmoConsentimiento;
 
     private final Long idPromocionManual;
+
+    @NotBlank
+    private final String medioPago;
+
+    @Size(max = 100)
+    private final String referenciaPago;
 }

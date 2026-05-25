@@ -22,6 +22,7 @@ import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
 import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
 import com.playzone.pems.domain.usuario.model.Cliente;
 import com.playzone.pems.domain.usuario.repository.ClienteRepository;
+import com.playzone.pems.domain.usuario.repository.SedeRepository;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import com.playzone.pems.shared.exception.ValidationException;
 import com.playzone.pems.shared.util.FechaUtil;
@@ -46,6 +47,7 @@ public class ReservaPublicaService
 
     private final ReservaPublicaRepository   reservaRepository;
     private final ClienteRepository          clienteRepository;
+    private final SedeRepository             sedeRepository;
     private final TarifaRepository           tarifaRepository;
     private final FeriadoRepository          feriadoRepository;
     private final BloqueCalendarioRepository bloqueRepository;
@@ -67,27 +69,35 @@ public class ReservaPublicaService
         Cliente cliente = clienteRepository.findById(idCliente)
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente", idCliente));
         return reservaRepository.findByCliente(idCliente, pageable)
-                .map(r -> toQuery(r, cliente.getNombre()));
+                .map(r -> toQuery(r, cliente.getNombre(), fetchNombreSede(r.getIdSede())));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<ReservaPublicaQuery> consultarPorSedeYFecha(Long idSede, LocalDate fecha, Pageable pageable) {
+        String nombreSede = fetchNombreSede(idSede);
         return reservaRepository.findBySedeAndFecha(idSede, fecha, pageable)
-                .map(r -> toQuery(r, fetchNombreCliente(r.getIdCliente())));
+                .map(r -> toQuery(r, fetchNombreCliente(r.getIdCliente()), nombreSede));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<ReservaPublicaQuery> consultarPorSedeYEstado(Long idSede, String estado, Pageable pageable) {
+        String nombreSede2 = fetchNombreSede(idSede);
         return reservaRepository.findBySedeAndEstado(idSede, EstadoReservaPublica.valueOf(estado), pageable)
-                .map(r -> toQuery(r, fetchNombreCliente(r.getIdCliente())));
+                .map(r -> toQuery(r, fetchNombreCliente(r.getIdCliente()), nombreSede2));
     }
 
     private String fetchNombreCliente(Long idCliente) {
         return clienteRepository.findById(idCliente)
                 .map(Cliente::getNombre)
                 .orElse("Cliente Desconocido");
+    }
+
+    private String fetchNombreSede(Long idSede) {
+        return sedeRepository.findById(idSede)
+                .map(s -> s.getNombre())
+                .orElse("Sede Principal");
     }
 
     @Override
@@ -108,11 +118,16 @@ public class ReservaPublicaService
         BigDecimal descuento = BigDecimal.ZERO;
         BigDecimal total     = precio.subtract(descuento);
 
-        long secuencia = reservaRepository.countConfirmadasBySedeAndFecha(
+        long secuencia = reservaRepository.countActivasBySedeAndFecha(
                 command.getIdSede(), command.getFechaEvento()) + 1L;
 
         String ticket = TicketUtil.generar(
                 command.getIdSede().intValue(), command.getFechaEvento(), secuencia);
+
+        while (reservaRepository.existsByNumeroTicket(ticket)) {
+            secuencia++;
+            ticket = TicketUtil.generar(command.getIdSede().intValue(), command.getFechaEvento(), secuencia);
+        }
 
         ReservaPublica reserva = ReservaPublica.builder()
                 .idCliente(command.getIdCliente())
@@ -130,6 +145,8 @@ public class ReservaPublicaService
                 .nombreAcompanante(command.getNombreAcompanante())
                 .dniAcompanante(command.getDniAcompanante())
                 .firmoConsentimiento(command.getFirmoConsentimiento())
+                .medioPago(command.getMedioPago())
+                .referenciaPago(command.getReferenciaPago())
                 .esReprogramacion(false)
                 .vecesReprogramada(0)
                 .build();
@@ -137,7 +154,7 @@ public class ReservaPublicaService
         ReservaPublica guardada = reservaRepository.save(reserva);
         disponibilidadRepository.incrementarAforo(command.getIdSede(), command.getFechaEvento());
 
-        ReservaPublicaQuery query = toQuery(guardada, cliente.getNombre());
+        ReservaPublicaQuery query = toQuery(guardada, cliente.getNombre(), fetchNombreSede(command.getIdSede()));
 
         correoPort.enviarTicket(cliente.getCorreo(), cliente.getNombre(), query);
 
@@ -168,11 +185,16 @@ public class ReservaPublicaService
                 .build();
         reservaRepository.save(originalActualizada);
 
-        long secuencia = reservaRepository.countConfirmadasBySedeAndFecha(
+        long secuencia = reservaRepository.countActivasBySedeAndFecha(
                 original.getIdSede(), command.getNuevaFechaEvento()) + 1L;
 
         String ticket = TicketUtil.generar(
                 original.getIdSede().intValue(), command.getNuevaFechaEvento(), secuencia);
+
+        while (reservaRepository.existsByNumeroTicket(ticket)) {
+            secuencia++;
+            ticket = TicketUtil.generar(original.getIdSede().intValue(), command.getNuevaFechaEvento(), secuencia);
+        }
 
         BigDecimal precio = tarifa.getPrecio();
 
@@ -204,7 +226,7 @@ public class ReservaPublicaService
         Cliente cliente = clienteRepository.findById(guardada.getIdCliente())
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente", guardada.getIdCliente()));
 
-        ReservaPublicaQuery query = toQuery(guardada, cliente.getNombre());
+        ReservaPublicaQuery query = toQuery(guardada, cliente.getNombre(), fetchNombreSede(guardada.getIdSede()));
         correoPort.enviarTicket(cliente.getCorreo(), cliente.getNombre(), query);
 
         return query;
@@ -231,7 +253,7 @@ public class ReservaPublicaService
         Cliente cliente = clienteRepository.findById(guardada.getIdCliente())
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente", guardada.getIdCliente()));
 
-        return toQuery(guardada, cliente.getNombre());
+        return toQuery(guardada, cliente.getNombre(), fetchNombreSede(guardada.getIdSede()));
     }
 
     private void validarFechaDisponible(Long idSede, LocalDate fecha) {
@@ -259,12 +281,13 @@ public class ReservaPublicaService
                 : TipoDia.SEMANA;
     }
 
-    private ReservaPublicaQuery toQuery(ReservaPublica r, String nombreCliente) {
+    private ReservaPublicaQuery toQuery(ReservaPublica r, String nombreCliente, String nombreSede) {
         return ReservaPublicaQuery.builder()
                 .id(r.getId())
                 .idCliente(r.getIdCliente())
                 .nombreCliente(nombreCliente)
                 .idSede(r.getIdSede())
+                .nombreSede(nombreSede)
                 .estado(r.getEstado().getCodigo())
                 .canalReserva(r.getCanalReserva().getCodigo())
                 .tipoDia(r.getTipoDia().getCodigo())

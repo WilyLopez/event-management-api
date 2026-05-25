@@ -31,6 +31,8 @@ public interface ReservaPublicaRepository {
 
     int countConfirmadasBySedeAndFecha(Long idSede, LocalDate fecha);
 
+    int countActivasBySedeAndFecha(Long idSede, LocalDate fecha);
+
     ReservaPublica save(ReservaPublica reserva);
 
     boolean existsByNumeroTicket(String numeroTicket);

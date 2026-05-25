@@ -16,6 +16,7 @@ public class ReservaPublicaQuery {
     private final String        nombreCliente;
     private final String        correoCliente;
     private final Long          idSede;
+    private final String        nombreSede;
     private final String        estado;
     private final String        canalReserva;
     private final String        tipoDia;
