@@ -54,4 +54,8 @@ public interface ClienteRepository {
     void actualizarTotalGastado(Long id, java.math.BigDecimal monto);
 
     void actualizarUltimaVisita(Long id);
+
+    void incrementarIntentosFallidos(Long id);
+
+    void reiniciarIntentosFallidos(Long id);
 }

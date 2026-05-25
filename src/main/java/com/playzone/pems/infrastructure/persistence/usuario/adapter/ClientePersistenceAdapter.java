@@ -125,4 +125,16 @@ public class ClientePersistenceAdapter implements ClienteRepository {
     public void actualizarUltimaVisita(Long id) {
         clienteJpa.actualizarUltimaVisita(id);
     }
+
+    @Override
+    @Transactional
+    public void incrementarIntentosFallidos(Long id) {
+        clienteJpa.incrementarIntentosFallidos(id);
+    }
+
+    @Override
+    @Transactional
+    public void reiniciarIntentosFallidos(Long id) {
+        clienteJpa.reiniciarIntentosFallidos(id);
+    }
 }

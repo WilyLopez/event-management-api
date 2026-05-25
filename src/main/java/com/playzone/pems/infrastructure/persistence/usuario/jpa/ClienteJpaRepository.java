@@ -125,4 +125,12 @@ public interface ClienteJpaRepository extends JpaRepository<ClienteEntity, Long>
     @Modifying
     @Query("UPDATE ClienteEntity c SET c.ultimaVisita = CURRENT_TIMESTAMP WHERE c.id = :id")
     void actualizarUltimaVisita(@Param("id") Long id);
+
+    @Modifying
+    @Query("UPDATE ClienteEntity c SET c.intentosFallidos = c.intentosFallidos + 1 WHERE c.id = :id")
+    void incrementarIntentosFallidos(@Param("id") Long id);
+
+    @Modifying
+    @Query("UPDATE ClienteEntity c SET c.intentosFallidos = 0, c.bloqueadoHasta = null WHERE c.id = :id")
+    void reiniciarIntentosFallidos(@Param("id") Long id);
 }

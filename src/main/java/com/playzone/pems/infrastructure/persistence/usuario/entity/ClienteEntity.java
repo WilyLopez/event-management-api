@@ -17,6 +17,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "cliente")
@@ -119,6 +120,13 @@ public class ClienteEntity {
     @Column(name = "segmentocliente", nullable = false, length = 30)
     @Builder.Default
     private String segmentoCliente = "NUEVO";
+
+    @Column(name = "intentosfallidos", nullable = false)
+    @Builder.Default
+    private int intentosFallidos = 0;
+
+    @Column(name = "bloqueadohasta")
+    private LocalDateTime bloqueadoHasta;
 
     @CreationTimestamp
     @Column(name = "fechacreacion", updatable = false)

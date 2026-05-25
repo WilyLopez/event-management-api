@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -55,6 +56,10 @@ public class Cliente {
     private BigDecimal totalGastado;
     private String  segmentoCliente;
 
+    private int intentosFallidos;
+
+    private LocalDateTime bloqueadoHasta;
+
     private Instant fechaCreacion;
 
     private Instant fechaActualizacion;
@@ -90,6 +95,10 @@ public class Cliente {
 
     public boolean puedeAcceder() {
         return activo && correoVerificado && tieneAccesoWeb;
+    }
+
+    public boolean estaBloqueado(LocalDateTime ahora) {
+        return bloqueadoHasta != null && ahora.isBefore(bloqueadoHasta);
     }
 
     public boolean esPresencial() {

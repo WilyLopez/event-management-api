@@ -24,11 +24,14 @@ import com.playzone.pems.application.usuario.port.in.AutenticarClienteUseCase.Re
 import com.playzone.pems.application.usuario.port.out.EnviarCorreoVerificacionPort;
 import com.playzone.pems.application.usuario.port.out.GenerarTokenPort;
 import com.playzone.pems.domain.usuario.exception.ClienteNotFoundException;
+import com.playzone.pems.domain.usuario.exception.UsuarioBlockedException;
 import com.playzone.pems.domain.usuario.model.Cliente;
 import com.playzone.pems.domain.usuario.repository.ClienteRepository;
 import com.playzone.pems.shared.exception.ValidationException;
 import com.playzone.pems.shared.util.EncriptacionUtil;
+import com.playzone.pems.shared.util.FechaUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -36,6 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -57,6 +61,12 @@ public class ClienteService
     private final ClienteRepository            clienteRepository;
     private final GenerarTokenPort             generarTokenPort;
     private final EnviarCorreoVerificacionPort correoPort;
+
+    @Value("${playzone.seguridad.max-intentos-login:5}")
+    private int maxIntentos;
+
+    @Value("${playzone.seguridad.duracion-bloqueo-min:15}")
+    private int duracionBloqueoMin;
 
     @Override
     @Transactional
@@ -168,18 +178,33 @@ public class ClienteService
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public Result ejecutar(Command command) {
+        LocalDateTime ahora = FechaUtil.ahoraPeru();
+
         Cliente cliente = clienteRepository.findByCorreo(command.correo())
                 .orElseThrow(() -> new ValidationException("Credenciales incorrectas."));
 
+        if (cliente.estaBloqueado(ahora)) {
+            throw new UsuarioBlockedException(cliente.getBloqueadoHasta());
+        }
+
         if (!cliente.puedeAcceder()) {
             throw new ValidationException(
-                    "La cuenta no esta activa o el correo no fue verificado.");
+                    "La cuenta no está activa o el correo no fue verificado.");
         }
+
         if (!EncriptacionUtil.verificar(command.contrasena(), cliente.getContrasenaHash())) {
+            clienteRepository.incrementarIntentosFallidos(cliente.getId());
+            if (cliente.getIntentosFallidos() + 1 >= maxIntentos) {
+                clienteRepository.save(cliente.toBuilder()
+                        .bloqueadoHasta(ahora.plusMinutes(duracionBloqueoMin))
+                        .build());
+            }
             throw new ValidationException("Credenciales incorrectas.");
         }
+
+        clienteRepository.reiniciarIntentosFallidos(cliente.getId());
 
         String token = generarTokenPort.generarTokenAcceso(
                 cliente.getId(), cliente.getCorreo(), "CLIENTE");

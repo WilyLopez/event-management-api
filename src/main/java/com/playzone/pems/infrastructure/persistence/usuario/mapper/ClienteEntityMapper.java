@@ -69,6 +69,8 @@ public class ClienteEntityMapper {
             .ultimaVisita(e.getUltimaVisita())
             .totalGastado(e.getTotalGastado())
             .segmentoCliente(e.getSegmentoCliente())
+            .intentosFallidos(e.getIntentosFallidos())
+            .bloqueadoHasta(e.getBloqueadoHasta())
             .fechaCreacion(e.getFechaCreacion())
             .fechaActualizacion(e.getFechaActualizacion())
             .build();
@@ -103,6 +105,8 @@ public class ClienteEntityMapper {
             .ultimaVisita(c.getUltimaVisita())
             .totalGastado(c.getTotalGastado())
             .segmentoCliente(c.getSegmentoCliente() != null ? c.getSegmentoCliente() : "NUEVO")
+            .intentosFallidos(c.getIntentosFallidos())
+            .bloqueadoHasta(c.getBloqueadoHasta())
             .build();
     }
 }
