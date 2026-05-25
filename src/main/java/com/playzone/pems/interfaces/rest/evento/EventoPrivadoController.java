@@ -45,6 +45,7 @@ public class EventoPrivadoController {
                 @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
             @RequestParam(required = false)
                 @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fin,
+            @RequestAttribute("idUsuario") Long idUsuario,
             Pageable pageable) {
 
         Page<EventoPrivadoQuery> result;
@@ -55,7 +56,7 @@ public class EventoPrivadoController {
         } else if (idSede != null && estado != null) {
             result = consultarUseCase.consultarPorSedeYEstado(idSede, estado, pageable);
         } else {
-            return ResponseEntity.ok(ApiResponse.ok(Page.empty(pageable)));
+            result = consultarUseCase.consultarPorCliente(idUsuario, pageable);
         }
         return ResponseEntity.ok(ApiResponse.ok(result.map(this::toResponse)));
     }
