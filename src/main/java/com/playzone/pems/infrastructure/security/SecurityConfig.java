@@ -44,6 +44,8 @@ public class SecurityConfig {
                                 "/v3/api-docs/**"
                         ).permitAll()
 
+                        .requestMatchers("/files/**").permitAll()
+
                         .requestMatchers(HttpMethod.GET,
                                 "/api/v1/public/**",
                                 "/api/v1/calendario/**",
@@ -53,6 +55,10 @@ public class SecurityConfig {
                                 "/api/v1/resenas/**",
                                 "/api/v1/cms/**",
                                 "/api/v1/promociones/**",
+                                "/api/v1/paquetes/**",
+                                "/api/v1/zonas/**",
+                                "/api/v1/actividades/**",
+                                "/api/v1/novedades/**",
                                 "/api/v1/api/v1/public/**",
                                 "/api/v1/api/v1/calendario/**",
                                 "/api/v1/api/v1/contenido/**",

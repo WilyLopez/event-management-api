@@ -7,6 +7,7 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Configuration;
 
 import java.net.URI;
 
@@ -35,6 +36,11 @@ public class StorageConfig {
 
         if (endpoint != null && !endpoint.isBlank()) {
             builder.endpointOverride(URI.create(endpoint));
+            // Path-style required for local S3 emulators (LocalStack/MinIO);
+            // virtual-hosted-style would prepend the bucket name to the hostname.
+            builder.serviceConfiguration(
+                S3Configuration.builder().pathStyleAccessEnabled(true).build()
+            );
         }
 
         return builder.build();

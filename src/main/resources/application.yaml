@@ -164,6 +164,13 @@ playzone:
     connect-timeout-ms: 5000
     read-timeout-ms: 10000
 
+storage:
+  tipo: ${STORAGE_TIPO:LOCAL}
+  local:
+    ruta-base: ${STORAGE_RUTA_BASE:uploads}
+    url-base: ${STORAGE_URL_BASE:/files}
+  max-tamanio-mb: 10
+
 logging:
   level:
     root: INFO
