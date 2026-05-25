@@ -59,7 +59,7 @@ public class ReservaAdminService
     public Page<ReservaPublicaQuery> buscar(
             Long idSede, String estado, LocalDate fecha,
             Boolean ingresado, Boolean esReprogramacion,
-            String search, Pageable pageable) {
+            String search, String medioPago, Pageable pageable) {
 
         EstadoReservaPublica estadoEnum = null;
         if (estado != null && !estado.isBlank()) {
@@ -67,12 +67,13 @@ public class ReservaAdminService
             catch (IllegalArgumentException ignored) {}
         }
 
-        String searchPattern = (search != null && !search.isBlank()) 
+        String searchPattern = (search != null && !search.isBlank())
                 ? "%" + search.toLowerCase() + "%" : null;
+        String medioPagoFiltro = (medioPago != null && !medioPago.isBlank()) ? medioPago : null;
 
         return reservaRepository.buscarAdmin(
                 idSede, estadoEnum, fecha, ingresado, esReprogramacion,
-                searchPattern,
+                searchPattern, medioPagoFiltro,
                 pageable
         ).map(r -> {
             String nombre = clienteRepository.findById(r.getIdCliente())

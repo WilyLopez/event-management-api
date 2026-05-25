@@ -22,3 +22,5 @@ playzone:
   url-base: http://localhost:8080
   cors:
     origenes-permitidos: http://localhost:3000,http://localhost:5173,http://localhost:4200
+  negocio:
+    id-cliente-mostrador: 1

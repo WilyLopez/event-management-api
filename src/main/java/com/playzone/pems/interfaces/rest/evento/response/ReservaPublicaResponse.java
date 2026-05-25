@@ -15,6 +15,7 @@ public class ReservaPublicaResponse {
     private final String        nombreCliente;
     private final String        correoCliente;
     private final Long          idSede;
+    private final String        nombreSede;
     private final String        numeroTicket;
     private final String        estado;
     private final String        canalReserva;
@@ -23,6 +24,7 @@ public class ReservaPublicaResponse {
     private final String        nombreNino;
     private final int           edadNino;
     private final String        nombreAcompanante;
+    private final String        dniAcompanante;
     private final BigDecimal    precioHistorico;
     private final BigDecimal    descuentoAplicado;
     private final BigDecimal    totalPagado;

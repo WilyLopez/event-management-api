@@ -303,6 +303,11 @@ public class ReservaPublicaService
                 .firmoConsentimiento(r.isFirmoConsentimiento())
                 .esReprogramacion(r.isEsReprogramacion())
                 .vecesReprogramada(r.getVecesReprogramada())
+                .ingresado(r.isIngresado())
+                .fechaIngreso(r.getFechaIngreso())
+                .codigoQr(r.getCodigoQr())
+                .medioPago(r.getMedioPago())
+                .referenciaPago(r.getReferenciaPago())
                 .fechaCreacion(r.getFechaCreacion())
                 .build();
     }
