@@ -6,6 +6,7 @@ import com.playzone.pems.application.calendario.dto.query.ResumenDiaQuery;
 import com.playzone.pems.application.calendario.port.in.BloquearFechasUseCase;
 import com.playzone.pems.application.calendario.port.in.ConsultarDisponibilidadUseCase;
 import com.playzone.pems.application.calendario.port.in.ConsultarResumenDiaUseCase;
+import com.playzone.pems.domain.calendario.repository.TurnoRepository;
 import com.playzone.pems.interfaces.rest.calendario.request.BloquearFechasRequest;
 import com.playzone.pems.interfaces.rest.calendario.response.DisponibilidadResponse;
 import com.playzone.pems.interfaces.rest.calendario.response.ResumenDiaResponse;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/calendario")
@@ -28,6 +30,22 @@ public class CalendarioController {
     private final ConsultarDisponibilidadUseCase consultarUseCase;
     private final ConsultarResumenDiaUseCase     resumenDiaUseCase;
     private final BloquearFechasUseCase          bloquearUseCase;
+    private final TurnoRepository                turnoRepository;
+
+    @GetMapping("/sedes/{idSede}/turnos")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> listarTurnos(
+            @PathVariable Long idSede) {
+
+        List<Map<String, Object>> turnos = turnoRepository.findAll()
+                .stream().map(t -> Map.<String, Object>of(
+                        "id",         t.getId(),
+                        "codigo",     t.getCodigo(),
+                        "nombre",     t.getDescripcion(),
+                        "horaInicio", t.getHoraInicio().toString(),
+                        "horaFin",    t.getHoraFin().toString()
+                )).toList();
+        return ResponseEntity.ok(ApiResponse.ok(turnos));
+    }
 
     @GetMapping("/sedes/{idSede}/disponibilidad")
     public ResponseEntity<ApiResponse<DisponibilidadResponse>> consultarPorFecha(
