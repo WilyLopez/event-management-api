@@ -61,4 +61,12 @@ public interface EventoPrivadoJpaRepository extends JpaRepository<EventoPrivadoE
             @Param("idSede") Long idSede,
             @Param("anio") int anio,
             @Param("mes") int mes);
+
+    @Query("SELECT COALESCE(SUM(e.precioTotalContrato - e.montoAdelanto), 0) FROM EventoPrivadoEntity e " +
+           "WHERE e.sede.id = :idSede AND YEAR(e.fechaEvento) = :anio AND MONTH(e.fechaEvento) = :mes " +
+           "AND e.estado = 'CONFIRMADA' AND e.precioTotalContrato > e.montoAdelanto")
+    BigDecimal sumSaldoPendienteBySedeAndMes(
+            @Param("idSede") Long idSede,
+            @Param("anio") int anio,
+            @Param("mes") int mes);
 }

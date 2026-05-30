@@ -29,6 +29,11 @@ public class EventoPrivado {
     private BigDecimal          montoAdelanto;
     private String              motivoCancelacion;
     private String              notasInternas;
+    private String              nombreNino;
+    private Integer             edadCumple;
+    private String              medioPagoAdelanto;
+    private String              observaciones;
+    private Long                idPaquete;
     private Long                idUsuarioGestor;
     private LocalDateTime       fechaCreacion;
     private LocalDateTime       fechaActualizacion;

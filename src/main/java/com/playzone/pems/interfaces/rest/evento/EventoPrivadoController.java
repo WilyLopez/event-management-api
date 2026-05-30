@@ -2,12 +2,18 @@ package com.playzone.pems.interfaces.rest.evento;
 
 import com.playzone.pems.application.evento.dto.command.SolicitarEventoPrivadoCommand;
 import com.playzone.pems.application.evento.dto.query.ChecklistEventoQuery;
+import com.playzone.pems.application.evento.dto.query.EventoExtraQuery;
 import com.playzone.pems.application.evento.dto.query.EventoPrivadoQuery;
 import com.playzone.pems.application.evento.port.in.*;
+import com.playzone.pems.application.evento.service.EventoPrivadoService;
+import com.playzone.pems.domain.comercial.model.ExtraPaquete;
+import com.playzone.pems.domain.comercial.repository.ExtraPaqueteRepository;
+import com.playzone.pems.interfaces.rest.evento.request.ConfirmarEventoRequest;
 import com.playzone.pems.interfaces.rest.evento.request.SolicitarEventoPrivadoRequest;
 import com.playzone.pems.interfaces.rest.evento.response.EventoPrivadoResponse;
 import com.playzone.pems.shared.response.ApiResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -22,25 +28,28 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/eventos-privados")
 @RequiredArgsConstructor
 public class EventoPrivadoController {
 
-    private final SolicitarEventoPrivadoUseCase  solicitarUseCase;
-    private final ConfirmarEventoPrivadoUseCase  confirmarUseCase;
-    private final CancelarEventoPrivadoUseCase   cancelarUseCase;
+    private final SolicitarEventoPrivadoUseCase   solicitarUseCase;
+    private final ConfirmarEventoPrivadoUseCase   confirmarUseCase;
+    private final CancelarEventoPrivadoUseCase    cancelarUseCase;
     private final ConsultarEventosPrivadosUseCase consultarUseCase;
-    private final BuscarEventosAdminUseCase      buscarAdminUseCase;
-    private final GestionarChecklistUseCase      checklistUseCase;
+    private final BuscarEventosAdminUseCase       buscarAdminUseCase;
+    private final GestionarChecklistUseCase       checklistUseCase;
+    private final EventoPrivadoService            eventoService;
+    private final ExtraPaqueteRepository          extraPaqueteRepository;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('CLIENTE','ADMIN')")
     public ResponseEntity<ApiResponse<Page<EventoPrivadoResponse>>> listar(
-            @RequestParam(required = false) Long idCliente,
-            @RequestParam(required = false) Long idSede,
-            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) Long      idCliente,
+            @RequestParam(required = false) Long      idSede,
+            @RequestParam(required = false) String    estado,
             @RequestParam(required = false)
                 @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
             @RequestParam(required = false)
@@ -104,31 +113,64 @@ public class EventoPrivadoController {
                         .tipoEvento(request.getTipoEvento())
                         .contactoAdicional(request.getContactoAdicional())
                         .aforoDeclarado(request.getAforoDeclarado())
+                        .nombreNino(request.getNombreNino())
+                        .edadCumple(request.getEdadCumple())
+                        .idPaquete(request.getIdPaquete())
+                        .idsExtras(request.getIdsExtras())
+                        .extrasLibres(request.getExtrasLibres())
+                        .observaciones(request.getObservaciones())
                         .build());
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(toResponse(query)));
     }
 
-    @PostMapping("/{idEvento}/confirmar")
+    @PostMapping("/{id}/confirmar")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<EventoPrivadoResponse>> confirmar(
-            @PathVariable Long idEvento,
-            @RequestParam BigDecimal precioTotal,
+            @PathVariable Long id,
+            @Valid @RequestBody ConfirmarEventoRequest request,
             @RequestAttribute Long idUsuarioAdmin) {
 
         return ResponseEntity.ok(ApiResponse.ok(
-                toResponse(confirmarUseCase.ejecutar(idEvento, precioTotal, idUsuarioAdmin))));
+                toResponse(confirmarUseCase.ejecutar(
+                        id,
+                        request.getPrecioTotal(),
+                        request.getMontoAdelanto(),
+                        request.getMedioPagoAdelanto(),
+                        idUsuarioAdmin))));
     }
 
-    @PostMapping("/{idEvento}/cancelar")
+    @PostMapping("/{id}/completar")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<EventoPrivadoResponse>> completar(
+            @PathVariable Long id,
+            @RequestAttribute Long idUsuarioAdmin) {
+
+        return ResponseEntity.ok(ApiResponse.ok(
+                toResponse(eventoService.completar(id, idUsuarioAdmin))));
+    }
+
+    @PostMapping("/{id}/registrar-saldo")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<EventoPrivadoResponse>> registrarSaldo(
+            @PathVariable Long id,
+            @RequestParam @DecimalMin("0.01") BigDecimal monto,
+            @RequestParam String medioPago,
+            @RequestAttribute Long idUsuarioAdmin) {
+
+        return ResponseEntity.ok(ApiResponse.ok(
+                toResponse(eventoService.registrarSaldo(id, monto, medioPago, idUsuarioAdmin))));
+    }
+
+    @PostMapping("/{id}/cancelar")
     @PreAuthorize("hasAnyRole('CLIENTE','ADMIN')")
     public ResponseEntity<ApiResponse<EventoPrivadoResponse>> cancelar(
-            @PathVariable Long idEvento,
+            @PathVariable Long id,
             @RequestParam String motivoCancelacion) {
 
         return ResponseEntity.ok(ApiResponse.ok(
-                toResponse(cancelarUseCase.ejecutar(idEvento, motivoCancelacion))));
+                toResponse(cancelarUseCase.ejecutar(id, motivoCancelacion))));
     }
 
     @GetMapping("/{idEvento}/checklist")
@@ -159,6 +201,49 @@ public class EventoPrivadoController {
         return ResponseEntity.ok(ApiResponse.ok(checklistUseCase.descompletar(idChecklist)));
     }
 
+    @GetMapping("/paquetes/{idPaquete}/extras")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> listarExtrasPaquete(
+            @PathVariable Long idPaquete) {
+
+        List<Map<String, Object>> extras = extraPaqueteRepository.findActivosByPaquete(idPaquete)
+                .stream().map(e -> Map.of(
+                        "id",          (Object) e.getId(),
+                        "nombre",      e.getNombre(),
+                        "descripcion", e.getDescripcion() != null ? e.getDescripcion() : "",
+                        "orden",       e.getOrden()
+                )).toList();
+
+        return ResponseEntity.ok(ApiResponse.ok(extras));
+    }
+
+    @PostMapping("/paquetes/{idPaquete}/extras")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> crearExtra(
+            @PathVariable Long idPaquete,
+            @RequestBody Map<String, Object> body) {
+
+        ExtraPaquete extra = ExtraPaquete.builder()
+                .idPaquete(idPaquete)
+                .nombre((String) body.get("nombre"))
+                .descripcion((String) body.get("descripcion"))
+                .activo(true)
+                .orden(body.containsKey("orden") ? (Integer) body.get("orden") : 0)
+                .build();
+
+        ExtraPaquete guardado = extraPaqueteRepository.save(extra);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(
+                Map.of("id", guardado.getId(), "nombre", guardado.getNombre(),
+                        "descripcion", guardado.getDescripcion() != null ? guardado.getDescripcion() : "",
+                        "orden", guardado.getOrden())));
+    }
+
+    @DeleteMapping("/extras/{idExtra}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> desactivarExtra(@PathVariable Long idExtra) {
+        extraPaqueteRepository.desactivar(idExtra);
+        return ResponseEntity.ok(ApiResponse.noContent());
+    }
+
     private EventoPrivadoResponse toResponse(EventoPrivadoQuery q) {
         return EventoPrivadoResponse.builder()
                 .id(q.getId())
@@ -179,12 +264,18 @@ public class EventoPrivadoController {
                 .precioTotalContrato(q.getPrecioTotalContrato())
                 .montoAdelanto(q.getMontoAdelanto())
                 .montoSaldo(q.getMontoSaldo())
+                .medioPagoAdelanto(q.getMedioPagoAdelanto())
                 .notasInternas(q.getNotasInternas())
+                .observaciones(q.getObservaciones())
+                .nombreNino(q.getNombreNino())
+                .edadCumple(q.getEdadCumple())
+                .idPaquete(q.getIdPaquete())
                 .usuarioGestor(q.getUsuarioGestor())
                 .estadoOperativo(q.getEstadoOperativo())
                 .checklistCompleto(q.isChecklistCompleto())
                 .horaInicioReal(q.getHoraInicioReal())
                 .horaFinReal(q.getHoraFinReal())
+                .extras(q.getExtras())
                 .fechaCreacion(q.getFechaCreacion())
                 .build();
     }

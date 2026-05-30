@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @NoArgsConstructor
@@ -24,4 +25,17 @@ public class SolicitarEventoPrivadoRequest {
 
     @Min(1) @Max(60)
     private Integer aforoDeclarado;
+
+    @Size(max = 120)
+    private String nombreNino;
+
+    @Min(0) @Max(18)
+    private Integer edadCumple;
+
+    private Long         idPaquete;
+    private List<Long>   idsExtras;
+    private List<String> extrasLibres;
+
+    @Size(max = 2000)
+    private String observaciones;
 }

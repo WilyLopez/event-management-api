@@ -9,4 +9,6 @@ public interface EnviarNotificacionEventoPort {
     void notificarEventoConfirmado(String destinatario, EventoPrivadoQuery evento);
 
     void notificarEventoCancelado(String destinatario, EventoPrivadoQuery evento, String motivo);
+
+    void notificarAdminNuevaSolicitud(EventoPrivadoQuery evento);
 }

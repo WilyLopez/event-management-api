@@ -82,4 +82,41 @@ public interface ReservaPublicaJpaRepository extends JpaRepository<ReservaPublic
             @Param("idSede") Long idSede,
             @Param("anio") int anio,
             @Param("mes") int mes);
+
+    @Query("SELECT COALESCE(SUM(r.totalPagado), 0) FROM ReservaPublicaEntity r " +
+           "WHERE r.sede.id = :idSede AND r.fechaEvento BETWEEN :inicio AND :fin AND r.estado <> 'CANCELADA'")
+    BigDecimal sumIngresosBySedeAndRango(
+            @Param("idSede") Long idSede, @Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
+
+    @Query("SELECT COUNT(r) FROM ReservaPublicaEntity r " +
+           "WHERE r.sede.id = :idSede AND r.fechaEvento BETWEEN :inicio AND :fin AND r.estado IN ('CONFIRMADA', 'COMPLETADA')")
+    long countConfirmadasBySedeAndRango(
+            @Param("idSede") Long idSede, @Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
+
+    @Query("SELECT COUNT(r) FROM ReservaPublicaEntity r " +
+           "WHERE r.sede.id = :idSede AND YEAR(r.fechaEvento) = :anio AND MONTH(r.fechaEvento) = :mes AND r.estado = 'CONFIRMADA'")
+    long countConfirmadasBySedeAndPeriodo(
+            @Param("idSede") Long idSede, @Param("anio") int anio, @Param("mes") int mes);
+
+    @Query("SELECT COUNT(r) FROM ReservaPublicaEntity r " +
+           "WHERE r.sede.id = :idSede AND YEAR(r.fechaEvento) = :anio AND MONTH(r.fechaEvento) = :mes AND r.estado = 'CANCELADA'")
+    long countCanceladasBySedeAndPeriodo(
+            @Param("idSede") Long idSede, @Param("anio") int anio, @Param("mes") int mes);
+
+    @Query("SELECT COUNT(r) FROM ReservaPublicaEntity r " +
+           "WHERE r.sede.id = :idSede AND YEAR(r.fechaEvento) = :anio AND MONTH(r.fechaEvento) = :mes AND r.estado = 'COMPLETADA'")
+    long countCompletadasBySedeAndPeriodo(
+            @Param("idSede") Long idSede, @Param("anio") int anio, @Param("mes") int mes);
+
+    @Query("SELECT COALESCE(AVG(r.totalPagado), 0) FROM ReservaPublicaEntity r " +
+           "WHERE r.sede.id = :idSede AND YEAR(r.fechaEvento) = :anio AND MONTH(r.fechaEvento) = :mes AND r.estado <> 'CANCELADA'")
+    BigDecimal avgTicketBySedeAndPeriodo(
+            @Param("idSede") Long idSede, @Param("anio") int anio, @Param("mes") int mes);
+
+    @Query("SELECT COALESCE(SUM(r.totalPagado), 0) FROM ReservaPublicaEntity r " +
+           "WHERE r.sede.id = :idSede AND YEAR(r.fechaEvento) = :anio AND MONTH(r.fechaEvento) = :mes " +
+           "AND r.estado <> 'CANCELADA' AND r.medioPago = :medioPago")
+    BigDecimal sumIngresosBySedeAndPeriodoAndMedioPago(
+            @Param("idSede") Long idSede, @Param("anio") int anio, @Param("mes") int mes,
+            @Param("medioPago") String medioPago);
 }

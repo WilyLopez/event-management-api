@@ -39,6 +39,9 @@ public class CorreoAdapter
     @Value("${playzone.correo.nombre-remitente:PlayZone}")
     private String nombreRemitente;
 
+    @Value("${playzone.negocio.correo-admin:admin@kikiylala.com}")
+    private String correoAdmin;
+
     @Override
     public void enviarBienvenida(String destinatario, String nombreCliente) {
         String asunto = "Bienvenida a Kiki y Lala";
@@ -100,33 +103,87 @@ public class CorreoAdapter
     @Override
     public void notificarSolicitudRecibida(String destinatario, EventoPrivadoQuery evento) {
         String asunto = "Solicitud de evento privado recibida — Kiki y Lala";
-        String cuerpo = "<h2>Solicitud recibida</h2>"
-                + "<p>Hemos recibido tu solicitud para el <b>" + evento.getFechaEvento() + "</b>.</p>"
-                + "<p>Turno solicitado: <b>" + evento.getTurno() + "</b></p>"
-                + "<p>Nos pondremos en contacto contigo pronto para confirmar los detalles.</p>";
-        correoClient.enviar(destinatario, asunto, cuerpo);
+        String cuerpo = htmlBase(
+            "Solicitud recibida",
+            "<p>Hola <b>" + evento.getNombreCliente() + "</b>,</p>"
+            + "<p>Hemos recibido tu solicitud de evento privado. Nuestro equipo se pondrá en contacto contigo en menos de 24 horas.</p>"
+            + resumenEvento(evento)
+            + "<p style='color:#64748b;font-size:13px;margin-top:20px;'>Próximos pasos: te confirmaremos disponibilidad, precio y condiciones por este medio.</p>"
+        );
+        correoClient.enviarConLogo(destinatario, asunto, cuerpo);
     }
 
     @Override
     public void notificarEventoConfirmado(String destinatario, EventoPrivadoQuery evento) {
         String asunto = "Tu evento privado ha sido confirmado — Kiki y Lala";
-        String cuerpo = "<h2>Evento confirmado</h2>"
-                + "<p>Tu evento del <b>" + evento.getFechaEvento() + "</b> ha sido confirmado.</p>"
-                + "<p>Turno: <b>" + evento.getTurno() + " (" + evento.getHoraInicio() + " – " + evento.getHoraFin() + ")</b></p>"
-                + "<p>Monto total: <b>S/ " + evento.getPrecioTotalContrato() + "</b></p>"
-                + "<p>Adelanto recibido: <b>S/ " + evento.getMontoAdelanto() + "</b></p>"
-                + "<p>Saldo pendiente: <b>S/ " + evento.getMontoSaldo() + "</b></p>";
-        correoClient.enviar(destinatario, asunto, cuerpo);
+        String cuerpo = htmlBase(
+            "¡Evento confirmado!",
+            "<p>Hola <b>" + evento.getNombreCliente() + "</b>,</p>"
+            + "<p>Tu evento ha sido confirmado. Te compartimos el resumen:</p>"
+            + resumenEvento(evento)
+            + filaFinanciera("Total contratado", "S/ " + evento.getPrecioTotalContrato())
+            + filaFinanciera("Adelanto pagado", "S/ " + evento.getMontoAdelanto())
+            + filaFinanciera("Saldo pendiente", "S/ " + evento.getMontoSaldo())
+            + "<p style='color:#64748b;font-size:13px;margin-top:16px;'>El contrato será enviado próximamente. El saldo pendiente se abona el día del evento.</p>"
+        );
+        correoClient.enviarConLogo(destinatario, asunto, cuerpo);
     }
 
     @Override
     public void notificarEventoCancelado(String destinatario, EventoPrivadoQuery evento, String motivo) {
         String asunto = "Evento privado cancelado — Kiki y Lala";
-        String cuerpo = "<h2>Evento cancelado</h2>"
-                + "<p>Lamentamos informarte que el evento del <b>" + evento.getFechaEvento() + "</b> ha sido cancelado.</p>"
-                + "<p>Motivo: " + motivo + "</p>"
-                + "<p>Si tienes dudas, contactanos por WhatsApp o correo.</p>";
-        correoClient.enviar(destinatario, asunto, cuerpo);
+        String cuerpo = htmlBase(
+            "Evento cancelado",
+            "<p>Hola <b>" + evento.getNombreCliente() + "</b>,</p>"
+            + "<p>Lamentamos informarte que el evento del <b>" + evento.getFechaEvento() + "</b> ha sido cancelado.</p>"
+            + "<p><b>Motivo:</b> " + motivo + "</p>"
+            + "<p style='color:#64748b;font-size:13px;'>Si tienes dudas, contáctanos por WhatsApp o correo.</p>"
+        );
+        correoClient.enviarConLogo(destinatario, asunto, cuerpo);
+    }
+
+    @Override
+    public void notificarAdminNuevaSolicitud(EventoPrivadoQuery evento) {
+        String asunto = "[Nueva solicitud] " + evento.getTipoEvento() + " — " + evento.getFechaEvento();
+        String cuerpo = htmlBase(
+            "Nueva solicitud de evento",
+            "<p>Se ha recibido una nueva solicitud de evento privado:</p>"
+            + resumenEvento(evento)
+            + "<p><b>Cliente:</b> " + evento.getNombreCliente() + "</p>"
+            + "<p><b>Correo:</b> " + evento.getCorreoCliente() + "</p>"
+            + "<p><b>Teléfono:</b> " + (evento.getTelefonoCliente() != null ? evento.getTelefonoCliente() : "—") + "</p>"
+            + "<p style='margin-top:16px;'><a href='#' style='background:#00AEEF;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:bold;'>Ver en el panel</a></p>"
+        );
+        correoClient.enviar(correoAdmin, asunto, cuerpo);
+    }
+
+    private String htmlBase(String titulo, String contenido) {
+        return "<div style='font-family:Arial,sans-serif;max-width:520px;margin:0 auto;'>"
+            + "<div style='background:#F64B8A;padding:20px;border-radius:12px 12px 0 0;text-align:center;'>"
+            + "<h2 style='color:white;margin:0;font-size:18px;'>" + titulo + "</h2>"
+            + "</div>"
+            + "<div style='background:#f8fafc;padding:24px;border:1px solid #e2e8f0;border-radius:0 0 12px 12px;'>"
+            + contenido
+            + "</div></div>";
+    }
+
+    private String resumenEvento(EventoPrivadoQuery evento) {
+        return "<div style='background:white;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:16px 0;font-size:13px;'>"
+            + filaEvento("Tipo de evento", evento.getTipoEvento())
+            + filaEvento("Fecha", evento.getFechaEvento() != null ? evento.getFechaEvento().toString() : "—")
+            + filaEvento("Turno", evento.getTurno() + " · " + evento.getHoraInicio() + " – " + evento.getHoraFin())
+            + (evento.getAforoDeclarado() != null ? filaEvento("Invitados", evento.getAforoDeclarado() + " personas") : "")
+            + "</div>";
+    }
+
+    private String filaEvento(String label, String valor) {
+        return "<p style='margin:6px 0;'><span style='color:#64748b;'>" + label + ":</span> <b>" + valor + "</b></p>";
+    }
+
+    private String filaFinanciera(String label, String valor) {
+        return "<p style='margin:6px 0;display:flex;justify-content:space-between;'>"
+            + "<span style='color:#64748b;'>" + label + "</span>"
+            + "<b style='color:#1A1A2E;'>" + valor + "</b></p>";
     }
 
     private String cargarTemplate(String nombre) {

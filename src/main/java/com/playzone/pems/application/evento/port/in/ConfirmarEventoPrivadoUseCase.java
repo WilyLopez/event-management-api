@@ -6,5 +6,7 @@ import java.math.BigDecimal;
 
 public interface ConfirmarEventoPrivadoUseCase {
 
-    EventoPrivadoQuery ejecutar(Long idEvento, BigDecimal precioTotal, Long idUsuarioGestor);
+    EventoPrivadoQuery ejecutar(Long idEvento, BigDecimal precioTotal,
+                                BigDecimal montoAdelanto, String medioPagoAdelanto,
+                                Long idUsuarioGestor);
 }

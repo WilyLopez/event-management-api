@@ -5,9 +5,11 @@ import com.playzone.pems.application.evento.dto.command.ReprogramarReservaComman
 import com.playzone.pems.application.evento.dto.query.MetricasReservaQuery;
 import com.playzone.pems.application.evento.dto.query.ReservaPublicaQuery;
 import com.playzone.pems.application.evento.port.in.*;
+import com.playzone.pems.application.finanzas.port.in.RegistrarIngresoUseCase;
 import com.playzone.pems.domain.evento.model.ReservaPublica;
 import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
 import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
+import com.playzone.pems.domain.finanzas.model.enums.CategoriaIngreso;
 import com.playzone.pems.domain.storage.StoragePort;
 import com.playzone.pems.domain.usuario.repository.ClienteRepository;
 import com.playzone.pems.domain.usuario.repository.SedeRepository;
@@ -44,6 +46,7 @@ public class ReservaPublicaController {
     private final ConsultarReservasUseCase    consultarUseCase;
     private final BuscarReservasAdminUseCase  buscarAdminUseCase;
     private final ConfirmarIngresoUseCase     ingresoUseCase;
+    private final RegistrarIngresoUseCase     registrarIngresoUseCase;
     private final ReservaPublicaRepository    reservaRepository;
     private final ClienteRepository           clienteRepository;
     private final SedeRepository              sedeRepository;
@@ -211,6 +214,15 @@ public class ReservaPublicaController {
         }
         ReservaPublica guardada = reservaRepository.save(
                 reserva.toBuilder().estado(EstadoReservaPublica.CONFIRMADA).build());
+        registrarIngresoUseCase.registrarAutomatico(
+                CategoriaIngreso.RESERVA_PUBLICA,
+                guardada.getIdSede(),
+                guardada.getId(),
+                null,
+                guardada.getTotalPagado(),
+                guardada.getFechaEvento(),
+                guardada.getMedioPago()
+        );
         return ResponseEntity.ok(ApiResponse.ok(toResponse(buildQueryFromRepo(guardada))));
     }
 

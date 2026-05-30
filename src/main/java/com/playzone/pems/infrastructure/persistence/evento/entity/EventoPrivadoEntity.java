@@ -70,6 +70,21 @@ public class EventoPrivadoEntity {
     @Column(name = "notasinternas", columnDefinition = "TEXT")
     private String notasInternas;
 
+    @Column(name = "nombre_nino", length = 120)
+    private String nombreNino;
+
+    @Column(name = "edad_cumple")
+    private Integer edadCumple;
+
+    @Column(name = "medio_pago_adelanto", length = 30)
+    private String medioPagoAdelanto;
+
+    @Column(name = "observaciones", columnDefinition = "TEXT")
+    private String observaciones;
+
+    @Column(name = "idpaquete")
+    private Long idPaquete;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "idusuariogestor")
     private UsuarioAdminEntity usuarioGestor;

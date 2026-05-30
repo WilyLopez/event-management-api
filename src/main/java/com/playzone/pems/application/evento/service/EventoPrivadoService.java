@@ -1,6 +1,7 @@
 package com.playzone.pems.application.evento.service;
 
 import com.playzone.pems.application.evento.dto.command.SolicitarEventoPrivadoCommand;
+import com.playzone.pems.application.evento.dto.query.EventoExtraQuery;
 import com.playzone.pems.application.evento.dto.query.EventoPrivadoQuery;
 import com.playzone.pems.application.evento.port.in.BuscarEventosAdminUseCase;
 import com.playzone.pems.application.evento.port.in.CancelarEventoPrivadoUseCase;
@@ -8,15 +9,20 @@ import com.playzone.pems.application.evento.port.in.ConfirmarEventoPrivadoUseCas
 import com.playzone.pems.application.evento.port.in.ConsultarEventosPrivadosUseCase;
 import com.playzone.pems.application.evento.port.in.SolicitarEventoPrivadoUseCase;
 import com.playzone.pems.application.evento.port.out.EnviarNotificacionEventoPort;
+import com.playzone.pems.application.finanzas.port.in.RegistrarIngresoUseCase;
 import com.playzone.pems.domain.calendario.exception.FechaNoDisponibleException;
-import com.playzone.pems.domain.calendario.model.Turno;
 import com.playzone.pems.domain.calendario.repository.BloqueCalendarioRepository;
 import com.playzone.pems.domain.calendario.repository.TurnoRepository;
+import com.playzone.pems.domain.comercial.repository.ExtraPaqueteRepository;
+import com.playzone.pems.domain.evento.model.EventoExtra;
 import com.playzone.pems.domain.evento.model.EventoPrivado;
 import com.playzone.pems.domain.evento.model.enums.EstadoEventoPrivado;
+import com.playzone.pems.domain.evento.repository.EventoExtraRepository;
 import com.playzone.pems.domain.evento.repository.EventoPrivadoRepository;
+import com.playzone.pems.domain.finanzas.model.enums.CategoriaIngreso;
 import com.playzone.pems.domain.usuario.model.Cliente;
 import com.playzone.pems.domain.usuario.repository.ClienteRepository;
+import com.playzone.pems.domain.calendario.model.Turno;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import com.playzone.pems.shared.exception.ValidationException;
 import com.playzone.pems.shared.util.FechaUtil;
@@ -29,6 +35,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -39,11 +47,14 @@ public class EventoPrivadoService
         ConsultarEventosPrivadosUseCase,
         BuscarEventosAdminUseCase {
 
-    private final EventoPrivadoRepository     eventoRepository;
-    private final ClienteRepository           clienteRepository;
-    private final BloqueCalendarioRepository  bloqueRepository;
-    private final TurnoRepository             turnoRepository;
+    private final EventoPrivadoRepository    eventoRepository;
+    private final ClienteRepository          clienteRepository;
+    private final BloqueCalendarioRepository bloqueRepository;
+    private final TurnoRepository            turnoRepository;
     private final EnviarNotificacionEventoPort notificacionPort;
+    private final RegistrarIngresoUseCase    registrarIngresoUseCase;
+    private final EventoExtraRepository      eventoExtraRepository;
+    private final ExtraPaqueteRepository     extraPaqueteRepository;
 
     @Value("${playzone.negocio.anticipacion-min-evento-dias:15}")
     private int anticipacionMinDias;
@@ -58,40 +69,39 @@ public class EventoPrivadoService
             try { estadoEnum = EstadoEventoPrivado.valueOf(estado); }
             catch (IllegalArgumentException ignored) {}
         }
-
-        String searchPattern = (search != null && !search.isBlank()) 
+        String searchPattern = (search != null && !search.isBlank())
                 ? "%" + search.toLowerCase() + "%" : null;
 
         return eventoRepository.buscarAdmin(idSede, estadoEnum, fecha, searchPattern, pageable)
-                .map(e -> toQuery(e, obtenerCliente(e.getIdCliente()), obtenerTurno(e.getIdTurno())));
+                .map(e -> toQuery(e, obtenerCliente(e.getIdCliente()), obtenerTurno(e.getIdTurno()), false));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<EventoPrivadoQuery> consultarPorCliente(Long idCliente, Pageable pageable) {
         return eventoRepository.findByCliente(idCliente, pageable)
-                .map(e -> toQuery(e, obtenerCliente(e.getIdCliente()), obtenerTurno(e.getIdTurno())));
+                .map(e -> toQuery(e, obtenerCliente(e.getIdCliente()), obtenerTurno(e.getIdTurno()), false));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<EventoPrivadoQuery> consultarPorSedeYEstado(Long idSede, String estado, Pageable pageable) {
         return eventoRepository.findBySedeAndEstado(idSede, EstadoEventoPrivado.valueOf(estado), pageable)
-                .map(e -> toQuery(e, obtenerCliente(e.getIdCliente()), obtenerTurno(e.getIdTurno())));
+                .map(e -> toQuery(e, obtenerCliente(e.getIdCliente()), obtenerTurno(e.getIdTurno()), false));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<EventoPrivadoQuery> consultarPorSedeYRangoFechas(Long idSede, LocalDate inicio, LocalDate fin, Pageable pageable) {
         return eventoRepository.findBySedeAndFechasBetween(idSede, inicio, fin, pageable)
-                .map(e -> toQuery(e, obtenerCliente(e.getIdCliente()), obtenerTurno(e.getIdTurno())));
+                .map(e -> toQuery(e, obtenerCliente(e.getIdCliente()), obtenerTurno(e.getIdTurno()), false));
     }
 
     @Override
     @Transactional(readOnly = true)
     public EventoPrivadoQuery consultarPorId(Long idEvento) {
         EventoPrivado e = obtenerEvento(idEvento);
-        return toQuery(e, obtenerCliente(e.getIdCliente()), obtenerTurno(e.getIdTurno()));
+        return toQuery(e, obtenerCliente(e.getIdCliente()), obtenerTurno(e.getIdTurno()), true);
     }
 
     @Override
@@ -114,20 +124,29 @@ public class EventoPrivadoService
                 .contactoAdicional(command.getContactoAdicional())
                 .aforoDeclarado(command.getAforoDeclarado())
                 .montoAdelanto(BigDecimal.ZERO)
+                .nombreNino(command.getNombreNino())
+                .edadCumple(command.getEdadCumple())
+                .observaciones(command.getObservaciones())
+                .idPaquete(command.getIdPaquete())
                 .build();
 
         EventoPrivado guardado = eventoRepository.save(evento);
-        Cliente cliente        = obtenerCliente(guardado.getIdCliente());
-        Turno turno            = obtenerTurno(guardado.getIdTurno());
-        EventoPrivadoQuery query = toQuery(guardado, cliente, turno);
+        persistirExtras(guardado.getId(), command.getIdsExtras(), command.getExtrasLibres());
+
+        Cliente cliente = obtenerCliente(guardado.getIdCliente());
+        Turno   turno   = obtenerTurno(guardado.getIdTurno());
+        EventoPrivadoQuery query = toQuery(guardado, cliente, turno, true);
 
         notificacionPort.notificarSolicitudRecibida(cliente.getCorreo(), query);
+        notificacionPort.notificarAdminNuevaSolicitud(query);
         return query;
     }
 
     @Override
     @Transactional
-    public EventoPrivadoQuery ejecutar(Long idEvento, BigDecimal precioTotal, Long idUsuarioGestor) {
+    public EventoPrivadoQuery ejecutar(Long idEvento, BigDecimal precioTotal,
+                                       BigDecimal montoAdelanto, String medioPagoAdelanto,
+                                       Long idUsuarioGestor) {
         EventoPrivado evento = obtenerEvento(idEvento);
 
         if (evento.getEstado() != EstadoEventoPrivado.SOLICITADA) {
@@ -137,16 +156,63 @@ public class EventoPrivadoService
         EventoPrivado confirmado = evento.toBuilder()
                 .estado(EstadoEventoPrivado.CONFIRMADA)
                 .precioTotalContrato(precioTotal)
+                .montoAdelanto(montoAdelanto != null ? montoAdelanto : BigDecimal.ZERO)
+                .medioPagoAdelanto(medioPagoAdelanto)
                 .idUsuarioGestor(idUsuarioGestor)
                 .build();
 
         EventoPrivado guardado = eventoRepository.save(confirmado);
-        Cliente cliente        = obtenerCliente(guardado.getIdCliente());
-        Turno turno            = obtenerTurno(guardado.getIdTurno());
-        EventoPrivadoQuery query = toQuery(guardado, cliente, turno);
 
+        if (montoAdelanto != null && montoAdelanto.compareTo(BigDecimal.ZERO) > 0) {
+            registrarIngresoUseCase.registrarAutomatico(
+                    CategoriaIngreso.ADELANTO_EVENTO,
+                    guardado.getIdSede(),
+                    null,
+                    guardado.getId(),
+                    montoAdelanto,
+                    guardado.getFechaEvento(),
+                    medioPagoAdelanto);
+        }
+
+        Cliente cliente = obtenerCliente(guardado.getIdCliente());
+        Turno   turno   = obtenerTurno(guardado.getIdTurno());
+        EventoPrivadoQuery query = toQuery(guardado, cliente, turno, true);
         notificacionPort.notificarEventoConfirmado(cliente.getCorreo(), query);
         return query;
+    }
+
+    @Transactional
+    public EventoPrivadoQuery completar(Long idEvento, Long idUsuarioGestor) {
+        EventoPrivado evento = obtenerEvento(idEvento);
+        if (evento.getEstado() != EstadoEventoPrivado.CONFIRMADA) {
+            throw new ValidationException("Solo se pueden completar eventos en estado CONFIRMADA.");
+        }
+        EventoPrivado completado = evento.toBuilder()
+                .estado(EstadoEventoPrivado.COMPLETADA)
+                .idUsuarioGestor(idUsuarioGestor)
+                .build();
+        EventoPrivado guardado = eventoRepository.save(completado);
+        return toQuery(guardado, obtenerCliente(guardado.getIdCliente()), obtenerTurno(guardado.getIdTurno()), false);
+    }
+
+    @Transactional
+    public EventoPrivadoQuery registrarSaldo(Long idEvento, BigDecimal monto, String medioPago, Long idUsuarioGestor) {
+        EventoPrivado evento = obtenerEvento(idEvento);
+
+        registrarIngresoUseCase.registrarAutomatico(
+                CategoriaIngreso.SALDO_EVENTO,
+                evento.getIdSede(),
+                null,
+                evento.getId(),
+                monto,
+                LocalDate.now(),
+                medioPago);
+
+        BigDecimal nuevoAdelanto = (evento.getMontoAdelanto() != null ? evento.getMontoAdelanto() : BigDecimal.ZERO)
+                .add(monto);
+        EventoPrivado actualizado = evento.toBuilder().montoAdelanto(nuevoAdelanto).build();
+        EventoPrivado guardado = eventoRepository.save(actualizado);
+        return toQuery(guardado, obtenerCliente(guardado.getIdCliente()), obtenerTurno(guardado.getIdTurno()), false);
     }
 
     @Override
@@ -158,7 +224,7 @@ public class EventoPrivadoService
             throw new ValidationException("El evento no puede cancelarse en su estado actual.");
         }
         if (motivoCancelacion == null || motivoCancelacion.isBlank()) {
-            throw new ValidationException("motivoCancelacion", "El motivo de cancelación es obligatorio.");
+            throw new ValidationException("motivoCancelacion", "El motivo de cancelacion es obligatorio.");
         }
 
         EventoPrivado cancelado = evento.toBuilder()
@@ -167,10 +233,9 @@ public class EventoPrivadoService
                 .build();
 
         EventoPrivado guardado = eventoRepository.save(cancelado);
-        Cliente cliente        = obtenerCliente(guardado.getIdCliente());
-        Turno turno            = obtenerTurno(guardado.getIdTurno());
-        EventoPrivadoQuery query = toQuery(guardado, cliente, turno);
-
+        Cliente cliente = obtenerCliente(guardado.getIdCliente());
+        Turno   turno   = obtenerTurno(guardado.getIdTurno());
+        EventoPrivadoQuery query = toQuery(guardado, cliente, turno, false);
         notificacionPort.notificarEventoCancelado(cliente.getCorreo(), query, motivoCancelacion);
         return query;
     }
@@ -179,10 +244,25 @@ public class EventoPrivadoService
         long diasRestantes = FechaUtil.diferenciaEnDias(FechaUtil.hoyPeru(), fecha);
         if (diasRestantes < anticipacionMinDias) {
             throw new FechaNoDisponibleException(fecha,
-                    "Debe solicitarse con al menos " + anticipacionMinDias + " días de anticipación.");
+                    "Debe solicitarse con al menos " + anticipacionMinDias + " dias de anticipacion.");
         }
         if (bloqueRepository.existsBloqueActivoEnFecha(idSede, fecha)) {
-            throw new FechaNoDisponibleException(fecha, "La fecha está bloqueada por el administrador.");
+            throw new FechaNoDisponibleException(fecha, "La fecha esta bloqueada por el administrador.");
+        }
+    }
+
+    private void persistirExtras(Long idEvento, List<Long> idsExtras, List<String> extrasLibres) {
+        List<EventoExtra> extras = new ArrayList<>();
+        if (idsExtras != null) {
+            idsExtras.forEach(idExtra -> extras.add(
+                    EventoExtra.builder().idEventoPrivado(idEvento).idExtra(idExtra).build()));
+        }
+        if (extrasLibres != null) {
+            extrasLibres.stream().filter(t -> t != null && !t.isBlank()).forEach(texto -> extras.add(
+                    EventoExtra.builder().idEventoPrivado(idEvento).nombreLibre(texto).build()));
+        }
+        if (!extras.isEmpty()) {
+            eventoExtraRepository.saveAll(extras);
         }
     }
 
@@ -201,7 +281,24 @@ public class EventoPrivadoService
                 .orElseThrow(() -> new ResourceNotFoundException("Turno", idTurno));
     }
 
-    private EventoPrivadoQuery toQuery(EventoPrivado e, Cliente c, Turno t) {
+    private EventoPrivadoQuery toQuery(EventoPrivado e, Cliente c, Turno t, boolean cargarExtras) {
+        List<EventoExtraQuery> extras = cargarExtras
+                ? eventoExtraRepository.findByEvento(e.getId()).stream()
+                        .map(ex -> {
+                            String nombre = null;
+                            if (ex.getIdExtra() != null) {
+                                nombre = extraPaqueteRepository.findById(ex.getIdExtra())
+                                        .map(ep -> ep.getNombre()).orElse(null);
+                            }
+                            return EventoExtraQuery.builder()
+                                    .id(ex.getId())
+                                    .idExtra(ex.getIdExtra())
+                                    .nombreExtra(nombre)
+                                    .nombreLibre(ex.getNombreLibre())
+                                    .build();
+                        }).toList()
+                : null;
+
         return EventoPrivadoQuery.builder()
                 .id(e.getId())
                 .idCliente(e.getIdCliente())
@@ -221,7 +318,18 @@ public class EventoPrivadoService
                 .precioTotalContrato(e.getPrecioTotalContrato())
                 .montoAdelanto(e.getMontoAdelanto())
                 .montoSaldo(e.calcularMontoSaldo())
+                .medioPagoAdelanto(e.getMedioPagoAdelanto())
                 .notasInternas(e.getNotasInternas())
+                .observaciones(e.getObservaciones())
+                .nombreNino(e.getNombreNino())
+                .edadCumple(e.getEdadCumple())
+                .idPaquete(e.getIdPaquete())
+                .usuarioGestor(e.getIdUsuarioGestor() != null ? "USR-" + e.getIdUsuarioGestor() : null)
+                .estadoOperativo(e.getEstadoOperativo())
+                .checklistCompleto(e.isChecklistCompleto())
+                .horaInicioReal(e.getHoraInicioReal())
+                .horaFinReal(e.getHoraFinReal())
+                .extras(extras)
                 .fechaCreacion(e.getFechaCreacion())
                 .build();
     }
