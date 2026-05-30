@@ -1,0 +1,26 @@
+package com.playzone.pems.interfaces.rest.finanzas.response;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.playzone.pems.domain.finanzas.model.enums.TipoMovimientoCaja;
+import lombok.Builder;
+import lombok.Getter;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+@Getter
+@Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class MovimientoCajaResponse {
+    private Long               id;
+    private Long               idAperturaCaja;
+    private TipoMovimientoCaja tipo;
+    private String             concepto;
+    private BigDecimal         monto;
+    private String             medioPago;
+    private Long               idRegistroIngreso;
+    private Long               idRegistroEgreso;
+    private Long               idReservaPublica;
+    private boolean            esManual;
+    private LocalDateTime      fechaCreacion;
+}
