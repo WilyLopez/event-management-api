@@ -17,8 +17,8 @@ public class CmsEntityMapper {
         if (e == null) return null;
         return ContenidoWeb.builder()
                 .id(e.getId())
-                .idSeccion(e.getIdSeccion() != null ? e.getIdSeccion().longValue() : null)
-                .idTipoContenido(e.getIdTipoContenido() != null ? e.getIdTipoContenido().longValue() : null)
+                .idSeccion(e.getIdSeccion())
+                .idTipoContenido(e.getIdTipoContenido())
                 .clave(e.getClave())
                 .valorEs(e.getValorEs())
                 .valorEn(e.getValorEn())
@@ -38,8 +38,8 @@ public class CmsEntityMapper {
         if (d == null) return null;
         return ContenidoWebEntity.builder()
                 .id(d.getId())
-                .idSeccion(d.getIdSeccion() != null ? d.getIdSeccion().intValue() : null)
-                .idTipoContenido(d.getIdTipoContenido() != null ? d.getIdTipoContenido().intValue() : null)
+                .idSeccion(d.getIdSeccion())
+                .idTipoContenido(d.getIdTipoContenido())
                 .clave(d.getClave())
                 .valorEs(d.getValorEs())
                 .valorEn(d.getValorEn())

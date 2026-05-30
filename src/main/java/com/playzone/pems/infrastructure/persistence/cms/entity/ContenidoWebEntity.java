@@ -23,12 +23,12 @@ public class ContenidoWebEntity {
     private Long id;
 
     @Column(name = "idseccion", nullable = false)
-    private Integer idSeccion;
+    private Long idSeccion;
 
     @Column(name = "idtipocontenido", nullable = false)
-    private Integer idTipoContenido;
+    private Long idTipoContenido;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 100, columnDefinition = "VARCHAR(100)")
     private String clave;
 
     @Column(name = "valores", nullable = false, columnDefinition = "TEXT")

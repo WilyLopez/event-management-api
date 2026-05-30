@@ -6,6 +6,8 @@ import com.playzone.pems.infrastructure.persistence.cms.jpa.ContenidoWebJpaRepos
 import com.playzone.pems.infrastructure.persistence.cms.mapper.CmsEntityMapper;
 import com.playzone.pems.infrastructure.persistence.usuario.jpa.UsuarioAdminJpaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +40,14 @@ public class ContenidoWebPersistenceAdapter implements ContenidoWebRepository {
     @Override
     public List<ContenidoWeb> findAllActivos() {
         return contenidoJpa.findByActivoTrue().stream().map(mapper::toDomain).toList();
+    }
+
+    @Override
+    public Page<ContenidoWeb> findAll(Long idSeccion, String clave, Pageable pageable) {
+        String clavePattern = (clave != null && !clave.isBlank())
+                ? "%" + clave.toLowerCase() + "%"
+                : null;
+        return contenidoJpa.findByFilters(idSeccion, clavePattern, pageable).map(mapper::toDomain);
     }
 
     @Override

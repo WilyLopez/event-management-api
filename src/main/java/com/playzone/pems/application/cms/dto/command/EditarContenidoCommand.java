@@ -19,6 +19,12 @@ public class EditarContenidoCommand {
     @Size(max = 5000)
     private final String valorEn;
 
+    private final String  imagenUrl;
+    private final String  descripcion;
+    private final String  metadatos;
+    private final Boolean visible;
+    private final Integer ordenVisualizacion;
+
     @NotNull
     private final Long idUsuarioEditor;
 }

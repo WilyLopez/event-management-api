@@ -14,4 +14,16 @@ public class EditarContenidoRequest {
 
     @Size(max = 5000)
     private String valorEn;
+
+    @Size(max = 500)
+    private String imagenUrl;
+
+    @Size(max = 300)
+    private String descripcion;
+
+    private String metadatos;
+
+    private Boolean visible;
+
+    private Integer ordenVisualizacion;
 }

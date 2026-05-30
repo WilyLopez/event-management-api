@@ -2,6 +2,9 @@ package com.playzone.pems.domain.cms.repository;
 
 import com.playzone.pems.domain.cms.model.ContenidoWeb;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -14,6 +17,8 @@ public interface ContenidoWebRepository {
     List<ContenidoWeb> findActivosBySeccion(Long idSeccion);
 
     List<ContenidoWeb> findAllActivos();
+
+    Page<ContenidoWeb> findAll(Long idSeccion, String clave, Pageable pageable);
 
     ContenidoWeb save(ContenidoWeb contenido);
 
