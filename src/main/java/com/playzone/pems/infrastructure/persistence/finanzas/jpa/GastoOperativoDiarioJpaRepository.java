@@ -24,4 +24,9 @@ public interface GastoOperativoDiarioJpaRepository extends JpaRepository<GastoOp
             @Param("idSede") Long idSede,
             @Param("anio") int anio,
             @Param("mes") int mes);
+
+    @Query("SELECT COALESCE(SUM(g.monto), 0) FROM GastoOperativoDiarioEntity g " +
+           "WHERE g.sede.id = :idSede AND g.fecha BETWEEN :inicio AND :fin")
+    BigDecimal sumMontoBySedeAndRango(
+            @Param("idSede") Long idSede, @Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
 }

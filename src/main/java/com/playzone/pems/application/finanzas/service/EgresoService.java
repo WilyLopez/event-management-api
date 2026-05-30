@@ -1,5 +1,6 @@
 package com.playzone.pems.application.finanzas.service;
 
+import com.playzone.pems.application.finanzas.dto.command.ActualizarEgresoCommand;
 import com.playzone.pems.application.finanzas.dto.command.RegistrarEgresoCommand;
 import com.playzone.pems.application.finanzas.dto.query.RegistroEgresoQuery;
 import com.playzone.pems.application.finanzas.port.in.RegistrarEgresoUseCase;
@@ -15,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -44,27 +46,53 @@ public class EgresoService implements RegistrarEgresoUseCase {
                 .esRecurrente(command.isEsRecurrente())
                 .idUsuarioRegistra(command.getIdUsuarioRegistra())
                 .build();
-        return toQuery(registroEgresoRepository.save(egreso), tipo);
+        return toQuery(registroEgresoRepository.save(egreso));
+    }
+
+    @Override
+    public RegistroEgresoQuery actualizar(ActualizarEgresoCommand command) {
+        RegistroEgreso existente = registroEgresoRepository.findById(command.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Egreso no encontrado."));
+        TipoEgreso tipo = tipoEgresoRepository.findById(command.getIdTipoEgreso())
+                .orElseThrow(() -> new ResourceNotFoundException("Tipo de egreso no encontrado."));
+        if (!tipo.isActivo()) {
+            throw new ValidationException("El tipo de egreso seleccionado no está activo.");
+        }
+        RegistroEgreso actualizado = RegistroEgreso.builder()
+                .id(existente.getId())
+                .idTipoEgreso(tipo.getId())
+                .idSede(existente.getIdSede())
+                .monto(command.getMonto())
+                .fecha(command.getFecha())
+                .periodoAnio(command.getPeriodoAnio())
+                .periodoMes(command.getPeriodoMes())
+                .descripcion(command.getDescripcion())
+                .comprobanteUrl(command.getComprobanteUrl())
+                .esRecurrente(command.isEsRecurrente())
+                .idUsuarioRegistra(existente.getIdUsuarioRegistra())
+                .build();
+        return toQuery(registroEgresoRepository.save(actualizado));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<RegistroEgresoQuery> listar(Long idSede, Pageable pageable) {
-        return registroEgresoRepository.findBySede(idSede, pageable)
-                .map(r -> {
-                    TipoEgreso tipo = tipoEgresoRepository.findById(r.getIdTipoEgreso()).orElse(null);
-                    return toQuery(r, tipo);
-                });
+        return registroEgresoRepository.findBySede(idSede, pageable).map(this::toQuery);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<RegistroEgresoQuery> listarPorPeriodo(Long idSede, int anio, int mes) {
         return registroEgresoRepository.findBySedeAndPeriodo(idSede, anio, mes).stream()
-                .map(r -> {
-                    TipoEgreso tipo = tipoEgresoRepository.findById(r.getIdTipoEgreso()).orElse(null);
-                    return toQuery(r, tipo);
-                })
+                .map(this::toQuery)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RegistroEgresoQuery> listarPorRango(Long idSede, LocalDate inicio, LocalDate fin) {
+        return registroEgresoRepository.findBySedeAndRangoFecha(idSede, inicio, fin).stream()
+                .map(this::toQuery)
                 .toList();
     }
 
@@ -73,12 +101,12 @@ public class EgresoService implements RegistrarEgresoUseCase {
         registroEgresoRepository.deleteById(id);
     }
 
-    private RegistroEgresoQuery toQuery(RegistroEgreso r, TipoEgreso tipo) {
+    private RegistroEgresoQuery toQuery(RegistroEgreso r) {
         return RegistroEgresoQuery.builder()
                 .id(r.getId())
                 .idTipoEgreso(r.getIdTipoEgreso())
-                .nombreTipoEgreso(tipo != null ? tipo.getNombre() : null)
-                .categoriaEgreso(tipo != null ? tipo.getCategoria() : null)
+                .nombreTipoEgreso(r.getNombreTipoEgreso())
+                .categoriaEgreso(r.getCategoriaEgreso())
                 .idSede(r.getIdSede())
                 .monto(r.getMonto())
                 .fecha(r.getFecha())

@@ -12,7 +12,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -31,6 +34,16 @@ public class GastoEventoPrivadoPersistenceAdapter implements GastoEventoPrivadoR
     @Override
     public BigDecimal sumMontoByEvento(Long idEvento) {
         return jpaRepository.sumMontoByEvento(idEvento);
+    }
+
+    @Override
+    public Map<Long, BigDecimal> sumMontoByEventoIds(List<Long> ids) {
+        if (ids.isEmpty()) return Collections.emptyMap();
+        return jpaRepository.sumMontoByEventoIds(ids).stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> (BigDecimal) row[1]
+                ));
     }
 
     @Override

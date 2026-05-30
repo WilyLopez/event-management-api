@@ -1,5 +1,6 @@
 package com.playzone.pems.interfaces.rest.finanzas;
 
+import com.playzone.pems.application.finanzas.dto.command.ActualizarGastoOperativoCommand;
 import com.playzone.pems.application.finanzas.dto.command.RegistrarGastoOperativoCommand;
 import com.playzone.pems.application.finanzas.dto.query.GastoOperativoQuery;
 import com.playzone.pems.application.finanzas.port.in.GestionarGastoOperativoUseCase;
@@ -34,6 +35,16 @@ public class GastoOperativoController {
         return ResponseEntity.ok(ApiResponse.ok(body));
     }
 
+    @GetMapping("/sedes/{idSede}/rango")
+    public ResponseEntity<ApiResponse<List<GastoOperativoResponse>>> listarPorRango(
+            @PathVariable Long idSede,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fin) {
+        List<GastoOperativoResponse> body = useCase.listarPorRango(idSede, inicio, fin)
+                .stream().map(this::toResponse).toList();
+        return ResponseEntity.ok(ApiResponse.ok(body));
+    }
+
     @PostMapping("/sedes/{idSede}")
     public ResponseEntity<ApiResponse<GastoOperativoResponse>> registrar(
             @PathVariable Long idSede,
@@ -48,6 +59,20 @@ public class GastoOperativoController {
                 .idUsuarioRegistra(idUsuarioAdmin)
                 .build());
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(query)));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<GastoOperativoResponse>> actualizar(
+            @PathVariable Long id,
+            @Valid @RequestBody RegistrarGastoOperativoRequest request) {
+        GastoOperativoQuery query = useCase.actualizar(ActualizarGastoOperativoCommand.builder()
+                .id(id)
+                .fecha(request.getFecha())
+                .descripcion(request.getDescripcion())
+                .monto(request.getMonto())
+                .comprobanteUrl(request.getComprobanteUrl())
+                .build());
+        return ResponseEntity.ok(ApiResponse.ok(toResponse(query)));
     }
 
     @DeleteMapping("/{id}")

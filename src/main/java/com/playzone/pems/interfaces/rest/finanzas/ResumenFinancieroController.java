@@ -1,12 +1,16 @@
 package com.playzone.pems.interfaces.rest.finanzas;
 
+import com.playzone.pems.application.finanzas.dto.query.MetricasReservasQuery;
 import com.playzone.pems.application.finanzas.dto.query.ResumenDiarioFinancieroQuery;
 import com.playzone.pems.application.finanzas.dto.query.ResumenEventoFinancieroQuery;
 import com.playzone.pems.application.finanzas.dto.query.ResumenFinancieroQuery;
+import com.playzone.pems.application.finanzas.dto.query.ResumenRangoQuery;
 import com.playzone.pems.application.finanzas.port.in.ConsultarResumenFinancieroUseCase;
+import com.playzone.pems.interfaces.rest.finanzas.response.MetricasReservasResponse;
 import com.playzone.pems.interfaces.rest.finanzas.response.ResumenDiarioResponse;
 import com.playzone.pems.interfaces.rest.finanzas.response.ResumenEventoFinancieroResponse;
 import com.playzone.pems.interfaces.rest.finanzas.response.ResumenFinancieroResponse;
+import com.playzone.pems.interfaces.rest.finanzas.response.ResumenRangoResponse;
 import com.playzone.pems.shared.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -49,6 +53,22 @@ public class ResumenFinancieroController {
         return ResponseEntity.ok(ApiResponse.ok(body));
     }
 
+    @GetMapping("/sedes/{idSede}/resumen-rango")
+    public ResponseEntity<ApiResponse<ResumenRangoResponse>> resumenPorRango(
+            @PathVariable Long idSede,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fin) {
+        return ResponseEntity.ok(ApiResponse.ok(toResponse(useCase.resumenPorRango(idSede, inicio, fin))));
+    }
+
+    @GetMapping("/sedes/{idSede}/metricas-reservas")
+    public ResponseEntity<ApiResponse<MetricasReservasResponse>> metricasReservas(
+            @PathVariable Long idSede,
+            @RequestParam int anio,
+            @RequestParam int mes) {
+        return ResponseEntity.ok(ApiResponse.ok(toResponse(useCase.metricasReservas(idSede, anio, mes))));
+    }
+
     private ResumenFinancieroResponse toResponse(ResumenFinancieroQuery q) {
         List<ResumenFinancieroResponse.DesgloseTipoEgreso> desglose = q.getDesglosePorTipoEgreso()
                 .stream()
@@ -62,7 +82,7 @@ public class ResumenFinancieroController {
                 .anio(q.getAnio())
                 .mes(q.getMes())
                 .totalIngresoReservas(q.getTotalIngresoReservas())
-                .totalIngresoEventos(q.getTotalIngresoEventos())
+                .totalAdelantoEventos(q.getTotalAdelantoEventos())
                 .totalIngresoOtros(q.getTotalIngresoOtros())
                 .totalIngresoGeneral(q.getTotalIngresoGeneral())
                 .totalEgresoGeneral(q.getTotalEgresoGeneral())
@@ -71,6 +91,33 @@ public class ResumenFinancieroController {
                 .totalEgresoNeto(q.getTotalEgresoNeto())
                 .utilidadNeta(q.getUtilidadNeta())
                 .desglosePorTipoEgreso(desglose)
+                .build();
+    }
+
+    private ResumenRangoResponse toResponse(ResumenRangoQuery q) {
+        return ResumenRangoResponse.builder()
+                .inicio(q.getInicio())
+                .fin(q.getFin())
+                .totalIngresoReservas(q.getTotalIngresoReservas())
+                .totalEgresoGeneral(q.getTotalEgresoGeneral())
+                .totalEgresoOperativo(q.getTotalEgresoOperativo())
+                .totalEgresoNeto(q.getTotalEgresoNeto())
+                .utilidadNeta(q.getUtilidadNeta())
+                .cantidadReservas(q.getCantidadReservas())
+                .build();
+    }
+
+    private MetricasReservasResponse toResponse(MetricasReservasQuery q) {
+        return MetricasReservasResponse.builder()
+                .anio(q.getAnio())
+                .mes(q.getMes())
+                .totalConfirmadas(q.getTotalConfirmadas())
+                .totalCanceladas(q.getTotalCanceladas())
+                .totalCompletadas(q.getTotalCompletadas())
+                .ingresoTotal(q.getIngresoTotal())
+                .ticketPromedio(q.getTicketPromedio())
+                .ingresoEfectivo(q.getIngresoEfectivo())
+                .ingresoYape(q.getIngresoYape())
                 .build();
     }
 
@@ -96,6 +143,7 @@ public class ResumenFinancieroController {
                 .gastoOperativo(q.getGastoOperativo())
                 .utilidadDia(q.getUtilidadDia())
                 .cantidadReservas(q.getCantidadReservas())
+                .ticketPromedio(q.getTicketPromedio())
                 .build();
     }
 }

@@ -21,6 +21,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -37,48 +38,41 @@ public class ResumenFinancieroService implements ConsultarResumenFinancieroUseCa
 
     @Override
     public ResumenFinancieroQuery resumenMensual(Long idSede, int anio, int mes) {
-        BigDecimal ingresoReservas = reservaJpaRepository
-                .sumIngresosBySedeAndPeriodo(idSede, anio, mes);
-        BigDecimal ingresoEventos = eventoJpaRepository
-                .sumAdelantosBySedeAndPeriodo(idSede, anio, mes);
-        BigDecimal ingresoOtros   = BigDecimal.ZERO;
-        BigDecimal ingresoGeneral = ingresoReservas.add(ingresoEventos).add(ingresoOtros);
+        BigDecimal ingresoReservas  = reservaJpaRepository.sumIngresosBySedeAndPeriodo(idSede, anio, mes);
+        BigDecimal adelantoEventos  = eventoJpaRepository.sumAdelantosBySedeAndPeriodo(idSede, anio, mes);
+        BigDecimal ingresoOtros     = BigDecimal.ZERO;
+        BigDecimal ingresoGeneral   = ingresoReservas.add(adelantoEventos).add(ingresoOtros);
 
-        BigDecimal egresoGeneral  = registroEgresoRepository.sumMontoBySedeAndPeriodo(idSede, anio, mes);
-        BigDecimal egresoOperativo = gastoOperativoRepository.sumMontoBySedeAndPeriodo(idSede, anio, mes);
+        BigDecimal egresoGeneral    = registroEgresoRepository.sumMontoBySedeAndPeriodo(idSede, anio, mes);
+        BigDecimal egresoOperativo  = gastoOperativoRepository.sumMontoBySedeAndPeriodo(idSede, anio, mes);
 
         LocalDate inicio = LocalDate.of(anio, mes, 1);
         LocalDate fin    = YearMonth.of(anio, mes).atEndOfMonth();
-        List<EventoPrivadoEntity> eventosDelMes = eventoJpaRepository
-                .findBySede_IdAndFechaEventoBetween(idSede, inicio, fin);
-        BigDecimal egresoEventos = eventosDelMes.stream()
-                .map(e -> gastoEventoRepository.sumMontoByEvento(e.getId()))
+        List<Long> idsEventos = eventoJpaRepository
+                .findBySede_IdAndFechaEventoBetween(idSede, inicio, fin)
+                .stream().map(EventoPrivadoEntity::getId).toList();
+        Map<Long, BigDecimal> montosPorEvento = gastoEventoRepository.sumMontoByEventoIds(idsEventos);
+        BigDecimal egresoEventos = montosPorEvento.values().stream()
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal egresoNeto    = egresoGeneral.add(egresoOperativo).add(egresoEventos);
         BigDecimal utilidadNeta  = ingresoGeneral.subtract(egresoNeto);
 
+        Map<Long, BigDecimal> montoPorTipo = registroEgresoRepository.sumMontoAgrupadoPorTipo(idSede, anio, mes);
         List<DesgloseTipoEgresoQuery> desglose = tipoEgresoRepository.findAllActivos().stream()
-                .map(tipo -> {
-                    BigDecimal totalTipo = registroEgresoRepository
-                            .findBySedeAndPeriodo(idSede, anio, mes).stream()
-                            .filter(r -> r.getIdTipoEgreso().equals(tipo.getId()))
-                            .map(r -> r.getMonto())
-                            .reduce(BigDecimal.ZERO, BigDecimal::add);
-                    return DesgloseTipoEgresoQuery.builder()
-                            .nombreTipo(tipo.getNombre())
-                            .categoria(tipo.getCategoria())
-                            .totalMonto(totalTipo)
-                            .build();
-                })
-                .filter(d -> d.getTotalMonto().compareTo(BigDecimal.ZERO) > 0)
+                .filter(tipo -> montoPorTipo.containsKey(tipo.getId()))
+                .map(tipo -> DesgloseTipoEgresoQuery.builder()
+                        .nombreTipo(tipo.getNombre())
+                        .categoria(tipo.getCategoria())
+                        .totalMonto(montoPorTipo.get(tipo.getId()))
+                        .build())
                 .toList();
 
         return ResumenFinancieroQuery.builder()
                 .anio(anio)
                 .mes(mes)
                 .totalIngresoReservas(ingresoReservas)
-                .totalIngresoEventos(ingresoEventos)
+                .totalAdelantoEventos(adelantoEventos)
                 .totalIngresoOtros(ingresoOtros)
                 .totalIngresoGeneral(ingresoGeneral)
                 .totalEgresoGeneral(egresoGeneral)
@@ -129,15 +123,61 @@ public class ResumenFinancieroService implements ConsultarResumenFinancieroUseCa
             BigDecimal gastoOperativo  = gastoOperativoRepository.sumMontoBySedeAndFecha(idSede, cursor);
             int cantidadReservas       = reservaJpaRepository.countConfirmadasBySedeAndFecha(idSede, cursor);
             BigDecimal utilidadDia     = ingresoReservas.subtract(gastoOperativo);
+            BigDecimal ticketPromedio  = cantidadReservas > 0
+                    ? ingresoReservas.divide(BigDecimal.valueOf(cantidadReservas), 2, RoundingMode.HALF_UP)
+                    : BigDecimal.ZERO;
             resultado.add(ResumenDiarioFinancieroQuery.builder()
                     .fecha(cursor)
                     .ingresoReservas(ingresoReservas)
                     .gastoOperativo(gastoOperativo)
                     .utilidadDia(utilidadDia)
                     .cantidadReservas(cantidadReservas)
+                    .ticketPromedio(ticketPromedio)
                     .build());
             cursor = cursor.plusDays(1);
         }
         return resultado;
+    }
+
+    @Override
+    public ResumenRangoQuery resumenPorRango(Long idSede, LocalDate inicio, LocalDate fin) {
+        BigDecimal ingresoReservas  = reservaJpaRepository.sumIngresosBySedeAndRango(idSede, inicio, fin);
+        BigDecimal egresoGeneral    = registroEgresoRepository.sumMontoBySedeAndRango(idSede, inicio, fin);
+        BigDecimal egresoOperativo  = gastoOperativoRepository.sumMontoBySedeAndRango(idSede, inicio, fin);
+        BigDecimal egresoNeto       = egresoGeneral.add(egresoOperativo);
+        BigDecimal utilidadNeta     = ingresoReservas.subtract(egresoNeto);
+        long cantidadReservas       = reservaJpaRepository.countConfirmadasBySedeAndRango(idSede, inicio, fin);
+        return ResumenRangoQuery.builder()
+                .inicio(inicio)
+                .fin(fin)
+                .totalIngresoReservas(ingresoReservas)
+                .totalEgresoGeneral(egresoGeneral)
+                .totalEgresoOperativo(egresoOperativo)
+                .totalEgresoNeto(egresoNeto)
+                .utilidadNeta(utilidadNeta)
+                .cantidadReservas(cantidadReservas)
+                .build();
+    }
+
+    @Override
+    public MetricasReservasQuery metricasReservas(Long idSede, int anio, int mes) {
+        long confirmadas   = reservaJpaRepository.countConfirmadasBySedeAndPeriodo(idSede, anio, mes);
+        long canceladas    = reservaJpaRepository.countCanceladasBySedeAndPeriodo(idSede, anio, mes);
+        long completadas   = reservaJpaRepository.countCompletadasBySedeAndPeriodo(idSede, anio, mes);
+        BigDecimal ingreso = reservaJpaRepository.sumIngresosBySedeAndPeriodo(idSede, anio, mes);
+        BigDecimal ticket  = reservaJpaRepository.avgTicketBySedeAndPeriodo(idSede, anio, mes);
+        BigDecimal efectivo = reservaJpaRepository.sumIngresosBySedeAndPeriodoAndMedioPago(idSede, anio, mes, "CAJA");
+        BigDecimal yape     = reservaJpaRepository.sumIngresosBySedeAndPeriodoAndMedioPago(idSede, anio, mes, "YAPE");
+        return MetricasReservasQuery.builder()
+                .anio(anio)
+                .mes(mes)
+                .totalConfirmadas(confirmadas)
+                .totalCanceladas(canceladas)
+                .totalCompletadas(completadas)
+                .ingresoTotal(ingreso)
+                .ticketPromedio(ticket)
+                .ingresoEfectivo(efectivo)
+                .ingresoYape(yape)
+                .build();
     }
 }

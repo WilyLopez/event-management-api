@@ -1,5 +1,6 @@
 package com.playzone.pems.interfaces.rest.finanzas;
 
+import com.playzone.pems.application.finanzas.dto.command.ActualizarEgresoCommand;
 import com.playzone.pems.application.finanzas.dto.command.RegistrarEgresoCommand;
 import com.playzone.pems.application.finanzas.dto.query.RegistroEgresoQuery;
 import com.playzone.pems.application.finanzas.port.in.RegistrarEgresoUseCase;
@@ -11,11 +12,13 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -45,6 +48,16 @@ public class EgresoController {
         return ResponseEntity.ok(ApiResponse.ok(body));
     }
 
+    @GetMapping("/sedes/{idSede}/rango")
+    public ResponseEntity<ApiResponse<List<RegistroEgresoResponse>>> listarPorRango(
+            @PathVariable Long idSede,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fin) {
+        List<RegistroEgresoResponse> body = useCase.listarPorRango(idSede, inicio, fin)
+                .stream().map(this::toResponse).toList();
+        return ResponseEntity.ok(ApiResponse.ok(body));
+    }
+
     @PostMapping("/sedes/{idSede}")
     public ResponseEntity<ApiResponse<RegistroEgresoResponse>> registrar(
             @PathVariable Long idSede,
@@ -63,6 +76,24 @@ public class EgresoController {
                 .idUsuarioRegistra(idUsuarioAdmin)
                 .build());
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(query)));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<RegistroEgresoResponse>> actualizar(
+            @PathVariable Long id,
+            @Valid @RequestBody RegistrarEgresoRequest request) {
+        RegistroEgresoQuery query = useCase.actualizar(ActualizarEgresoCommand.builder()
+                .id(id)
+                .idTipoEgreso(request.getIdTipoEgreso())
+                .monto(request.getMonto())
+                .fecha(request.getFecha())
+                .periodoAnio(request.getPeriodoAnio())
+                .periodoMes(request.getPeriodoMes())
+                .descripcion(request.getDescripcion())
+                .comprobanteUrl(request.getComprobanteUrl())
+                .esRecurrente(request.isEsRecurrente())
+                .build());
+        return ResponseEntity.ok(ApiResponse.ok(toResponse(query)));
     }
 
     @DeleteMapping("/{id}")

@@ -1,5 +1,6 @@
 package com.playzone.pems.domain.finanzas.model;
 
+import com.playzone.pems.domain.finanzas.model.enums.CategoriaEgreso;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -11,9 +12,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RegistroEgreso {
-    private Long          id;
-    private Long          idTipoEgreso;
-    private Long          idSede;
+    private Long            id;
+    private Long            idTipoEgreso;
+    private String          nombreTipoEgreso;
+    private CategoriaEgreso categoriaEgreso;
+    private Long            idSede;
     private BigDecimal    monto;
     private LocalDate     fecha;
     private Integer       periodoAnio;

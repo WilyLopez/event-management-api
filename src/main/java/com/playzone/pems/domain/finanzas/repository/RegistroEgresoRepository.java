@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface RegistroEgresoRepository {
@@ -15,6 +16,9 @@ public interface RegistroEgresoRepository {
     List<RegistroEgreso> findBySedeAndPeriodo(Long idSede, int anio, int mes);
     List<RegistroEgreso> findBySedeAndRangoFecha(Long idSede, LocalDate inicio, LocalDate fin);
     BigDecimal sumMontoBySedeAndPeriodo(Long idSede, int anio, int mes);
+    BigDecimal sumMontoBySedeAndRango(Long idSede, LocalDate inicio, LocalDate fin);
+    BigDecimal sumMontoBySedeAndPeriodoAndCategoria(Long idSede, int anio, int mes, String categoria);
+    Map<Long, BigDecimal> sumMontoAgrupadoPorTipo(Long idSede, int anio, int mes);
     RegistroEgreso save(RegistroEgreso registro);
     void deleteById(Long id);
 }

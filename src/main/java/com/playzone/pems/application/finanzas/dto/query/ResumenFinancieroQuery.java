@@ -12,7 +12,7 @@ public class ResumenFinancieroQuery {
     private int                        anio;
     private int                        mes;
     private BigDecimal                 totalIngresoReservas;
-    private BigDecimal                 totalIngresoEventos;
+    private BigDecimal                 totalAdelantoEventos;
     private BigDecimal                 totalIngresoOtros;
     private BigDecimal                 totalIngresoGeneral;
     private BigDecimal                 totalEgresoGeneral;

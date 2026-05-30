@@ -1,5 +1,6 @@
 package com.playzone.pems.application.finanzas.port.in;
 
+import com.playzone.pems.application.finanzas.dto.command.ActualizarGastoOperativoCommand;
 import com.playzone.pems.application.finanzas.dto.command.RegistrarGastoOperativoCommand;
 import com.playzone.pems.application.finanzas.dto.query.GastoOperativoQuery;
 
@@ -8,6 +9,8 @@ import java.util.List;
 
 public interface GestionarGastoOperativoUseCase {
     GastoOperativoQuery registrar(RegistrarGastoOperativoCommand command);
+    GastoOperativoQuery actualizar(ActualizarGastoOperativoCommand command);
     List<GastoOperativoQuery> listarPorFecha(Long idSede, LocalDate fecha);
+    List<GastoOperativoQuery> listarPorRango(Long idSede, LocalDate inicio, LocalDate fin);
     void eliminar(Long id);
 }

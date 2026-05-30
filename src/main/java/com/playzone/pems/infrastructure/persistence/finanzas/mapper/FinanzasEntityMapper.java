@@ -40,6 +40,8 @@ public class FinanzasEntityMapper {
         return RegistroEgreso.builder()
                 .id(e.getId())
                 .idTipoEgreso(e.getTipoEgreso().getId())
+                .nombreTipoEgreso(e.getTipoEgreso().getNombre())
+                .categoriaEgreso(e.getTipoEgreso().getCategoria())
                 .idSede(e.getSede().getId())
                 .monto(e.getMonto())
                 .fecha(e.getFecha())

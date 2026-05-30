@@ -14,4 +14,8 @@ public interface GastoEventoPrivadoJpaRepository extends JpaRepository<GastoEven
 
     @Query("SELECT COALESCE(SUM(g.monto), 0) FROM GastoEventoPrivadoEntity g WHERE g.eventoPrivado.id = :idEvento")
     BigDecimal sumMontoByEvento(@Param("idEvento") Long idEvento);
+
+    @Query("SELECT g.eventoPrivado.id, COALESCE(SUM(g.monto), 0) FROM GastoEventoPrivadoEntity g " +
+           "WHERE g.eventoPrivado.id IN :ids GROUP BY g.eventoPrivado.id")
+    List<Object[]> sumMontoByEventoIds(@Param("ids") List<Long> ids);
 }

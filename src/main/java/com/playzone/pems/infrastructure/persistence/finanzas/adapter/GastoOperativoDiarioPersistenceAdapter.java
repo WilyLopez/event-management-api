@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -22,6 +23,11 @@ public class GastoOperativoDiarioPersistenceAdapter implements GastoOperativoDia
     private final GastoOperativoDiarioJpaRepository jpaRepository;
     private final SedeJpaRepository                 sedeJpaRepository;
     private final FinanzasEntityMapper              mapper;
+
+    @Override
+    public Optional<GastoOperativoDiario> findById(Long id) {
+        return jpaRepository.findById(id).map(mapper::toDomain);
+    }
 
     @Override
     public List<GastoOperativoDiario> findBySedeAndFecha(Long idSede, LocalDate fecha) {
@@ -43,6 +49,11 @@ public class GastoOperativoDiarioPersistenceAdapter implements GastoOperativoDia
     @Override
     public BigDecimal sumMontoBySedeAndPeriodo(Long idSede, int anio, int mes) {
         return jpaRepository.sumMontoBySedeAndPeriodo(idSede, anio, mes);
+    }
+
+    @Override
+    public BigDecimal sumMontoBySedeAndRango(Long idSede, LocalDate inicio, LocalDate fin) {
+        return jpaRepository.sumMontoBySedeAndRango(idSede, inicio, fin);
     }
 
     @Override

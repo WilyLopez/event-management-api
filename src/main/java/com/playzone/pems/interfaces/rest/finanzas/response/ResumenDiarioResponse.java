@@ -14,4 +14,5 @@ public class ResumenDiarioResponse {
     private BigDecimal gastoOperativo;
     private BigDecimal utilidadDia;
     private int        cantidadReservas;
+    private BigDecimal ticketPromedio;
 }
