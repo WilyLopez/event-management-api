@@ -135,6 +135,7 @@ playzone:
     aforo-maximo: 60
     anticipacion-min-horas: 1
     anticipacion-min-evento-dias: 15
+    dias-max-reserva-publica: 14
     max-reprogramaciones: 1
     visitas-para-entrada-gratis: 6
 

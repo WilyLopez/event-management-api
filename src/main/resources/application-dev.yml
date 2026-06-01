@@ -24,3 +24,6 @@ playzone:
     origenes-permitidos: http://localhost:3000,http://localhost:5173,http://localhost:4200
   negocio:
     id-cliente-mostrador: 1
+  seguridad:
+    jwt-refresh-admin-idle-ms: 7200000
+    jwt-refresh-cliente-idle-ms: 2700000
