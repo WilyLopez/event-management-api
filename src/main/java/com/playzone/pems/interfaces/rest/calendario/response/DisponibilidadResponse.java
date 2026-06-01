@@ -32,4 +32,9 @@ public class DisponibilidadResponse {
     private BigDecimal ingresoEstimado;
     private boolean   tieneNotas;
     private int       ocupacionPorcentaje;
+    private String    tipoOcupacion;
+    private boolean   disponiblePublico;
+    private boolean   disponiblePrivado;
+    private String    tituloEvento;
+    private Long      idEvento;
 }

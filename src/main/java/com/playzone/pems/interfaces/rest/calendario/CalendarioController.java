@@ -133,6 +133,11 @@ public class CalendarioController {
                 .ingresoEstimado(q.getIngresoEstimado())
                 .tieneNotas(q.isTieneNotas())
                 .ocupacionPorcentaje(q.getOcupacionPorcentaje())
+                .tipoOcupacion(q.getTipoOcupacion())
+                .disponiblePublico(q.isDisponiblePublico())
+                .disponiblePrivado(q.isDisponiblePrivado())
+                .tituloEvento(q.getTituloEvento())
+                .idEvento(q.getIdEvento())
                 .build();
     }
 
