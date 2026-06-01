@@ -10,6 +10,7 @@ import com.playzone.pems.application.usuario.port.in.ActualizarClienteUseCase;
 import com.playzone.pems.application.usuario.port.in.ActualizarSegmentoClienteUseCase;
 import com.playzone.pems.application.usuario.port.in.ActivarClienteUseCase;
 import com.playzone.pems.application.usuario.port.in.DesactivarClienteUseCase;
+import com.playzone.pems.application.usuario.port.in.EliminarFotoClienteUseCase;
 import com.playzone.pems.application.usuario.port.in.HacerVipUseCase;
 import com.playzone.pems.application.usuario.port.in.ListarClientesUseCase;
 import com.playzone.pems.application.usuario.port.in.MigrarClienteWebUseCase;
@@ -18,6 +19,7 @@ import com.playzone.pems.application.usuario.port.in.QuitarVipUseCase;
 import com.playzone.pems.application.usuario.port.in.RegistrarClienteAdminUseCase;
 import com.playzone.pems.application.usuario.port.in.RegistrarClienteUseCase;
 import com.playzone.pems.application.usuario.port.in.RegistrarVisitaManualUseCase;
+import com.playzone.pems.application.usuario.port.in.SubirFotoClienteUseCase;
 import com.playzone.pems.interfaces.rest.usuario.request.ActualizarClienteRequest;
 import com.playzone.pems.interfaces.rest.usuario.request.HacerVipRequest;
 import com.playzone.pems.interfaces.rest.usuario.request.MigrarClienteWebRequest;
@@ -42,24 +44,32 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/v1/clientes")
 @RequiredArgsConstructor
 public class ClienteController {
 
-    private final RegistrarClienteUseCase        registrarUseCase;
-    private final RegistrarClienteAdminUseCase   registrarAdminUseCase;
-    private final MigrarClienteWebUseCase        migrarWebUseCase;
-    private final ActualizarClienteUseCase       actualizarUseCase;
-    private final ListarClientesUseCase          listarUseCase;
-    private final ObtenerClienteUseCase          obtenerUseCase;
-    private final ActivarClienteUseCase          activarUseCase;
-    private final DesactivarClienteUseCase       desactivarUseCase;
-    private final HacerVipUseCase                hacerVipUseCase;
-    private final QuitarVipUseCase               quitarVipUseCase;
-    private final RegistrarVisitaManualUseCase   visitaManualUseCase;
+    private static final long        FOTO_MAX_BYTES    = 5L * 1024 * 1024;
+    private static final Set<String> FOTO_TIPOS        = Set.of("image/jpeg", "image/jpg", "image/png", "image/webp");
+
+    private final RegistrarClienteUseCase          registrarUseCase;
+    private final RegistrarClienteAdminUseCase     registrarAdminUseCase;
+    private final MigrarClienteWebUseCase          migrarWebUseCase;
+    private final ActualizarClienteUseCase         actualizarUseCase;
+    private final ListarClientesUseCase            listarUseCase;
+    private final ObtenerClienteUseCase            obtenerUseCase;
+    private final ActivarClienteUseCase            activarUseCase;
+    private final DesactivarClienteUseCase         desactivarUseCase;
+    private final HacerVipUseCase                  hacerVipUseCase;
+    private final QuitarVipUseCase                 quitarVipUseCase;
+    private final RegistrarVisitaManualUseCase     visitaManualUseCase;
     private final ActualizarSegmentoClienteUseCase segmentoUseCase;
+    private final SubirFotoClienteUseCase          subirFotoUseCase;
+    private final EliminarFotoClienteUseCase       eliminarFotoUseCase;
 
     @PostMapping("/registro")
     public ResponseEntity<ApiResponse<ClienteResponse>> registrar(
@@ -172,6 +182,7 @@ public class ClienteController {
                         .ruc(request.getRuc())
                         .razonSocial(request.getRazonSocial())
                         .direccionFiscal(request.getDireccionFiscal())
+                        .aceptaComunicaciones(request.getAceptaComunicaciones())
                         .build());
 
         return ResponseEntity.ok(ApiResponse.ok(toResponse(query)));
@@ -223,6 +234,32 @@ public class ClienteController {
             @RequestParam String segmento) {
         segmentoUseCase.ejecutar(id, segmento);
         return ResponseEntity.ok(ApiResponse.ok(null));
+    }
+
+    @PutMapping("/{id}/foto")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('CLIENTE') and #id == authentication.principal.id)")
+    public ResponseEntity<ApiResponse<ClienteResponse>> subirFoto(
+            @PathVariable Long id,
+            @RequestParam("foto") MultipartFile foto) {
+
+        if (foto.isEmpty()) {
+            throw new IllegalArgumentException("El archivo no puede estar vacío.");
+        }
+        String tipo = foto.getContentType();
+        if (tipo == null || !FOTO_TIPOS.contains(tipo)) {
+            throw new IllegalArgumentException("Formato no válido. Solo se aceptan JPG, PNG o WebP.");
+        }
+        if (foto.getSize() > FOTO_MAX_BYTES) {
+            throw new IllegalArgumentException("El archivo no puede superar 5 MB.");
+        }
+
+        return ResponseEntity.ok(ApiResponse.ok(toResponse(subirFotoUseCase.ejecutar(id, foto))));
+    }
+
+    @DeleteMapping("/{id}/foto")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('CLIENTE') and #id == authentication.principal.id)")
+    public ResponseEntity<ApiResponse<ClienteResponse>> eliminarFoto(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.ok(toResponse(eliminarFotoUseCase.eliminarFoto(id))));
     }
 
     private ClienteResponse toResponse(ClienteQuery q) {

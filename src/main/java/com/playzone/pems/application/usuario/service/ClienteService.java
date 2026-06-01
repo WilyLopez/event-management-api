@@ -11,6 +11,7 @@ import com.playzone.pems.application.usuario.port.in.ActivarClienteUseCase;
 import com.playzone.pems.application.usuario.port.in.ActualizarSegmentoClienteUseCase;
 import com.playzone.pems.application.usuario.port.in.AutenticarClienteUseCase;
 import com.playzone.pems.application.usuario.port.in.DesactivarClienteUseCase;
+import com.playzone.pems.application.usuario.port.in.EliminarFotoClienteUseCase;
 import com.playzone.pems.application.usuario.port.in.HacerVipUseCase;
 import com.playzone.pems.application.usuario.port.in.ListarClientesUseCase;
 import com.playzone.pems.application.usuario.port.in.MigrarClienteWebUseCase;
@@ -19,6 +20,8 @@ import com.playzone.pems.application.usuario.port.in.QuitarVipUseCase;
 import com.playzone.pems.application.usuario.port.in.RegistrarClienteAdminUseCase;
 import com.playzone.pems.application.usuario.port.in.RegistrarClienteUseCase;
 import com.playzone.pems.application.usuario.port.in.RegistrarVisitaManualUseCase;
+import com.playzone.pems.application.usuario.port.in.SubirFotoClienteUseCase;
+import com.playzone.pems.domain.storage.StoragePort;
 import com.playzone.pems.application.usuario.port.in.AutenticarClienteUseCase.Command;
 import com.playzone.pems.application.usuario.port.in.AutenticarClienteUseCase.Result;
 import com.playzone.pems.application.usuario.port.out.EnviarCorreoVerificacionPort;
@@ -36,6 +39,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -56,11 +60,14 @@ public class ClienteService
         HacerVipUseCase,
         QuitarVipUseCase,
         RegistrarVisitaManualUseCase,
-        ActualizarSegmentoClienteUseCase {
+        ActualizarSegmentoClienteUseCase,
+        SubirFotoClienteUseCase,
+        EliminarFotoClienteUseCase {
 
     private final ClienteRepository            clienteRepository;
     private final GenerarTokenPort             generarTokenPort;
     private final EnviarCorreoVerificacionPort correoPort;
+    private final StoragePort                  storagePort;
 
     @Value("${playzone.seguridad.max-intentos-login:5}")
     private int maxIntentos;
@@ -218,12 +225,17 @@ public class ClienteService
         Cliente cliente = clienteRepository.findById(idCliente)
                 .orElseThrow(() -> new ClienteNotFoundException(idCliente));
 
+        boolean aceptaCom = command.getAceptaComunicaciones() != null
+                ? command.getAceptaComunicaciones()
+                : cliente.isAceptaComunicaciones();
+
         return toQuery(clienteRepository.save(cliente.toBuilder()
                 .nombre(command.getNombre())
                 .telefono(command.getTelefono())
                 .ruc(command.getRuc())
                 .razonSocial(command.getRazonSocial())
                 .direccionFiscal(command.getDireccionFiscal())
+                .aceptaComunicaciones(aceptaCom)
                 .build()));
     }
 
@@ -344,6 +356,34 @@ public class ClienteService
             throw new ClienteNotFoundException(idCliente);
         }
         clienteRepository.actualizarSegmento(idCliente, segmento);
+    }
+
+    @Override
+    @Transactional
+    public ClienteQuery ejecutar(Long idCliente, MultipartFile foto) {
+        Cliente cliente = clienteRepository.findById(idCliente)
+                .orElseThrow(() -> new ClienteNotFoundException(idCliente));
+
+        if (cliente.getFotoPerfil() != null) {
+            storagePort.eliminar(cliente.getFotoPerfil());
+        }
+
+        String ruta       = storagePort.guardar(foto, "perfiles");
+        String urlPublica = storagePort.obtenerUrlPublica(ruta);
+        return toQuery(clienteRepository.save(cliente.toBuilder().fotoPerfil(urlPublica).build()));
+    }
+
+    @Override
+    @Transactional
+    public ClienteQuery eliminarFoto(Long idCliente) {
+        Cliente cliente = clienteRepository.findById(idCliente)
+                .orElseThrow(() -> new ClienteNotFoundException(idCliente));
+
+        if (cliente.getFotoPerfil() != null) {
+            storagePort.eliminar(cliente.getFotoPerfil());
+        }
+
+        return toQuery(clienteRepository.save(cliente.toBuilder().fotoPerfil(null).build()));
     }
 
     private ClienteQuery toQuery(Cliente c) {

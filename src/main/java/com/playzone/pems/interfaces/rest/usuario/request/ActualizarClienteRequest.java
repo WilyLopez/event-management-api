@@ -24,4 +24,6 @@ public class ActualizarClienteRequest {
 
     @Size(max = 300)
     private String direccionFiscal;
+
+    private Boolean aceptaComunicaciones;
 }
