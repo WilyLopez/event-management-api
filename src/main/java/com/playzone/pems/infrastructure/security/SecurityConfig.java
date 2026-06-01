@@ -59,6 +59,7 @@ public class SecurityConfig {
                                 "/api/v1/zonas/**",
                                 "/api/v1/actividades/**",
                                 "/api/v1/novedades/**",
+                                "/api/v1/servicios-cotizacion/**",
                                 "/api/v1/api/v1/public/**",
                                 "/api/v1/api/v1/calendario/**",
                                 "/api/v1/api/v1/contenido/**",
