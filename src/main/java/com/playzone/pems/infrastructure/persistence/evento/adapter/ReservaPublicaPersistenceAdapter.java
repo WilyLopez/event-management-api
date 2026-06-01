@@ -75,6 +75,10 @@ public class ReservaPublicaPersistenceAdapter implements ReservaPublicaRepositor
         return reservaJpa.countActivasBySedeAndFecha(idSede, fecha);
     }
 
+    @Override public boolean existsActivaBySedeAndFecha(Long idSede, LocalDate fecha) {
+        return reservaJpa.existsActivaBySedeAndFecha(idSede, fecha);
+    }
+
     @Override
     public Page<ReservaPublica> buscarAdmin(
             Long idSede, EstadoReservaPublica estadoEnum, LocalDate fecha,

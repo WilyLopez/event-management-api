@@ -36,6 +36,9 @@ public class EventoPrivadoQuery {
     private final String                    nombreNino;
     private final Integer                   edadCumple;
     private final Long                      idPaquete;
+    private final String                    descripcionPersonalizada;
+    private final BigDecimal                presupuestoEstimado;
+    private final boolean                   esCotizacionPersonalizada;
     private final String                    usuarioGestor;
     private final String                    estadoOperativo;
     private final boolean                   checklistCompleto;

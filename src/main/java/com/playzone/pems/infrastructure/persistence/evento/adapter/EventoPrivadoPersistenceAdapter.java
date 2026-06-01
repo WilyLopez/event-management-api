@@ -59,6 +59,10 @@ public class EventoPrivadoPersistenceAdapter implements EventoPrivadoRepository 
         return eventoJpa.existsActivoBySedeAndFechaAndTurno(idSede, fecha, idTurno);
     }
 
+    @Override public boolean existsActivoBySedeAndFecha(Long idSede, LocalDate fecha) {
+        return eventoJpa.existsActivoBySedeAndFecha(idSede, fecha);
+    }
+
     @Override
     public Page<EventoPrivado> buscarAdmin(
             Long idSede, EstadoEventoPrivado estadoEnum, LocalDate fecha, String searchPattern, Pageable pageable) {

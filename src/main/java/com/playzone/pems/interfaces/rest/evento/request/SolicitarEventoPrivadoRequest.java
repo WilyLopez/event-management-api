@@ -4,6 +4,7 @@ import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -38,4 +39,10 @@ public class SolicitarEventoPrivadoRequest {
 
     @Size(max = 2000)
     private String observaciones;
+
+    @Size(max = 4000)
+    private String       descripcionPersonalizada;
+    private BigDecimal   presupuestoEstimado;
+    private List<Long>   idsServiciosCotizacion;
+    private boolean      esCotizacionPersonalizada;
 }

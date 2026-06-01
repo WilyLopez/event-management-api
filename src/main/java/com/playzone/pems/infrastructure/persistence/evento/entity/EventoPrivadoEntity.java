@@ -85,6 +85,16 @@ public class EventoPrivadoEntity {
     @Column(name = "idpaquete")
     private Long idPaquete;
 
+    @Column(name = "descripcion_personalizada", columnDefinition = "TEXT")
+    private String descripcionPersonalizada;
+
+    @Column(name = "presupuesto_estimado", precision = 10, scale = 2)
+    private BigDecimal presupuestoEstimado;
+
+    @Column(name = "es_cotizacion_personalizada", nullable = false)
+    @Builder.Default
+    private boolean esCotizacionPersonalizada = false;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "idusuariogestor")
     private UsuarioAdminEntity usuarioGestor;

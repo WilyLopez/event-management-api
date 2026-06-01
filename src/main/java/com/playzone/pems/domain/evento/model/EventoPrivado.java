@@ -34,6 +34,9 @@ public class EventoPrivado {
     private String              medioPagoAdelanto;
     private String              observaciones;
     private Long                idPaquete;
+    private String              descripcionPersonalizada;
+    private BigDecimal          presupuestoEstimado;
+    private boolean             esCotizacionPersonalizada;
     private Long                idUsuarioGestor;
     private LocalDateTime       fechaCreacion;
     private LocalDateTime       fechaActualizacion;

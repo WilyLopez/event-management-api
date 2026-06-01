@@ -19,6 +19,7 @@ import com.playzone.pems.domain.calendario.repository.TarifaRepository;
 import com.playzone.pems.domain.evento.exception.ReservaNotFoundException;
 import com.playzone.pems.domain.evento.model.ReservaPublica;
 import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
+import com.playzone.pems.domain.evento.repository.EventoPrivadoRepository;
 import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
 import com.playzone.pems.domain.usuario.model.Cliente;
 import com.playzone.pems.domain.usuario.repository.ClienteRepository;
@@ -46,6 +47,7 @@ public class ReservaPublicaService
         ConsultarReservasUseCase {
 
     private final ReservaPublicaRepository   reservaRepository;
+    private final EventoPrivadoRepository    eventoRepository;
     private final ClienteRepository          clienteRepository;
     private final SedeRepository             sedeRepository;
     private final TarifaRepository           tarifaRepository;
@@ -59,6 +61,9 @@ public class ReservaPublicaService
 
     @Value("${playzone.negocio.anticipacion-min-horas:1}")
     private int anticipacionMinHoras;
+
+    @Value("${playzone.negocio.dias-max-reserva-publica:14}")
+    private int diasMaxReservaPublica;
 
     @Value("${playzone.negocio.max-reprogramaciones:1}")
     private int maxReprogramaciones;
@@ -258,15 +263,24 @@ public class ReservaPublicaService
 
     private void validarFechaDisponible(Long idSede, LocalDate fecha) {
         if (FechaUtil.esPasado(fecha)) {
-            throw new FechaNoDisponibleException(fecha, "La fecha ya pasó.");
+            throw new FechaNoDisponibleException(fecha, "La fecha ya paso.");
         }
-        // Solo validamos anticipación en horas si la fecha es futura (no hoy)
+        LocalDate limite = FechaUtil.hoyPeru().plusDays(diasMaxReservaPublica);
+        if (fecha.isAfter(limite)) {
+            throw new ValidationException(
+                    "Las reservas solo pueden realizarse hasta " + diasMaxReservaPublica
+                    + " dias de anticipacion.");
+        }
         if (fecha.isAfter(FechaUtil.hoyPeru()) && !FechaUtil.superaAnticipacionMinima(fecha, anticipacionMinHoras)) {
             throw new FechaNoDisponibleException(fecha,
-                    "Debe reservar con al menos " + anticipacionMinHoras + " hora(s) de anticipación.");
+                    "Debe reservar con al menos " + anticipacionMinHoras + " hora(s) de anticipacion.");
         }
         if (bloqueRepository.existsBloqueActivoEnFecha(idSede, fecha)) {
-            throw new FechaNoDisponibleException(fecha, "La fecha está bloqueada por el administrador.");
+            throw new FechaNoDisponibleException(fecha, "La fecha esta bloqueada por el administrador.");
+        }
+        if (eventoRepository.existsActivoBySedeAndFecha(idSede, fecha)) {
+            throw new ValidationException(
+                    "Esta fecha esta reservada para un evento privado. Elige otra fecha.");
         }
         int confirmadas = reservaRepository.countConfirmadasBySedeAndFecha(idSede, fecha);
         if (confirmadas >= aforoMaximo) {

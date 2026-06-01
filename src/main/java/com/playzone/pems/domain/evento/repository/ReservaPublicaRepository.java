@@ -33,6 +33,8 @@ public interface ReservaPublicaRepository {
 
     int countActivasBySedeAndFecha(Long idSede, LocalDate fecha);
 
+    boolean existsActivaBySedeAndFecha(Long idSede, LocalDate fecha);
+
     ReservaPublica save(ReservaPublica reserva);
 
     boolean existsByNumeroTicket(String numeroTicket);

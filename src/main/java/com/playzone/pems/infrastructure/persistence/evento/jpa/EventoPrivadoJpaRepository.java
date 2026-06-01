@@ -54,6 +54,16 @@ public interface EventoPrivadoJpaRepository extends JpaRepository<EventoPrivadoE
             @Param("fecha")  LocalDate fecha,
             @Param("idTurno")Long idTurno);
 
+    @Query("""
+            SELECT COUNT(e) > 0 FROM EventoPrivadoEntity e
+            WHERE e.sede.id = :idSede
+              AND e.fechaEvento = :fecha
+              AND e.estado IN ('SOLICITADA','CONFIRMADA')
+            """)
+    boolean existsActivoBySedeAndFecha(
+            @Param("idSede") Long idSede,
+            @Param("fecha")  LocalDate fecha);
+
     @Query("SELECT COALESCE(SUM(e.montoAdelanto), 0) FROM EventoPrivadoEntity e " +
            "WHERE e.sede.id = :idSede AND YEAR(e.fechaEvento) = :anio " +
            "AND MONTH(e.fechaEvento) = :mes AND e.estado <> 'CANCELADA'")
@@ -69,4 +79,28 @@ public interface EventoPrivadoJpaRepository extends JpaRepository<EventoPrivadoE
             @Param("idSede") Long idSede,
             @Param("anio") int anio,
             @Param("mes") int mes);
+
+    @Query("SELECT COUNT(e) FROM EventoPrivadoEntity e WHERE e.sede.id = :idSede AND e.estado = :estado")
+    int countBySedeAndEstado(@Param("idSede") Long idSede, @Param("estado") EstadoEventoPrivado estado);
+
+    @Query("""
+            SELECT COUNT(e) FROM EventoPrivadoEntity e
+            WHERE e.sede.id = :idSede
+              AND e.fechaEvento BETWEEN :inicio AND :fin
+              AND e.estado = :estado
+            """)
+    int countBySedeAndRangoAndEstado(
+            @Param("idSede") Long idSede,
+            @Param("inicio") LocalDate inicio,
+            @Param("fin")    LocalDate fin,
+            @Param("estado") EstadoEventoPrivado estado);
+
+    @Query("""
+            SELECT COUNT(e) FROM EventoPrivadoEntity e
+            WHERE e.sede.id = :idSede
+              AND e.estado = 'CONFIRMADA'
+              AND e.precioTotalContrato IS NOT NULL
+              AND e.montoAdelanto < e.precioTotalContrato
+            """)
+    int countConfirmadosConSaldo(@Param("idSede") Long idSede);
 }

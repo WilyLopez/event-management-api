@@ -45,7 +45,7 @@ public enum EstadoEventoPrivado {
     }
 
     public boolean bloqueaDisponibilidadPublica() {
-        return this == CONFIRMADA;
+        return this == SOLICITADA || this == CONFIRMADA;
     }
 
     public boolean requiereMotivoCancelacion() {

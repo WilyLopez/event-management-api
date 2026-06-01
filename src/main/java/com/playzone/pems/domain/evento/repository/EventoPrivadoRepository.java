@@ -27,6 +27,8 @@ public interface EventoPrivadoRepository {
 
     boolean existsActivoBySedeAndFechaAndTurno(Long idSede, LocalDate fecha, Long idTurno);
 
+    boolean existsActivoBySedeAndFecha(Long idSede, LocalDate fecha);
+
     Page<EventoPrivado> buscarAdmin(
             Long idSede, EstadoEventoPrivado estadoEnum, LocalDate fecha, String searchPattern, Pageable pageable);
 

@@ -14,11 +14,13 @@ import com.playzone.pems.domain.calendario.exception.FechaNoDisponibleException;
 import com.playzone.pems.domain.calendario.repository.BloqueCalendarioRepository;
 import com.playzone.pems.domain.calendario.repository.TurnoRepository;
 import com.playzone.pems.domain.comercial.repository.ExtraPaqueteRepository;
+import com.playzone.pems.domain.comercial.repository.ServicioCotizacionRepository;
 import com.playzone.pems.domain.evento.model.EventoExtra;
 import com.playzone.pems.domain.evento.model.EventoPrivado;
 import com.playzone.pems.domain.evento.model.enums.EstadoEventoPrivado;
 import com.playzone.pems.domain.evento.repository.EventoExtraRepository;
 import com.playzone.pems.domain.evento.repository.EventoPrivadoRepository;
+import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
 import com.playzone.pems.domain.finanzas.model.enums.CategoriaIngreso;
 import com.playzone.pems.domain.usuario.model.Cliente;
 import com.playzone.pems.domain.usuario.repository.ClienteRepository;
@@ -48,13 +50,15 @@ public class EventoPrivadoService
         BuscarEventosAdminUseCase {
 
     private final EventoPrivadoRepository    eventoRepository;
+    private final ReservaPublicaRepository   reservaRepository;
     private final ClienteRepository          clienteRepository;
     private final BloqueCalendarioRepository bloqueRepository;
     private final TurnoRepository            turnoRepository;
     private final EnviarNotificacionEventoPort notificacionPort;
     private final RegistrarIngresoUseCase    registrarIngresoUseCase;
-    private final EventoExtraRepository      eventoExtraRepository;
-    private final ExtraPaqueteRepository     extraPaqueteRepository;
+    private final EventoExtraRepository          eventoExtraRepository;
+    private final ExtraPaqueteRepository         extraPaqueteRepository;
+    private final ServicioCotizacionRepository   servicioCotizacionRepository;
 
     @Value("${playzone.negocio.anticipacion-min-evento-dias:15}")
     private int anticipacionMinDias;
@@ -128,10 +132,14 @@ public class EventoPrivadoService
                 .edadCumple(command.getEdadCumple())
                 .observaciones(command.getObservaciones())
                 .idPaquete(command.getIdPaquete())
+                .descripcionPersonalizada(command.getDescripcionPersonalizada())
+                .presupuestoEstimado(command.getPresupuestoEstimado())
+                .esCotizacionPersonalizada(command.isEsCotizacionPersonalizada())
                 .build();
 
         EventoPrivado guardado = eventoRepository.save(evento);
         persistirExtras(guardado.getId(), command.getIdsExtras(), command.getExtrasLibres());
+        persistirServiciosCotizacion(guardado.getId(), command.getIdsServiciosCotizacion());
 
         Cliente cliente = obtenerCliente(guardado.getIdCliente());
         Turno   turno   = obtenerTurno(guardado.getIdTurno());
@@ -244,10 +252,33 @@ public class EventoPrivadoService
         long diasRestantes = FechaUtil.diferenciaEnDias(FechaUtil.hoyPeru(), fecha);
         if (diasRestantes < anticipacionMinDias) {
             throw new FechaNoDisponibleException(fecha,
-                    "Debe solicitarse con al menos " + anticipacionMinDias + " dias de anticipacion.");
+                    "Los eventos privados deben reservarse con un minimo de " + anticipacionMinDias
+                    + " dias de anticipacion. Por favor selecciona una fecha posterior.");
         }
         if (bloqueRepository.existsBloqueActivoEnFecha(idSede, fecha)) {
             throw new FechaNoDisponibleException(fecha, "La fecha esta bloqueada por el administrador.");
+        }
+        if (reservaRepository.existsActivaBySedeAndFecha(idSede, fecha)) {
+            throw new ValidationException(
+                    "Esta fecha ya tiene reservas publicas y no puede usarse para un evento privado.");
+        }
+        if (eventoRepository.existsActivoBySedeAndFecha(idSede, fecha)) {
+            throw new ValidationException(
+                    "Esta fecha ya tiene un evento privado registrado. Elige otra fecha.");
+        }
+    }
+
+    private void persistirServiciosCotizacion(Long idEvento, List<Long> idsServicios) {
+        if (idsServicios == null || idsServicios.isEmpty()) return;
+        List<EventoExtra> extras = servicioCotizacionRepository.findAllActivos().stream()
+                .filter(s -> idsServicios.contains(s.getId()))
+                .map(s -> EventoExtra.builder()
+                        .idEventoPrivado(idEvento)
+                        .nombreLibre("Servicio: " + s.getNombre())
+                        .build())
+                .toList();
+        if (!extras.isEmpty()) {
+            eventoExtraRepository.saveAll(extras);
         }
     }
 
@@ -324,6 +355,9 @@ public class EventoPrivadoService
                 .nombreNino(e.getNombreNino())
                 .edadCumple(e.getEdadCumple())
                 .idPaquete(e.getIdPaquete())
+                .descripcionPersonalizada(e.getDescripcionPersonalizada())
+                .presupuestoEstimado(e.getPresupuestoEstimado())
+                .esCotizacionPersonalizada(e.isEsCotizacionPersonalizada())
                 .usuarioGestor(e.getIdUsuarioGestor() != null ? "USR-" + e.getIdUsuarioGestor() : null)
                 .estadoOperativo(e.getEstadoOperativo())
                 .checklistCompleto(e.isChecklistCompleto())

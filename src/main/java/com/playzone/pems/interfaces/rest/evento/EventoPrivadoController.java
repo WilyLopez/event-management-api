@@ -119,6 +119,10 @@ public class EventoPrivadoController {
                         .idsExtras(request.getIdsExtras())
                         .extrasLibres(request.getExtrasLibres())
                         .observaciones(request.getObservaciones())
+                        .descripcionPersonalizada(request.getDescripcionPersonalizada())
+                        .presupuestoEstimado(request.getPresupuestoEstimado())
+                        .idsServiciosCotizacion(request.getIdsServiciosCotizacion())
+                        .esCotizacionPersonalizada(request.isEsCotizacionPersonalizada())
                         .build());
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -270,6 +274,9 @@ public class EventoPrivadoController {
                 .nombreNino(q.getNombreNino())
                 .edadCumple(q.getEdadCumple())
                 .idPaquete(q.getIdPaquete())
+                .descripcionPersonalizada(q.getDescripcionPersonalizada())
+                .presupuestoEstimado(q.getPresupuestoEstimado())
+                .esCotizacionPersonalizada(q.isEsCotizacionPersonalizada())
                 .usuarioGestor(q.getUsuarioGestor())
                 .estadoOperativo(q.getEstadoOperativo())
                 .checklistCompleto(q.isChecklistCompleto())

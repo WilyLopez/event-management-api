@@ -1,5 +1,6 @@
 package com.playzone.pems.infrastructure.persistence.evento.jpa;
 
+import com.playzone.pems.application.dashboard.dto.query.ReservasDiaQuery;
 import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
 import com.playzone.pems.infrastructure.persistence.evento.entity.ReservaPublicaEntity;
 import org.springframework.data.domain.Page;
@@ -61,6 +62,9 @@ public interface ReservaPublicaJpaRepository extends JpaRepository<ReservaPublic
     @Query("SELECT COUNT(r) FROM ReservaPublicaEntity r WHERE r.sede.id = :idSede AND r.fechaEvento = :fecha AND r.estado <> 'CANCELADA'")
     int countActivasBySedeAndFecha(@Param("idSede") Long idSede, @Param("fecha") LocalDate fecha);
 
+    @Query("SELECT COUNT(r) > 0 FROM ReservaPublicaEntity r WHERE r.sede.id = :idSede AND r.fechaEvento = :fecha AND r.estado <> 'CANCELADA'")
+    boolean existsActivaBySedeAndFecha(@Param("idSede") Long idSede, @Param("fecha") LocalDate fecha);
+
     @Query("SELECT COUNT(r) FROM ReservaPublicaEntity r WHERE r.sede.id = :idSede AND r.fechaEvento = :fecha AND r.estado = :estado")
     int countBySedeAndFechaAndEstado(
             @Param("idSede") Long idSede,
@@ -119,4 +123,19 @@ public interface ReservaPublicaJpaRepository extends JpaRepository<ReservaPublic
     BigDecimal sumIngresosBySedeAndPeriodoAndMedioPago(
             @Param("idSede") Long idSede, @Param("anio") int anio, @Param("mes") int mes,
             @Param("medioPago") String medioPago);
+
+    @Query("""
+            SELECT new com.playzone.pems.application.dashboard.dto.query.ReservasDiaQuery(
+                r.fechaEvento, COUNT(r))
+            FROM ReservaPublicaEntity r
+            WHERE r.sede.id = :idSede
+              AND r.fechaEvento BETWEEN :inicio AND :fin
+              AND r.estado <> 'CANCELADA'
+            GROUP BY r.fechaEvento
+            ORDER BY r.fechaEvento
+            """)
+    List<ReservasDiaQuery> countAgrupadoPorDia(
+            @Param("idSede") Long idSede,
+            @Param("inicio") LocalDate inicio,
+            @Param("fin")    LocalDate fin);
 }
