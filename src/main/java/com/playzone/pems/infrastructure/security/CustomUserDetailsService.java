@@ -6,7 +6,6 @@ import com.playzone.pems.domain.usuario.repository.ClienteRepository;
 import com.playzone.pems.domain.usuario.repository.UsuarioAdminRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -34,21 +33,22 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
 
     private UserDetails buildDesdeAdmin(UsuarioAdmin admin) {
-        return User.builder()
-                .username(admin.getCorreo())
-                .password(admin.getContrasenaHash())
-                .authorities(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")))
-                .accountLocked(!admin.isActivo())
-                .build();
+        return new CustomUserDetails(
+                admin.getId(),
+                admin.getCorreo(),
+                admin.getContrasenaHash(),
+                List.of(new SimpleGrantedAuthority("ROLE_ADMIN")),
+                admin.isActivo(),
+                true);
     }
 
     private UserDetails buildDesdeCliente(Cliente cliente) {
-        return User.builder()
-                .username(cliente.getCorreo())
-                .password(cliente.getContrasenaHash())
-                .authorities(List.of(new SimpleGrantedAuthority("ROLE_CLIENTE")))
-                .accountLocked(!cliente.isActivo())
-                .disabled(!cliente.isCorreoVerificado())
-                .build();
+        return new CustomUserDetails(
+                cliente.getId(),
+                cliente.getCorreo(),
+                cliente.getContrasenaHash(),
+                List.of(new SimpleGrantedAuthority("ROLE_CLIENTE")),
+                cliente.isActivo(),
+                cliente.isCorreoVerificado());
     }
 }
