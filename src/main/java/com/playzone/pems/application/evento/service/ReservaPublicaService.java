@@ -10,9 +10,11 @@ import com.playzone.pems.application.evento.port.in.ReprogramarReservaUseCase;
 import com.playzone.pems.application.evento.port.out.EnviarTicketPorCorreoPort;
 import com.playzone.pems.domain.calendario.exception.AforoExcedidoException;
 import com.playzone.pems.domain.calendario.exception.FechaNoDisponibleException;
+import com.playzone.pems.domain.calendario.model.ConfiguracionCalendario;
 import com.playzone.pems.domain.calendario.model.Tarifa;
 import com.playzone.pems.domain.calendario.model.enums.TipoDia;
 import com.playzone.pems.domain.calendario.repository.BloqueCalendarioRepository;
+import com.playzone.pems.domain.calendario.repository.ConfiguracionCalendarioRepository;
 import com.playzone.pems.domain.calendario.repository.DisponibilidadDiariaRepository;
 import com.playzone.pems.domain.calendario.repository.FeriadoRepository;
 import com.playzone.pems.domain.calendario.repository.TarifaRepository;
@@ -46,24 +48,16 @@ public class ReservaPublicaService
         CancelarReservaUseCase,
         ConsultarReservasUseCase {
 
-    private final ReservaPublicaRepository   reservaRepository;
-    private final EventoPrivadoRepository    eventoRepository;
-    private final ClienteRepository          clienteRepository;
-    private final SedeRepository             sedeRepository;
-    private final TarifaRepository           tarifaRepository;
-    private final FeriadoRepository          feriadoRepository;
-    private final BloqueCalendarioRepository bloqueRepository;
-    private final DisponibilidadDiariaRepository disponibilidadRepository;
-    private final EnviarTicketPorCorreoPort  correoPort;
-
-    @Value("${playzone.negocio.aforo-maximo:60}")
-    private int aforoMaximo;
-
-    @Value("${playzone.negocio.anticipacion-min-horas:1}")
-    private int anticipacionMinHoras;
-
-    @Value("${playzone.negocio.dias-max-reserva-publica:14}")
-    private int diasMaxReservaPublica;
+    private final ReservaPublicaRepository        reservaRepository;
+    private final EventoPrivadoRepository         eventoRepository;
+    private final ClienteRepository               clienteRepository;
+    private final SedeRepository                  sedeRepository;
+    private final TarifaRepository                tarifaRepository;
+    private final FeriadoRepository               feriadoRepository;
+    private final BloqueCalendarioRepository      bloqueRepository;
+    private final DisponibilidadDiariaRepository  disponibilidadRepository;
+    private final ConfiguracionCalendarioRepository configRepository;
+    private final EnviarTicketPorCorreoPort       correoPort;
 
     @Value("${playzone.negocio.max-reprogramaciones:1}")
     private int maxReprogramaciones;
@@ -262,29 +256,35 @@ public class ReservaPublicaService
     }
 
     private void validarFechaDisponible(Long idSede, LocalDate fecha) {
-        if (FechaUtil.esPasado(fecha)) {
-            throw new FechaNoDisponibleException(fecha, "La fecha ya paso.");
+        ConfiguracionCalendario cfg = configRepository.obtener(idSede);
+        LocalDate hoy   = FechaUtil.hoy();
+        LocalDate min   = hoy.plusDays(cfg.getDiasMinReservaPublica());
+        LocalDate max   = hoy.plusDays(cfg.getDiasMaxReservaPublica());
+
+        if (fecha.isBefore(hoy)) {
+            throw new FechaNoDisponibleException(fecha, "No se puede reservar en fechas pasadas.");
         }
-        LocalDate limite = FechaUtil.hoyPeru().plusDays(diasMaxReservaPublica);
-        if (fecha.isAfter(limite)) {
+        if (fecha.isAfter(max)) {
             throw new ValidationException(
-                    "Las reservas solo pueden realizarse hasta " + diasMaxReservaPublica
+                    "Las reservas solo se permiten hasta " + cfg.getDiasMaxReservaPublica()
                     + " dias de anticipacion.");
         }
-        if (fecha.isAfter(FechaUtil.hoyPeru()) && !FechaUtil.superaAnticipacionMinima(fecha, anticipacionMinHoras)) {
-            throw new FechaNoDisponibleException(fecha,
-                    "Debe reservar con al menos " + anticipacionMinHoras + " hora(s) de anticipacion.");
+        if (fecha.isEqual(hoy) && FechaUtil.ahora().toLocalTime().isAfter(cfg.getHoraCierre())) {
+            throw new FechaNoDisponibleException(fecha, "El local ya cerro por hoy. Elige otra fecha.");
+        }
+        if (feriadoRepository.existsByFecha(fecha)) {
+            throw new FechaNoDisponibleException(fecha, "Esta fecha es feriado.");
         }
         if (bloqueRepository.existsBloqueActivoEnFecha(idSede, fecha)) {
-            throw new FechaNoDisponibleException(fecha, "La fecha esta bloqueada por el administrador.");
+            throw new FechaNoDisponibleException(fecha, "La fecha esta bloqueada.");
         }
         if (eventoRepository.existsActivoBySedeAndFecha(idSede, fecha)) {
             throw new ValidationException(
                     "Esta fecha esta reservada para un evento privado. Elige otra fecha.");
         }
-        int confirmadas = reservaRepository.countConfirmadasBySedeAndFecha(idSede, fecha);
-        if (confirmadas >= aforoMaximo) {
-            throw new AforoExcedidoException(fecha, aforoMaximo);
+        int activas = reservaRepository.countActivasBySedeAndFecha(idSede, fecha);
+        if (activas >= cfg.getAforoMaximo()) {
+            throw new AforoExcedidoException(fecha, cfg.getAforoMaximo());
         }
     }
 

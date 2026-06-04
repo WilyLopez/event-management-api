@@ -35,6 +35,12 @@ public class DisponibilidadResponse {
     private String    tipoOcupacion;
     private boolean   disponiblePublico;
     private boolean   disponiblePrivado;
+    private boolean   turnoT1Ocupado;
+    private boolean   turnoT2Ocupado;
     private String    tituloEvento;
     private Long      idEvento;
+    private String    tituloEventoT1;
+    private Long      idEventoT1;
+    private String    tituloEventoT2;
+    private Long      idEventoT2;
 }

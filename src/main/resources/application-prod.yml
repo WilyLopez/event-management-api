@@ -1,4 +1,6 @@
 spring:
+  jackson:
+    time-zone: America/Lima
   jpa:
     show-sql: false
     properties:

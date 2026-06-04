@@ -56,6 +56,26 @@ public interface EventoPrivadoJpaRepository extends JpaRepository<EventoPrivadoE
 
     @Query("""
             SELECT COUNT(e) > 0 FROM EventoPrivadoEntity e
+            WHERE e.sede.id = :idSede AND e.fechaEvento = :fecha
+              AND e.turno.codigo = :codigoTurno AND e.estado IN ('SOLICITADA','CONFIRMADA')
+            """)
+    boolean existsActivoBySedeAndFechaAndCodigoTurno(
+            @Param("idSede")       Long      idSede,
+            @Param("fecha")        LocalDate fecha,
+            @Param("codigoTurno")  String    codigoTurno);
+
+    @Query("""
+            SELECT e FROM EventoPrivadoEntity e
+            WHERE e.sede.id = :idSede AND e.fechaEvento = :fecha
+              AND e.estado IN ('SOLICITADA','CONFIRMADA')
+            ORDER BY e.turno.codigo
+            """)
+    List<EventoPrivadoEntity> findActivosBySedeAndFecha(
+            @Param("idSede") Long idSede,
+            @Param("fecha")  LocalDate fecha);
+
+    @Query("""
+            SELECT COUNT(e) > 0 FROM EventoPrivadoEntity e
             WHERE e.sede.id = :idSede
               AND e.fechaEvento = :fecha
               AND e.estado IN ('SOLICITADA','CONFIRMADA')

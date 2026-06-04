@@ -30,4 +30,6 @@ public class BloquearFechasCommand {
     @NotBlank
     @Size(max = 300)
     private final String motivo;
+
+    private boolean confirmado;
 }

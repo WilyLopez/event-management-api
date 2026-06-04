@@ -27,7 +27,11 @@ public interface EventoPrivadoRepository {
 
     boolean existsActivoBySedeAndFechaAndTurno(Long idSede, LocalDate fecha, Long idTurno);
 
+    boolean existsActivoBySedeAndFechaAndCodigoTurno(Long idSede, LocalDate fecha, String codigoTurno);
+
     boolean existsActivoBySedeAndFecha(Long idSede, LocalDate fecha);
+
+    List<EventoPrivado> findActivosBySedeAndFecha(Long idSede, LocalDate fecha);
 
     Page<EventoPrivado> buscarAdmin(
             Long idSede, EstadoEventoPrivado estadoEnum, LocalDate fecha, String searchPattern, Pageable pageable);

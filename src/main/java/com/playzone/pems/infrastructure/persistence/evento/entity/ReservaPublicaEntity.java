@@ -107,6 +107,9 @@ public class ReservaPublicaEntity {
     @Column(name = "referenciapago", length = 100)
     private String referenciaPago;
 
+    @Column(name = "idventa")
+    private Long idVenta;
+
     @CreationTimestamp
     @Column(name = "fechacreacion", nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;

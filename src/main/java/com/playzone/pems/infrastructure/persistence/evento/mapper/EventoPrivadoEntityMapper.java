@@ -19,6 +19,7 @@ public class EventoPrivadoEntityMapper {
                 .idSede(e.getSede().getId())
                 .estado(e.getEstado())
                 .idTurno(e.getTurno().getId())
+                .codigoTurno(e.getTurno().getCodigo())
                 .fechaEvento(e.getFechaEvento())
                 .tipoEvento(e.getTipoEvento())
                 .contactoAdicional(e.getContactoAdicional())

@@ -1,5 +1,6 @@
 package com.playzone.pems.shared.exception;
 
+import com.playzone.pems.domain.calendario.exception.ConflictoActividadException;
 import com.playzone.pems.shared.response.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -97,6 +98,22 @@ public class GlobalExceptionHandler {
                 .build();
 
         return ResponseEntity.badRequest().body(error);
+    }
+
+    @ExceptionHandler(ConflictoActividadException.class)
+    public ResponseEntity<ErrorResponse> handleConflictoActividad(
+            ConflictoActividadException ex, HttpServletRequest request) {
+
+        ErrorResponse error = ErrorResponse.builder()
+                .status(HttpStatus.CONFLICT.value())
+                .error(HttpStatus.CONFLICT.getReasonPhrase())
+                .codigoError("CONFLICTO_ACTIVIDAD")
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .timestamp(Instant.now())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
     @ExceptionHandler(AccessDeniedException.class)

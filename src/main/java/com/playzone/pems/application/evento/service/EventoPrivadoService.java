@@ -11,7 +11,10 @@ import com.playzone.pems.application.evento.port.in.SolicitarEventoPrivadoUseCas
 import com.playzone.pems.application.evento.port.out.EnviarNotificacionEventoPort;
 import com.playzone.pems.application.finanzas.port.in.RegistrarIngresoUseCase;
 import com.playzone.pems.domain.calendario.exception.FechaNoDisponibleException;
+import com.playzone.pems.domain.calendario.model.ConfiguracionCalendario;
 import com.playzone.pems.domain.calendario.repository.BloqueCalendarioRepository;
+import com.playzone.pems.domain.calendario.repository.ConfiguracionCalendarioRepository;
+import com.playzone.pems.domain.calendario.repository.FeriadoRepository;
 import com.playzone.pems.domain.calendario.repository.TurnoRepository;
 import com.playzone.pems.domain.comercial.repository.ExtraPaqueteRepository;
 import com.playzone.pems.domain.comercial.repository.ServicioCotizacionRepository;
@@ -49,19 +52,18 @@ public class EventoPrivadoService
         ConsultarEventosPrivadosUseCase,
         BuscarEventosAdminUseCase {
 
-    private final EventoPrivadoRepository    eventoRepository;
-    private final ReservaPublicaRepository   reservaRepository;
-    private final ClienteRepository          clienteRepository;
-    private final BloqueCalendarioRepository bloqueRepository;
-    private final TurnoRepository            turnoRepository;
-    private final EnviarNotificacionEventoPort notificacionPort;
-    private final RegistrarIngresoUseCase    registrarIngresoUseCase;
-    private final EventoExtraRepository          eventoExtraRepository;
-    private final ExtraPaqueteRepository         extraPaqueteRepository;
-    private final ServicioCotizacionRepository   servicioCotizacionRepository;
-
-    @Value("${playzone.negocio.anticipacion-min-evento-dias:15}")
-    private int anticipacionMinDias;
+    private final EventoPrivadoRepository         eventoRepository;
+    private final ReservaPublicaRepository        reservaRepository;
+    private final ClienteRepository               clienteRepository;
+    private final BloqueCalendarioRepository      bloqueRepository;
+    private final FeriadoRepository               feriadoRepository;
+    private final TurnoRepository                 turnoRepository;
+    private final ConfiguracionCalendarioRepository configRepository;
+    private final EnviarNotificacionEventoPort    notificacionPort;
+    private final RegistrarIngresoUseCase         registrarIngresoUseCase;
+    private final EventoExtraRepository           eventoExtraRepository;
+    private final ExtraPaqueteRepository          extraPaqueteRepository;
+    private final ServicioCotizacionRepository    servicioCotizacionRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -112,11 +114,7 @@ public class EventoPrivadoService
     @Transactional
     public EventoPrivadoQuery ejecutar(SolicitarEventoPrivadoCommand command) {
         validarFechaEvento(command.getIdSede(), command.getFechaEvento());
-
-        if (eventoRepository.existsActivoBySedeAndFechaAndTurno(
-                command.getIdSede(), command.getFechaEvento(), command.getIdTurno())) {
-            throw new ValidationException("Ya existe un evento activo para esa fecha y turno.");
-        }
+        validarTurnoEvento(command.getIdSede(), command.getFechaEvento(), command.getIdTurno());
 
         EventoPrivado evento = EventoPrivado.builder()
                 .idCliente(command.getIdCliente())
@@ -249,22 +247,37 @@ public class EventoPrivadoService
     }
 
     private void validarFechaEvento(Long idSede, LocalDate fecha) {
-        long diasRestantes = FechaUtil.diferenciaEnDias(FechaUtil.hoyPeru(), fecha);
-        if (diasRestantes < anticipacionMinDias) {
+        ConfiguracionCalendario cfg = configRepository.obtener(idSede);
+        long dias = FechaUtil.diasEntre(FechaUtil.hoy(), fecha);
+
+        if (dias < cfg.getDiasMinEventoPrivado()) {
             throw new FechaNoDisponibleException(fecha,
-                    "Los eventos privados deben reservarse con un minimo de " + anticipacionMinDias
+                    "Los eventos privados deben reservarse con un minimo de "
+                    + cfg.getDiasMinEventoPrivado()
                     + " dias de anticipacion. Por favor selecciona una fecha posterior.");
         }
+        if (dias > cfg.getDiasMaxEventoPrivado()) {
+            throw new ValidationException(
+                    "Los eventos solo pueden agendarse hasta " + cfg.getDiasMaxEventoPrivado() + " dias adelante.");
+        }
+        if (feriadoRepository.existsByFecha(fecha)) {
+            throw new FechaNoDisponibleException(fecha, "Esta fecha es feriado.");
+        }
         if (bloqueRepository.existsBloqueActivoEnFecha(idSede, fecha)) {
-            throw new FechaNoDisponibleException(fecha, "La fecha esta bloqueada por el administrador.");
+            throw new FechaNoDisponibleException(fecha, "La fecha esta bloqueada.");
         }
         if (reservaRepository.existsActivaBySedeAndFecha(idSede, fecha)) {
             throw new ValidationException(
-                    "Esta fecha ya tiene reservas publicas y no puede usarse para un evento privado.");
+                    "Esta fecha ya tiene reservas publicas y no admite eventos privados.");
         }
-        if (eventoRepository.existsActivoBySedeAndFecha(idSede, fecha)) {
+    }
+
+    private void validarTurnoEvento(Long idSede, LocalDate fecha, Long idTurno) {
+        Turno turno = turnoRepository.findById(idTurno)
+                .orElseThrow(() -> new ValidationException("Turno no encontrado."));
+        if (eventoRepository.existsActivoBySedeAndFechaAndCodigoTurno(idSede, fecha, turno.getCodigo())) {
             throw new ValidationException(
-                    "Esta fecha ya tiene un evento privado registrado. Elige otra fecha.");
+                    "Este turno ya tiene un evento privado. Elige otro turno u otra fecha.");
         }
     }
 

@@ -20,8 +20,20 @@ public final class FechaUtil {
         return LocalDate.now(ZONA_PERU);
     }
 
+    public static LocalDate hoy() {
+        return LocalDate.now(ZONA_PERU);
+    }
+
     public static LocalDateTime ahoraPeru() {
         return LocalDateTime.now(ZONA_PERU);
+    }
+
+    public static LocalDateTime ahora() {
+        return LocalDateTime.now(ZONA_PERU);
+    }
+
+    public static long diasEntre(LocalDate desde, LocalDate hasta) {
+        return ChronoUnit.DAYS.between(desde, hasta);
     }
 
     public static Instant ahoraInstante() {

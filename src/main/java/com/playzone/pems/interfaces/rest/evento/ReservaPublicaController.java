@@ -4,7 +4,9 @@ import com.playzone.pems.application.evento.dto.command.CrearReservaPublicaComma
 import com.playzone.pems.application.evento.dto.command.ReprogramarReservaCommand;
 import com.playzone.pems.application.evento.dto.query.MetricasReservaQuery;
 import com.playzone.pems.application.evento.dto.query.ReservaPublicaQuery;
+import com.playzone.pems.application.evento.dto.query.TicketDetalleQuery;
 import com.playzone.pems.application.evento.port.in.*;
+import com.playzone.pems.application.evento.service.ReservaAdminService;
 import com.playzone.pems.application.finanzas.port.in.RegistrarIngresoUseCase;
 import com.playzone.pems.domain.evento.model.ReservaPublica;
 import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
@@ -17,6 +19,7 @@ import com.playzone.pems.interfaces.rest.evento.request.CrearReservaRequest;
 import com.playzone.pems.interfaces.rest.evento.request.ReprogramarReservaRequest;
 import com.playzone.pems.interfaces.rest.evento.response.MetricasReservaResponse;
 import com.playzone.pems.interfaces.rest.evento.response.ReservaPublicaResponse;
+import com.playzone.pems.interfaces.rest.evento.response.TicketDetalleResponse;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import com.playzone.pems.shared.exception.ValidationException;
 import com.playzone.pems.shared.response.ApiResponse;
@@ -51,6 +54,7 @@ public class ReservaPublicaController {
     private final ClienteRepository           clienteRepository;
     private final SedeRepository              sedeRepository;
     private final StoragePort                 storagePort;
+    private final ReservaAdminService         reservaAdminService;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('CLIENTE','ADMIN')")
@@ -249,6 +253,50 @@ public class ReservaPublicaController {
                 reserva.toBuilder().referenciaPago(urlComprobante).build());
 
         return ResponseEntity.ok(ApiResponse.ok(toResponse(buildQueryFromRepo(guardada))));
+    }
+
+    @GetMapping("/control-acceso/ticket/{numeroTicket}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<TicketDetalleResponse>> buscarTicketDetalle(
+            @PathVariable String numeroTicket) {
+        TicketDetalleQuery q = reservaAdminService.buscarTicketDetalle(numeroTicket);
+        return ResponseEntity.ok(ApiResponse.ok(toDetalleResponse(q)));
+    }
+
+    @PostMapping("/control-acceso/{idReserva}/marcar-entrada")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<TicketDetalleResponse>> marcarEntrada(
+            @PathVariable Long idReserva) {
+        TicketDetalleQuery q = reservaAdminService.marcarEntrada(idReserva);
+        return ResponseEntity.ok(ApiResponse.ok(toDetalleResponse(q)));
+    }
+
+    @PatchMapping("/control-acceso/{idReserva}/fecha")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<TicketDetalleResponse>> editarFecha(
+            @PathVariable Long idReserva,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate nuevaFecha) {
+        TicketDetalleQuery q = reservaAdminService.editarFecha(idReserva, nuevaFecha);
+        return ResponseEntity.ok(ApiResponse.ok(toDetalleResponse(q)));
+    }
+
+    private TicketDetalleResponse toDetalleResponse(TicketDetalleQuery q) {
+        return TicketDetalleResponse.builder()
+                .idReserva(q.getIdReserva())
+                .numeroTicket(q.getNumeroTicket())
+                .estado(q.getEstado())
+                .yaIngreso(q.isYaIngreso())
+                .fechaIngreso(q.getFechaIngreso())
+                .fechaVisita(q.getFechaVisita())
+                .esHoy(q.isEsHoy())
+                .nombreNino(q.getNombreNino())
+                .edadNino(q.getEdadNino())
+                .nombreAcompanante(q.getNombreAcompanante())
+                .dniAcompanante(q.getDniAcompanante())
+                .montoPagado(q.getMontoPagado())
+                .estadoPago(q.getEstadoPago())
+                .codigoQr(q.getCodigoQr())
+                .build();
     }
 
     private ReservaPublicaQuery buildQueryFromRepo(ReservaPublica r) {

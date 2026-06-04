@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 public class ReservaPublica {
 
     private Long                 id;
+    private Long                 idVenta;
     private Long                 idCliente;
     private Long                 idSede;
     private EstadoReservaPublica estado;

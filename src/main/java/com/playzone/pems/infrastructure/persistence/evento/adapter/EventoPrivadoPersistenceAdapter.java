@@ -59,8 +59,16 @@ public class EventoPrivadoPersistenceAdapter implements EventoPrivadoRepository 
         return eventoJpa.existsActivoBySedeAndFechaAndTurno(idSede, fecha, idTurno);
     }
 
+    @Override public boolean existsActivoBySedeAndFechaAndCodigoTurno(Long idSede, LocalDate fecha, String codigoTurno) {
+        return eventoJpa.existsActivoBySedeAndFechaAndCodigoTurno(idSede, fecha, codigoTurno);
+    }
+
     @Override public boolean existsActivoBySedeAndFecha(Long idSede, LocalDate fecha) {
         return eventoJpa.existsActivoBySedeAndFecha(idSede, fecha);
+    }
+
+    @Override public List<EventoPrivado> findActivosBySedeAndFecha(Long idSede, LocalDate fecha) {
+        return eventoJpa.findActivosBySedeAndFecha(idSede, fecha).stream().map(mapper::toDomain).toList();
     }
 
     @Override

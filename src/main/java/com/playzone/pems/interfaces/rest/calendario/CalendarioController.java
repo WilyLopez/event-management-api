@@ -88,6 +88,7 @@ public class CalendarioController {
     public ResponseEntity<ApiResponse<Void>> bloquearFechas(
             @PathVariable Long idSede,
             @Valid @RequestBody BloquearFechasRequest request,
+            @RequestParam(defaultValue = "false") boolean confirmado,
             @RequestAttribute Long idUsuarioAdmin) {
 
         bloquearUseCase.ejecutar(BloquearFechasCommand.builder()
@@ -97,6 +98,7 @@ public class CalendarioController {
                 .fechaFin(request.getFechaFin())
                 .tipoBloqueo(request.getTipoBloqueo())
                 .motivo(request.getMotivo())
+                .confirmado(confirmado)
                 .build());
 
         return ResponseEntity.ok(ApiResponse.noContent());
@@ -136,8 +138,14 @@ public class CalendarioController {
                 .tipoOcupacion(q.getTipoOcupacion())
                 .disponiblePublico(q.isDisponiblePublico())
                 .disponiblePrivado(q.isDisponiblePrivado())
+                .turnoT1Ocupado(q.isTurnoT1Ocupado())
+                .turnoT2Ocupado(q.isTurnoT2Ocupado())
                 .tituloEvento(q.getTituloEvento())
                 .idEvento(q.getIdEvento())
+                .tituloEventoT1(q.getTituloEventoT1())
+                .idEventoT1(q.getIdEventoT1())
+                .tituloEventoT2(q.getTituloEventoT2())
+                .idEventoT2(q.getIdEventoT2())
                 .build();
     }
 

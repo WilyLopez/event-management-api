@@ -21,6 +21,7 @@ public class EventoPrivado {
     private Long                idSede;
     private EstadoEventoPrivado estado;
     private Long                idTurno;
+    private String              codigoTurno;
     private LocalDate           fechaEvento;
     private String              tipoEvento;
     private String              contactoAdicional;

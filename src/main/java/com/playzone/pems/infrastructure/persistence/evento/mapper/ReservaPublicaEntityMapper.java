@@ -13,6 +13,7 @@ public class ReservaPublicaEntityMapper {
         if (e == null) return null;
         return ReservaPublica.builder()
                 .id(e.getId())
+                .idVenta(e.getIdVenta())
                 .idCliente(e.getCliente().getId())
                 .idSede(e.getSede().getId())
                 .estado(e.getEstado())
@@ -49,6 +50,7 @@ public class ReservaPublicaEntityMapper {
         if (d == null) return null;
         return ReservaPublicaEntity.builder()
                 .id(d.getId())
+                .idVenta(d.getIdVenta())
                 .cliente(cliente)
                 .sede(sede)
                 .estado(d.getEstado())

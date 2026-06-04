@@ -2,15 +2,22 @@ package com.playzone.pems.application.evento.service;
 
 import com.playzone.pems.application.evento.dto.query.MetricasReservaQuery;
 import com.playzone.pems.application.evento.dto.query.ReservaPublicaQuery;
+import com.playzone.pems.application.evento.dto.query.TicketDetalleQuery;
 import com.playzone.pems.application.evento.port.in.BuscarReservasAdminUseCase;
 import com.playzone.pems.application.evento.port.in.ConfirmarIngresoUseCase;
+import com.playzone.pems.domain.calendario.model.ConfiguracionCalendario;
+import com.playzone.pems.domain.calendario.repository.BloqueCalendarioRepository;
+import com.playzone.pems.domain.calendario.repository.ConfiguracionCalendarioRepository;
+import com.playzone.pems.domain.calendario.repository.FeriadoRepository;
 import com.playzone.pems.domain.evento.exception.ReservaNotFoundException;
 import com.playzone.pems.domain.evento.model.ReservaPublica;
 import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
+import com.playzone.pems.domain.evento.repository.EventoPrivadoRepository;
 import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
 import com.playzone.pems.domain.usuario.model.Cliente;
 import com.playzone.pems.domain.usuario.repository.ClienteRepository;
 import com.playzone.pems.shared.exception.ValidationException;
+import com.playzone.pems.shared.util.FechaUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,8 +34,12 @@ public class ReservaAdminService
         implements ConfirmarIngresoUseCase,
                    BuscarReservasAdminUseCase {
 
-    private final ReservaPublicaRepository reservaRepository;
-    private final ClienteRepository        clienteRepository;
+    private final ReservaPublicaRepository          reservaRepository;
+    private final ClienteRepository                 clienteRepository;
+    private final FeriadoRepository                 feriadoRepository;
+    private final BloqueCalendarioRepository        bloqueRepository;
+    private final ConfiguracionCalendarioRepository configRepository;
+    private final EventoPrivadoRepository           eventoRepository;
 
     @Override
     @Transactional
@@ -89,6 +100,99 @@ public class ReservaAdminService
     public MetricasReservaQuery metricas(Long idSede, LocalDate fecha) {
         LocalDate dia = fecha != null ? fecha : LocalDate.now(ZoneId.of("America/Lima"));
         return reservaRepository.calcularMetricas(idSede, dia);
+    }
+
+    @Transactional(readOnly = true)
+    public TicketDetalleQuery buscarTicketDetalle(String numeroTicket) {
+        ReservaPublica r = reservaRepository.findByNumeroTicket(numeroTicket)
+                .orElseThrow(() -> new ReservaNotFoundException(0L));
+        return toDetalle(r);
+    }
+
+    @Transactional
+    public TicketDetalleQuery marcarEntrada(Long idReserva) {
+        ReservaPublica r = reservaRepository.findById(idReserva)
+                .orElseThrow(() -> new ReservaNotFoundException(idReserva));
+
+        if (r.isIngresado()) {
+            throw new ValidationException("Este ticket ya registro su ingreso.");
+        }
+        if (r.getEstado() == EstadoReservaPublica.CANCELADA) {
+            throw new ValidationException("Este ticket esta cancelado.");
+        }
+        if (r.getEstado() == EstadoReservaPublica.PENDIENTE) {
+            throw new ValidationException("Este ticket tiene pago pendiente. Cobra antes de permitir el ingreso.");
+        }
+
+        ReservaPublica actualizada = r.toBuilder()
+                .ingresado(true)
+                .estado(EstadoReservaPublica.COMPLETADA)
+                .fechaIngreso(LocalDateTime.now(ZoneId.of("America/Lima")))
+                .build();
+        return toDetalle(reservaRepository.save(actualizada));
+    }
+
+    @Transactional
+    public TicketDetalleQuery editarFecha(Long idReserva, LocalDate nuevaFecha) {
+        ReservaPublica r = reservaRepository.findById(idReserva)
+                .orElseThrow(() -> new ReservaNotFoundException(idReserva));
+
+        if (r.isIngresado()) {
+            throw new ValidationException("No se puede cambiar la fecha de un ticket ya ingresado.");
+        }
+        if (r.getEstado() == EstadoReservaPublica.CANCELADA) {
+            throw new ValidationException("No se puede cambiar la fecha de un ticket cancelado.");
+        }
+
+        LocalDate hoy = FechaUtil.hoy();
+        ConfiguracionCalendario cfg = configRepository.obtener(r.getIdSede());
+        LocalDate max = hoy.plusDays(cfg.getDiasMaxReservaPublica());
+
+        if (nuevaFecha.isBefore(hoy)) {
+            throw new ValidationException("La nueva fecha no puede ser en el pasado.");
+        }
+        if (nuevaFecha.isAfter(max)) {
+            throw new ValidationException("La nueva fecha excede el horizonte permitido.");
+        }
+        if (feriadoRepository.existsByFecha(nuevaFecha)) {
+            throw new ValidationException("La nueva fecha es feriado.");
+        }
+        if (bloqueRepository.existsBloqueActivoEnFecha(r.getIdSede(), nuevaFecha)) {
+            throw new ValidationException("La nueva fecha esta bloqueada.");
+        }
+        if (eventoRepository.existsActivoBySedeAndFecha(r.getIdSede(), nuevaFecha)) {
+            throw new ValidationException("La nueva fecha esta reservada para un evento privado.");
+        }
+        int activas = reservaRepository.countActivasBySedeAndFecha(r.getIdSede(), nuevaFecha);
+        if (activas >= cfg.getAforoMaximo()) {
+            throw new ValidationException("No hay aforo disponible para la nueva fecha.");
+        }
+
+        ReservaPublica actualizada = r.toBuilder()
+                .fechaEvento(nuevaFecha)
+                .build();
+        return toDetalle(reservaRepository.save(actualizada));
+    }
+
+    private TicketDetalleQuery toDetalle(ReservaPublica r) {
+        LocalDate hoy = FechaUtil.hoy();
+        String estadoPago = r.getEstado() == EstadoReservaPublica.PENDIENTE ? "PENDIENTE" : "PAGADO";
+        return TicketDetalleQuery.builder()
+                .idReserva(r.getId())
+                .numeroTicket(r.getNumeroTicket())
+                .estado(r.getEstado().getCodigo())
+                .yaIngreso(r.isIngresado())
+                .fechaIngreso(r.getFechaIngreso())
+                .fechaVisita(r.getFechaEvento())
+                .esHoy(r.getFechaEvento().isEqual(hoy))
+                .nombreNino(r.getNombreNino())
+                .edadNino(r.getEdadNino())
+                .nombreAcompanante(r.getNombreAcompanante())
+                .dniAcompanante(r.getDniAcompanante())
+                .montoPagado(r.getTotalPagado())
+                .estadoPago(estadoPago)
+                .codigoQr(r.getCodigoQr())
+                .build();
     }
 
     private ReservaPublicaQuery toQuery(ReservaPublica r, String nombreCliente, String correoCliente) {
