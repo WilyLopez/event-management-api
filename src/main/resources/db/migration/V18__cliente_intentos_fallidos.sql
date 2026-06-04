@@ -1,3 +1,0 @@
-ALTER TABLE cliente
-    ADD COLUMN IF NOT EXISTS intentosfallidos INT         NOT NULL DEFAULT 0,
-    ADD COLUMN IF NOT EXISTS bloqueadohasta   TIMESTAMPTZ;
