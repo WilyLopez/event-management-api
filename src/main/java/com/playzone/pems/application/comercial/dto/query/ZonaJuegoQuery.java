@@ -2,7 +2,7 @@ package com.playzone.pems.application.comercial.dto.query;
 
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Getter
@@ -21,6 +21,6 @@ public class ZonaJuegoQuery {
     private int           orden;
     private List<String>  imagenes;
     private List<String>  videos;
-    private LocalDateTime fechaCreacion;
-    private LocalDateTime fechaActualizacion;
+    private OffsetDateTime fechaCreacion;
+    private OffsetDateTime fechaActualizacion;
 }

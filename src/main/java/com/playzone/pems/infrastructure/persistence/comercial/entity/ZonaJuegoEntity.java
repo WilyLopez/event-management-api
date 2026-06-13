@@ -5,11 +5,12 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
-@Table(name = "zonajuego")
+@Table(name = "zona_juego")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,31 +20,31 @@ public class ZonaJuegoEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idzona")
+    @Column(name = "id")
     private Long id;
 
-    @Column(nullable = false, length = 25)
+    @Column(name = "nombre", nullable = false)
     private String nombre;
 
-    @Column(nullable = false, unique = true, length = 35)
+    @Column(name = "slug", nullable = false, unique = true)
     private String slug;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "descripcion", nullable = false)
     private String descripcion;
 
-    @Column(name = "edadminima")
+    @Column(name = "edad_minima")
     private Integer edadMinima;
 
-    @Column(name = "edadmaxima")
+    @Column(name = "edad_maxima")
     private Integer edadMaxima;
 
-    @Column(nullable = false)
+    @Column(name = "es_activa", nullable = false)
     private boolean activa;
 
-    @Column(nullable = false)
+    @Column(name = "es_destacada", nullable = false)
     private boolean destacada;
 
-    @Column(nullable = false)
+    @Column(name = "orden", nullable = false)
     private int orden;
 
     @OneToMany(mappedBy = "zona", cascade = CascadeType.ALL, orphanRemoval = true,
@@ -52,10 +53,19 @@ public class ZonaJuegoEntity {
     private List<MedioZonaJuegoEntity> medios;
 
     @CreationTimestamp
-    @Column(name = "fechacreacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime fechaCreacion;
 
     @UpdateTimestamp
-    @Column(name = "fechaactualizacion", nullable = false)
-    private LocalDateTime fechaActualizacion;
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime fechaActualizacion;
+
+    @Column(name = "created_by")
+    private UUID createdBy;
+
+    @Column(name = "updated_by")
+    private UUID updatedBy;
+
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
 }

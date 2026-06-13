@@ -6,10 +6,11 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "actividadlocal")
+@Table(name = "actividad")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,45 +20,54 @@ public class ActividadLocalEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idactividad")
+    @Column(name = "id")
     private Long id;
 
-    @Column(nullable = false, length = 40)
+    @Column(name = "nombre", nullable = false)
     private String nombre;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "descripcion", nullable = false)
     private String descripcion;
 
-    @Column(name = "imagenurl", length = 500)
+    @Column(name = "imagen_path")
     private String imagenUrl;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(name = "idzona")
+    @JoinColumn(name = "zona_id")
     private ZonaJuegoEntity zona;
 
-    @Column(name = "esespecial", nullable = false)
+    @Column(name = "es_especial", nullable = false)
     private boolean esEspecial;
 
-    @Column(name = "fechainicio")
+    @Column(name = "fecha_inicio")
     private LocalDate fechaInicio;
 
-    @Column(name = "fechafin")
+    @Column(name = "fecha_fin")
     private LocalDate fechaFin;
 
-    @Column(nullable = false)
-    private boolean activa;
-
-    @Column(nullable = false)
+    @Column(name = "es_destacada", nullable = false)
     private boolean destacada;
 
-    @Column(nullable = false)
+    @Column(name = "es_activa", nullable = false)
+    private boolean activa;
+
+    @Column(name = "orden", nullable = false)
     private int orden;
 
     @CreationTimestamp
-    @Column(name = "fechacreacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime fechaCreacion;
 
     @UpdateTimestamp
-    @Column(name = "fechaactualizacion", nullable = false)
-    private LocalDateTime fechaActualizacion;
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime fechaActualizacion;
+
+    @Column(name = "created_by")
+    private UUID createdBy;
+
+    @Column(name = "updated_by")
+    private UUID updatedBy;
+
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
 }

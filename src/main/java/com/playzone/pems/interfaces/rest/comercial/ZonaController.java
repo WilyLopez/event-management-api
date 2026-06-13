@@ -28,19 +28,19 @@ public class ZonaController {
     }
 
     @GetMapping("/admin")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.zona')")
     public ResponseEntity<ApiResponse<List<ZonaJuegoResponse>>> listarTodas() {
         return ResponseEntity.ok(ApiResponse.ok(useCase.listarTodas().stream().map(this::toResponse).toList()));
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.zona')")
     public ResponseEntity<ApiResponse<ZonaJuegoResponse>> crear(@Valid @RequestBody CrearZonaCommand command) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(useCase.crear(command))));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.zona')")
     public ResponseEntity<ApiResponse<ZonaJuegoResponse>> actualizar(
             @PathVariable Long id,
             @Valid @RequestBody ActualizarZonaCommand command) {
@@ -53,14 +53,14 @@ public class ZonaController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.zona')")
     public ResponseEntity<ApiResponse<Void>> eliminar(@PathVariable Long id) {
         useCase.eliminar(id);
         return ResponseEntity.ok(ApiResponse.noContent());
     }
 
     @PostMapping("/{id}/media")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.zona')")
     public ResponseEntity<ApiResponse<ZonaJuegoResponse>> agregarMedia(
             @PathVariable Long id,
             @RequestParam String url,
@@ -69,7 +69,7 @@ public class ZonaController {
     }
 
     @DeleteMapping("/{id}/media")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.zona')")
     public ResponseEntity<ApiResponse<ZonaJuegoResponse>> eliminarMedia(
             @PathVariable Long id,
             @RequestParam String url) {
@@ -77,7 +77,7 @@ public class ZonaController {
     }
 
     @PatchMapping("/{id}/orden")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.zona')")
     public ResponseEntity<ApiResponse<ZonaJuegoResponse>> reordenar(
             @PathVariable Long id,
             @RequestParam int nuevoOrden) {

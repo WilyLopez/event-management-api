@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Getter
@@ -27,6 +27,6 @@ public class PaqueteEventoResponse {
     private boolean       destacado;
     private int           orden;
     private List<String>  beneficios;
-    private LocalDateTime fechaCreacion;
-    private LocalDateTime fechaActualizacion;
+    private OffsetDateTime fechaCreacion;
+    private OffsetDateTime fechaActualizacion;
 }

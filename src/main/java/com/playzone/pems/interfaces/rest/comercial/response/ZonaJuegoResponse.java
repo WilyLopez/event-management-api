@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Getter
@@ -22,6 +22,6 @@ public class ZonaJuegoResponse {
     private int           orden;
     private List<String>  imagenes;
     private List<String>  videos;
-    private LocalDateTime fechaCreacion;
-    private LocalDateTime fechaActualizacion;
+    private OffsetDateTime fechaCreacion;
+    private OffsetDateTime fechaActualizacion;
 }

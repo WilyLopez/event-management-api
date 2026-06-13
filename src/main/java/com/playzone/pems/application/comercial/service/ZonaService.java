@@ -116,7 +116,7 @@ public class ZonaService implements GestionarZonasUseCase {
                 .orElseThrow(() -> new IllegalArgumentException("Zona no encontrada: " + id));
         boolean esImagen = !esVideo(url);
         if (esImagen) {
-            storagePort.eliminar(url);
+            storagePort.deleteByUrl(url);
         }
         List<String> imagenes = new ArrayList<>(zona.getImagenes() != null ? zona.getImagenes() : List.of());
         List<String> videos   = new ArrayList<>(zona.getVideos() != null ? zona.getVideos() : List.of());

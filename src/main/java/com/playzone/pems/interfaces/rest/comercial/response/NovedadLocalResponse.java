@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder
@@ -23,6 +23,6 @@ public class NovedadLocalResponse {
     private boolean       visibleHome;
     private boolean       destacada;
     private boolean       activa;
-    private LocalDateTime fechaCreacion;
-    private LocalDateTime fechaActualizacion;
+    private OffsetDateTime fechaCreacion;
+    private OffsetDateTime fechaActualizacion;
 }

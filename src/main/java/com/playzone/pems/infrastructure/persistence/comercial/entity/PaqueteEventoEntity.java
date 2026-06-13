@@ -2,15 +2,16 @@ package com.playzone.pems.infrastructure.persistence.comercial.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
-@Table(name = "paqueteevento")
+@Table(name = "paquete")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,46 +21,46 @@ public class PaqueteEventoEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idpaquete")
+    @Column(name = "id")
     private Long id;
 
-    @Column(nullable = false, length = 30)
+    @Column(name = "nombre", nullable = false)
     private String nombre;
 
-    @Column(nullable = false, unique = true, length = 40)
+    @Column(name = "slug", nullable = false, unique = true)
     private String slug;
 
-    @Column(name = "descripcioncorta", nullable = false, length = 80)
+    @Column(name = "descripcion_corta", nullable = false)
     private String descripcionCorta;
 
-    @Column(name = "descripcionlarga", length = 500)
+    @Column(name = "descripcion_larga")
     private String descripcionLarga;
 
-    @Column(nullable = false, precision = 10, scale = 2)
+    @Column(name = "precio", nullable = false, precision = 10, scale = 2)
     private BigDecimal precio;
 
-    @Column(length = 20)
+    @Column(name = "badge")
     private String badge;
 
-    @Column(length = 7)
+    @Column(name = "color_hex")
     private String color;
 
-    @Column(name = "imagenurl", length = 500)
+    @Column(name = "imagen_path")
     private String imagenUrl;
 
-    @Column(name = "duracionminutos")
+    @Column(name = "duracion_minutos")
     private Integer duracionMinutos;
 
-    @Column(name = "limitepersonas")
+    @Column(name = "limite_personas")
     private Integer limitepersonas;
 
-    @Column(nullable = false)
+    @Column(name = "es_activo", nullable = false)
     private boolean activo;
 
-    @Column(nullable = false)
+    @Column(name = "es_destacado", nullable = false)
     private boolean destacado;
 
-    @Column(nullable = false)
+    @Column(name = "orden", nullable = false)
     private int orden;
 
     @OneToMany(mappedBy = "paquete", cascade = CascadeType.ALL, orphanRemoval = true,
@@ -68,10 +69,19 @@ public class PaqueteEventoEntity {
     private List<BeneficioPaqueteEntity> beneficios;
 
     @CreationTimestamp
-    @Column(name = "fechacreacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime fechaCreacion;
 
     @UpdateTimestamp
-    @Column(name = "fechaactualizacion", nullable = false)
-    private LocalDateTime fechaActualizacion;
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime fechaActualizacion;
+
+    @Column(name = "created_by")
+    private UUID createdBy;
+
+    @Column(name = "updated_by")
+    private UUID updatedBy;
+
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
 }

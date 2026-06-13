@@ -3,7 +3,7 @@ package com.playzone.pems.application.comercial.dto.query;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder
@@ -22,6 +22,6 @@ public class NovedadLocalQuery {
     private boolean       visibleHome;
     private boolean       destacada;
     private boolean       activa;
-    private LocalDateTime fechaCreacion;
-    private LocalDateTime fechaActualizacion;
+    private OffsetDateTime fechaCreacion;
+    private OffsetDateTime fechaActualizacion;
 }

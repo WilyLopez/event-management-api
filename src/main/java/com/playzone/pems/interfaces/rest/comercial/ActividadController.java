@@ -33,19 +33,19 @@ public class ActividadController {
     }
 
     @GetMapping("/admin")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.actividad')")
     public ResponseEntity<ApiResponse<List<ActividadLocalResponse>>> listarTodas() {
         return ResponseEntity.ok(ApiResponse.ok(useCase.listarTodas().stream().map(this::toResponse).toList()));
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.actividad')")
     public ResponseEntity<ApiResponse<ActividadLocalResponse>> crear(@Valid @RequestBody CrearActividadCommand command) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(useCase.crear(command))));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.actividad')")
     public ResponseEntity<ApiResponse<ActividadLocalResponse>> actualizar(
             @PathVariable Long id,
             @Valid @RequestBody ActualizarActividadCommand command) {
@@ -59,7 +59,7 @@ public class ActividadController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.actividad')")
     public ResponseEntity<ApiResponse<Void>> eliminar(@PathVariable Long id) {
         useCase.eliminar(id);
         return ResponseEntity.ok(ApiResponse.noContent());

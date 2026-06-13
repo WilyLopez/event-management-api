@@ -28,19 +28,19 @@ public class PaqueteController {
     }
 
     @GetMapping("/admin")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('paquete.gestionar')")
     public ResponseEntity<ApiResponse<List<PaqueteEventoResponse>>> listarTodos() {
         return ResponseEntity.ok(ApiResponse.ok(useCase.listarTodos().stream().map(this::toResponse).toList()));
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('paquete.gestionar')")
     public ResponseEntity<ApiResponse<PaqueteEventoResponse>> crear(@Valid @RequestBody CrearPaqueteCommand command) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(useCase.crear(command))));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('paquete.gestionar')")
     public ResponseEntity<ApiResponse<PaqueteEventoResponse>> actualizar(
             @PathVariable Long id,
             @Valid @RequestBody ActualizarPaqueteCommand command) {
@@ -55,14 +55,14 @@ public class PaqueteController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('paquete.gestionar')")
     public ResponseEntity<ApiResponse<Void>> eliminar(@PathVariable Long id) {
         useCase.eliminar(id);
         return ResponseEntity.ok(ApiResponse.noContent());
     }
 
     @PatchMapping("/{id}/orden")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('paquete.gestionar')")
     public ResponseEntity<ApiResponse<PaqueteEventoResponse>> reordenar(
             @PathVariable Long id,
             @RequestParam int nuevoOrden) {

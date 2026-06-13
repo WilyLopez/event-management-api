@@ -21,8 +21,8 @@ public class NovedadLocalEntityMapper {
                 .visibleHome(entity.isVisibleHome())
                 .destacada(entity.isDestacada())
                 .activa(entity.isActiva())
-                .fechaCreacion(entity.getFechaCreacion())
-                .fechaActualizacion(entity.getFechaActualizacion())
+                .fechaCreacion(entity.getFechaCreacion() != null ? entity.getFechaCreacion() : null)
+                .fechaActualizacion(entity.getFechaActualizacion() != null ? entity.getFechaActualizacion() : null)
                 .build();
     }
 
