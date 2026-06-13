@@ -13,11 +13,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
 import java.util.Set;
+import java.util.UUID;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/media")
-@PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 public class MediaController {
 
@@ -30,33 +30,30 @@ public class MediaController {
     private final StoragePort storagePort;
 
     @PostMapping("/upload")
+    @PreAuthorize("hasAuthority('catalogo.editar')")
     public ResponseEntity<ApiResponse<MediaResponse>> subir(
             @RequestParam MultipartFile archivo,
             @RequestParam String carpeta) {
 
-        log.debug("Petición para subir archivo: {}, tamaño: {}, carpeta: {}",
+        log.debug("Peticion para subir archivo: {}, tamanio: {}, carpeta: {}",
                 archivo.getOriginalFilename(), archivo.getSize(), carpeta);
 
         if (archivo.isEmpty()) {
-            log.warn("Intento de subir archivo vacío");
             throw new IllegalArgumentException("El archivo no puede estar vacio");
         }
         String tipoMime = archivo.getContentType();
-        log.debug("Tipo MIME detectado: {}", tipoMime);
-
         if (tipoMime == null || !TIPOS_PERMITIDOS.contains(tipoMime)) {
-            log.warn("Tipo de archivo no permitido: {}", tipoMime);
             throw new IllegalArgumentException("Tipo de archivo no permitido: " + tipoMime);
         }
         if (archivo.getSize() > MAX_BYTES) {
-            log.warn("El archivo supera el limite de 10 MB: {} bytes", archivo.getSize());
             throw new IllegalArgumentException("El archivo supera el limite de 10 MB");
         }
 
         try {
-            String rutaRelativa = storagePort.guardar(archivo, carpeta);
-            String url = storagePort.obtenerUrlPublica(rutaRelativa);
-            log.debug("Archivo guardado con éxito. URL: {}", url);
+            byte[] bytes = archivo.getBytes();
+            String key = carpeta + "/" + UUID.randomUUID() + "_" + sanitizarNombre(archivo.getOriginalFilename());
+            String url = storagePort.upload("publico", key, bytes, tipoMime);
+            log.debug("Archivo subido con exito. URL: {}", url);
 
             MediaResponse response = MediaResponse.builder()
                     .url(url)
@@ -69,14 +66,20 @@ public class MediaController {
             return ResponseEntity.ok(ApiResponse.ok(response));
         } catch (Exception e) {
             log.error("Error al procesar la subida del archivo: {}", e.getMessage(), e);
-            throw e;
+            throw new RuntimeException("Error al subir el archivo", e);
         }
     }
 
     @DeleteMapping
-    public ResponseEntity<ApiResponse<Void>> eliminar(@RequestParam String rutaRelativa) {
-        storagePort.eliminar(rutaRelativa);
+    @PreAuthorize("hasAuthority('catalogo.editar')")
+    public ResponseEntity<ApiResponse<Void>> eliminar(@RequestParam String url) {
+        storagePort.deleteByUrl(url);
         return ResponseEntity.ok(ApiResponse.noContent());
+    }
+
+    private String sanitizarNombre(String nombre) {
+        if (nombre == null) return "archivo";
+        return nombre.replaceAll("[^a-zA-Z0-9.\\-]", "_");
     }
 
     @Getter

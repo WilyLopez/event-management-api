@@ -4,7 +4,6 @@ import com.playzone.pems.application.evento.dto.query.EventoPrivadoQuery;
 import com.playzone.pems.application.evento.dto.query.ReservaPublicaQuery;
 import com.playzone.pems.application.evento.port.out.EnviarNotificacionEventoPort;
 import com.playzone.pems.application.evento.port.out.EnviarTicketPorCorreoPort;
-import com.playzone.pems.application.usuario.port.out.EnviarCorreoVerificacionPort;
 import com.playzone.pems.domain.usuario.repository.SedeRepository;
 import com.playzone.pems.infrastructure.pdf.PdfTicketService;
 import jakarta.mail.internet.MimeMessage;
@@ -24,8 +23,7 @@ import java.nio.charset.StandardCharsets;
 @Component
 @RequiredArgsConstructor
 public class CorreoAdapter
-        implements EnviarCorreoVerificacionPort,
-        EnviarTicketPorCorreoPort,
+        implements EnviarTicketPorCorreoPort,
         EnviarNotificacionEventoPort {
 
     private final JavaMailCorreoClient correoClient;
@@ -41,14 +39,6 @@ public class CorreoAdapter
 
     @Value("${playzone.negocio.correo-admin:admin@kikiylala.com}")
     private String correoAdmin;
-
-    @Override
-    public void enviarBienvenida(String destinatario, String nombreCliente) {
-        String asunto = "Bienvenida a Kiki y Lala";
-        String cuerpo = cargarTemplate("bienvenida.html")
-                .replace("{{nombre}}", nombreCliente);
-        correoClient.enviarConLogo(destinatario, asunto, cuerpo);
-    }
 
     @Override
     public void enviarTicket(String destinatario, String nombreCliente, ReservaPublicaQuery reserva) {

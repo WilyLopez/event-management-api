@@ -4,11 +4,14 @@ import com.playzone.pems.domain.calendario.exception.ConflictoActividadException
 import com.playzone.pems.shared.response.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -16,6 +19,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestControllerAdvice
@@ -117,35 +121,37 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleAccessDenied(
-            AccessDeniedException ex, HttpServletRequest request) {
+    public ResponseEntity<Map<String, String>> handleAccessDenied(AccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("error", "forbidden", "message", "No tienes permisos para esta operacion"));
+    }
 
-        ErrorResponse error = ErrorResponse.builder()
-                .status(HttpStatus.FORBIDDEN.value())
-                .error(HttpStatus.FORBIDDEN.getReasonPhrase())
-                .codigoError("FORBIDDEN")
-                .message("No tiene permisos para realizar esta operación.")
-                .path(request.getRequestURI())
-                .timestamp(Instant.now())
-                .build();
-
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<Map<String, String>> handleAuthentication(AuthenticationException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "unauthorized", "message", "Autenticacion requerida"));
     }
 
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ErrorResponse> handleBadCredentials(
-            BadCredentialsException ex, HttpServletRequest request) {
+    public ResponseEntity<Map<String, String>> handleBadCredentials(BadCredentialsException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "unauthorized", "message", "Credenciales incorrectas."));
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMethodNotSupported(
+            HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
 
         ErrorResponse error = ErrorResponse.builder()
-                .status(HttpStatus.UNAUTHORIZED.value())
-                .error(HttpStatus.UNAUTHORIZED.getReasonPhrase())
-                .codigoError("UNAUTHORIZED")
-                .message("Credenciales incorrectas.")
+                .status(HttpStatus.METHOD_NOT_ALLOWED.value())
+                .error(HttpStatus.METHOD_NOT_ALLOWED.getReasonPhrase())
+                .codigoError("method_not_allowed")
+                .message("Metodo HTTP '" + ex.getMethod() + "' no soportado en este endpoint.")
                 .path(request.getRequestURI())
-                .timestamp(Instant.now())
+                .timestamp(java.time.Instant.now())
                 .build();
 
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(error);
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
@@ -164,6 +170,36 @@ public class GlobalExceptionHandler {
                 .build();
 
         return ResponseEntity.badRequest().body(error);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(
+            DataIntegrityViolationException ex, HttpServletRequest request) {
+
+        String rawMessage = ex.getMostSpecificCause().getMessage();
+        String mensaje = extraerMensajeTrigger(rawMessage);
+
+        ErrorResponse error = ErrorResponse.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                .codigoError("db_constraint_violation")
+                .message(mensaje)
+                .path(request.getRequestURI())
+                .timestamp(java.time.Instant.now())
+                .build();
+
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    private String extraerMensajeTrigger(String rawMessage) {
+        if (rawMessage == null) return "Error de integridad en la operacion.";
+        int idx = rawMessage.indexOf("ERROR:");
+        if (idx >= 0) {
+            String rest = rawMessage.substring(idx + 6).trim();
+            int nl = rest.indexOf('\n');
+            return nl > 0 ? rest.substring(0, nl).trim() : rest;
+        }
+        return rawMessage;
     }
 
     @ExceptionHandler(Exception.class)

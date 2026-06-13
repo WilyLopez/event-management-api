@@ -17,7 +17,7 @@ public class DashboardController {
     private final ConsultarDashboardAdminUseCase useCase;
 
     @GetMapping("/sedes/{idSede}/resumen")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('dashboard.ver')")
     public ResponseEntity<ApiResponse<DashboardAdminResponse>> resumen(
             @PathVariable Long idSede) {
         return ResponseEntity.ok(ApiResponse.ok(toResponse(useCase.obtener(idSede))));

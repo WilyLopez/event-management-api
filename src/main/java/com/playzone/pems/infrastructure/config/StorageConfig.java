@@ -14,35 +14,27 @@ import java.net.URI;
 @Configuration
 public class StorageConfig {
 
-    @Value("${playzone.storage.access-key}")
+    @Value("${supabase.storage.endpoint}")
+    private String endpoint;
+
+    @Value("${supabase.storage.access-key}")
     private String accessKey;
 
-    @Value("${playzone.storage.secret-key}")
+    @Value("${supabase.storage.secret-key}")
     private String secretKey;
 
-    @Value("${playzone.storage.region:us-east-1}")
+    @Value("${supabase.storage.region}")
     private String region;
-
-    @Value("${playzone.storage.endpoint:#{null}}")
-    private String endpoint;
 
     @Bean
     public S3Client s3Client() {
-        var credentials = AwsBasicCredentials.create(accessKey, secretKey);
-
-        var builder = S3Client.builder()
+        return S3Client.builder()
+                .endpointOverride(URI.create(endpoint))
                 .region(Region.of(region))
-                .credentialsProvider(StaticCredentialsProvider.create(credentials));
-
-        if (endpoint != null && !endpoint.isBlank()) {
-            builder.endpointOverride(URI.create(endpoint));
-            // Path-style required for local S3 emulators (LocalStack/MinIO);
-            // virtual-hosted-style would prepend the bucket name to the hostname.
-            builder.serviceConfiguration(
-                S3Configuration.builder().pathStyleAccessEnabled(true).build()
-            );
-        }
-
-        return builder.build();
+                .credentialsProvider(StaticCredentialsProvider.create(
+                        AwsBasicCredentials.create(accessKey, secretKey)))
+                .serviceConfiguration(
+                        S3Configuration.builder().pathStyleAccessEnabled(true).build())
+                .build();
     }
 }
