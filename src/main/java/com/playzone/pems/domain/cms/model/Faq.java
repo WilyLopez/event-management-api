@@ -2,7 +2,8 @@ package com.playzone.pems.domain.cms.model;
 
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder(toBuilder = true)
@@ -15,6 +16,6 @@ public class Faq {
     private String        respuesta;
     private int           ordenVisualizacion;
     private boolean       visible;
-    private Long          idUsuarioEditor;
-    private LocalDateTime fechaActualizacion;
+    private UUID          idUsuarioEditor;
+    private OffsetDateTime fechaActualizacion;
 }

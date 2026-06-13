@@ -1,9 +1,8 @@
 package com.playzone.pems.domain.storage;
 
-import org.springframework.web.multipart.MultipartFile;
-
 public interface StoragePort {
-    String guardar(MultipartFile archivo, String carpeta);
-    void eliminar(String rutaRelativa);
-    String obtenerUrlPublica(String rutaRelativa);
+    String upload(String bucket, String key, byte[] contenido, String contentType);
+    void delete(String bucket, String key);
+    void deleteByUrl(String url);
+    String getUrlPublica(String bucket, String key);
 }

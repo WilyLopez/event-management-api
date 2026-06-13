@@ -13,12 +13,12 @@ public interface HistorialFidelizacionJpaRepository extends JpaRepository<Histor
 
     Optional<HistorialFidelizacionEntity> findByReservaPublica_Id(Long idReservaPublica);
 
-    Page<HistorialFidelizacionEntity> findByCliente_IdOrderByVisitaNumeroDesc(Long idCliente, Pageable pageable);
+    Page<HistorialFidelizacionEntity> findByClienteIdOrderByVisitaNumeroDesc(Long idCliente, Pageable pageable);
 
-    @Query("SELECT COUNT(h) FROM HistorialFidelizacionEntity h WHERE h.cliente.id = :idCliente")
+    @Query("SELECT COUNT(h) FROM HistorialFidelizacionEntity h WHERE h.clienteId = :idCliente")
     int countByCliente(@Param("idCliente") Long idCliente);
 
-    @Query("SELECT COUNT(h) > 0 FROM HistorialFidelizacionEntity h WHERE h.cliente.id = :idCliente AND h.visitaNumero = :visitaNumero AND h.esBeneficioAplicado = true")
+    @Query("SELECT COUNT(h) > 0 FROM HistorialFidelizacionEntity h WHERE h.clienteId = :idCliente AND h.visitaNumero = :visitaNumero AND h.esBeneficioAplicado = true")
     boolean existsBeneficioAplicadoByClienteAndVisita(
             @Param("idCliente") Long idCliente,
             @Param("visitaNumero") int visitaNumero);

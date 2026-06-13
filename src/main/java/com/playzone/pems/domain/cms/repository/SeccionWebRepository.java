@@ -7,17 +7,17 @@ import java.util.Optional;
 
 public interface SeccionWebRepository {
 
-    Optional<SeccionWeb> findById(Long id);
+    Optional<SeccionWeb> findById(String codigo);
 
     Optional<SeccionWeb> findByCodigo(String codigo);
 
     List<SeccionWeb> findAll();
 
-    List<SeccionWeb> findVisibles();
+    List<SeccionWeb> findActivas();
 
     SeccionWeb save(SeccionWeb seccionWeb);
 
-    void deleteById(Long id);
+    void deleteById(String codigo);
 
     boolean existsByCodigo(String codigo);
 }

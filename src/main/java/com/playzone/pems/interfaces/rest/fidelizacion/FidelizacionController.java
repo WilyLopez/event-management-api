@@ -13,12 +13,12 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/fidelizacion")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class FidelizacionController {
 
     private final RegistrarVisitaUseCase registrarVisitaUseCase;
 
     @PostMapping("/reservas/{idReserva}/registrar-visita")
+    @PreAuthorize("hasAuthority('reserva.marcar_ingreso')")
     public ResponseEntity<ApiResponse<HistorialFidelizacionResponse>> registrarVisita(
             @PathVariable Long idReserva) {
 

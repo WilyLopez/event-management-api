@@ -3,7 +3,7 @@ package com.playzone.pems.domain.comercial.model;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder
@@ -22,6 +22,6 @@ public class ActividadLocal {
     private boolean       activa;
     private boolean       destacada;
     private int           orden;
-    private LocalDateTime fechaCreacion;
-    private LocalDateTime fechaActualizacion;
+    private OffsetDateTime fechaCreacion;
+    private OffsetDateTime fechaActualizacion;
 }

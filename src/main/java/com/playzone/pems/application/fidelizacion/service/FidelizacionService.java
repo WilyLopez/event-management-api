@@ -8,7 +8,7 @@ import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
 import com.playzone.pems.domain.fidelizacion.exception.BeneficioNoAplicableException;
 import com.playzone.pems.domain.fidelizacion.model.HistorialFidelizacion;
 import com.playzone.pems.domain.fidelizacion.repository.HistorialFidelizacionRepository;
-import com.playzone.pems.domain.usuario.repository.ClienteRepository;
+import com.playzone.pems.domain.usuario.repository.ClientePerfilRepository;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import com.playzone.pems.shared.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ public class FidelizacionService implements RegistrarVisitaUseCase, OtorgarBenef
 
     private final HistorialFidelizacionRepository historialRepository;
     private final ReservaPublicaRepository        reservaRepository;
-    private final ClienteRepository               clienteRepository;
+    private final ClientePerfilRepository          clientePerfilRepository;
 
     @Value("${playzone.negocio.visitas-para-entrada-gratis:6}")
     private int visitasParaBeneficio;
@@ -48,7 +48,7 @@ public class FidelizacionService implements RegistrarVisitaUseCase, OtorgarBenef
                 .esBeneficioAplicado(esBeneficio)
                 .build();
 
-        clienteRepository.incrementarContadorVisitas(reserva.getIdCliente());
+        clientePerfilRepository.incrementarContadorVisitas(reserva.getIdCliente());
 
         return toQuery(historialRepository.save(registro));
     }
@@ -56,7 +56,7 @@ public class FidelizacionService implements RegistrarVisitaUseCase, OtorgarBenef
     @Override
     @Transactional
     public HistorialFidelizacionQuery otorgarBeneficio(Long idCliente) {
-        clienteRepository.findById(idCliente)
+        clientePerfilRepository.buscarPorId(idCliente)
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente", idCliente));
 
         int visitasActuales = historialRepository.countVisitasByCliente(idCliente);

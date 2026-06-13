@@ -1,15 +1,14 @@
 package com.playzone.pems.infrastructure.persistence.fidelizacion.entity;
 
 import com.playzone.pems.infrastructure.persistence.evento.entity.ReservaPublicaEntity;
-import com.playzone.pems.infrastructure.persistence.usuario.entity.ClienteEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "historialfidelizacion")
+@Table(name = "fidelizacion")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,24 +18,23 @@ public class HistorialFidelizacionEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idhistorialfidelizacion")
+    @Column(name = "id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "idcliente", nullable = false)
-    private ClienteEntity cliente;
+    @Column(name = "cliente_id", nullable = false)
+    private Long clienteId;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "idreservapublica", nullable = false, unique = true)
+    @JoinColumn(name = "reserva_id", nullable = false, unique = true)
     private ReservaPublicaEntity reservaPublica;
 
-    @Column(name = "visitanumero", nullable = false)
+    @Column(name = "visita_numero", nullable = false)
     private int visitaNumero;
 
-    @Column(name = "esbeneficioaplicado", nullable = false)
+    @Column(name = "es_beneficio", nullable = false)
     private boolean esBeneficioAplicado = false;
 
     @CreationTimestamp
-    @Column(name = "fecharegistro", nullable = false, updatable = false)
-    private LocalDateTime fechaRegistro;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime fechaRegistro;
 }

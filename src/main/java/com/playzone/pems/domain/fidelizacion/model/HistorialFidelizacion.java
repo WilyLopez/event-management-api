@@ -2,7 +2,7 @@ package com.playzone.pems.domain.fidelizacion.model;
 
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder(toBuilder = true)
@@ -15,7 +15,7 @@ public class HistorialFidelizacion {
     private Long          idReservaPublica;
     private int           visitaNumero;
     private boolean       esBeneficioAplicado;
-    private LocalDateTime fechaRegistro;
+    private OffsetDateTime fechaRegistro;
 
     public boolean fueVisitaBeneficio() {
         return esBeneficioAplicado;

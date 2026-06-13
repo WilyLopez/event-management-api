@@ -3,7 +3,7 @@ package com.playzone.pems.application.fidelizacion.dto.query;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder
@@ -14,5 +14,5 @@ public class HistorialFidelizacionQuery {
     private final Long          idReservaPublica;
     private final int           visitaNumero;
     private final boolean       esBeneficioAplicado;
-    private final LocalDateTime fechaRegistro;
+    private final OffsetDateTime fechaRegistro;
 }

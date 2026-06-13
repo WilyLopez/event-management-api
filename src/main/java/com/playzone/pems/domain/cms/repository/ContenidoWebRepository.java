@@ -12,15 +12,15 @@ public interface ContenidoWebRepository {
 
     Optional<ContenidoWeb> findById(Long id);
 
-    Optional<ContenidoWeb> findBySeccionAndClave(Long idSeccion, String clave);
+    Optional<ContenidoWeb> findBySeccionAndClave(String seccionCodigo, String clave);
 
-    List<ContenidoWeb> findActivosBySeccion(Long idSeccion);
+    List<ContenidoWeb> findActivosBySeccion(String seccionCodigo);
 
     List<ContenidoWeb> findAllActivos();
 
-    Page<ContenidoWeb> findAll(Long idSeccion, String clave, Pageable pageable);
+    Page<ContenidoWeb> findAll(String seccionCodigo, String clave, Pageable pageable);
 
     ContenidoWeb save(ContenidoWeb contenido);
 
-    boolean existsBySeccionAndClave(Long idSeccion, String clave);
+    boolean existsBySeccionAndClave(String seccionCodigo, String clave);
 }
