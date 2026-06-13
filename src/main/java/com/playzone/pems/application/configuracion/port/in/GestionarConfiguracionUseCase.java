@@ -1,13 +1,13 @@
 package com.playzone.pems.application.configuracion.port.in;
 
-import com.playzone.pems.domain.configuracion.model.ConfiguracionSistema;
+import com.playzone.pems.domain.configuracion.model.ConfiguracionGlobal;
 
 import java.util.List;
 import java.util.Map;
 
 public interface GestionarConfiguracionUseCase {
 
-    List<ConfiguracionSistema> listar();
+    List<ConfiguracionGlobal> listar();
 
-    List<ConfiguracionSistema> actualizar(Map<String, String> cambios);
+    List<ConfiguracionGlobal> actualizar(Map<String, String> cambios);
 }

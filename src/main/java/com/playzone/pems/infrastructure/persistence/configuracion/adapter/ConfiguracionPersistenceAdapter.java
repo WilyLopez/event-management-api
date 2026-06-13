@@ -1,9 +1,9 @@
 package com.playzone.pems.infrastructure.persistence.configuracion.adapter;
 
-import com.playzone.pems.domain.configuracion.model.ConfiguracionSistema;
-import com.playzone.pems.domain.configuracion.repository.ConfiguracionSistemaRepository;
-import com.playzone.pems.infrastructure.persistence.configuracion.entity.ConfiguracionSistemaEntity;
-import com.playzone.pems.infrastructure.persistence.configuracion.jpa.ConfiguracionSistemaJpaRepository;
+import com.playzone.pems.domain.configuracion.model.ConfiguracionGlobal;
+import com.playzone.pems.domain.configuracion.repository.ConfiguracionGlobalRepository;
+import com.playzone.pems.infrastructure.persistence.configuracion.entity.ConfiguracionGlobalEntity;
+import com.playzone.pems.infrastructure.persistence.configuracion.jpa.ConfiguracionGlobalJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -12,50 +12,52 @@ import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
-public class ConfiguracionPersistenceAdapter implements ConfiguracionSistemaRepository {
+public class ConfiguracionPersistenceAdapter implements ConfiguracionGlobalRepository {
 
-    private final ConfiguracionSistemaJpaRepository jpaRepo;
+    private final ConfiguracionGlobalJpaRepository jpaRepo;
 
     @Override
-    public List<ConfiguracionSistema> findAll() {
+    public List<ConfiguracionGlobal> findAll() {
         return jpaRepo.findAll().stream().map(this::toDomain).toList();
     }
 
     @Override
-    public Optional<ConfiguracionSistema> findByClave(String clave) {
-        return jpaRepo.findByClave(clave).map(this::toDomain);
+    public Optional<ConfiguracionGlobal> findByClave(String clave) {
+        return jpaRepo.findById(clave).map(this::toDomain);
     }
 
     @Override
-    public ConfiguracionSistema save(ConfiguracionSistema config) {
+    public ConfiguracionGlobal save(ConfiguracionGlobal config) {
         return toDomain(jpaRepo.save(toEntity(config)));
     }
 
     @Override
-    public List<ConfiguracionSistema> saveAll(List<ConfiguracionSistema> configs) {
+    public List<ConfiguracionGlobal> saveAll(List<ConfiguracionGlobal> configs) {
         return jpaRepo.saveAll(configs.stream().map(this::toEntity).toList())
                 .stream().map(this::toDomain).toList();
     }
 
-    private ConfiguracionSistema toDomain(ConfiguracionSistemaEntity e) {
-        return ConfiguracionSistema.builder()
-                .id(e.getId())
+    private ConfiguracionGlobal toDomain(ConfiguracionGlobalEntity e) {
+        return ConfiguracionGlobal.builder()
                 .clave(e.getClave())
                 .valor(e.getValor())
                 .descripcion(e.getDescripcion())
                 .tipo(e.getTipo())
-                .fechaActualizacion(e.getFechaActualizacion())
+                .esSecreto(e.isEsSecreto())
+                .createdAt(e.getCreatedAt())
+                .updatedAt(e.getUpdatedAt())
                 .build();
     }
 
-    private ConfiguracionSistemaEntity toEntity(ConfiguracionSistema d) {
-        return ConfiguracionSistemaEntity.builder()
-                .id(d.getId())
+    private ConfiguracionGlobalEntity toEntity(ConfiguracionGlobal d) {
+        return ConfiguracionGlobalEntity.builder()
                 .clave(d.getClave())
                 .valor(d.getValor())
                 .descripcion(d.getDescripcion())
                 .tipo(d.getTipo())
-                .fechaActualizacion(d.getFechaActualizacion())
+                .esSecreto(d.isEsSecreto())
+                .createdAt(d.getCreatedAt())
+                .updatedAt(d.getUpdatedAt())
                 .build();
     }
 }

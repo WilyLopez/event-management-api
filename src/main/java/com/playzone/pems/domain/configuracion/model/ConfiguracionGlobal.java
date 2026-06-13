@@ -8,12 +8,13 @@ import java.time.OffsetDateTime;
 @Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class ConfiguracionSistema {
+public class ConfiguracionGlobal {
 
-    private Long           id;
     private String         clave;
     private String         valor;
     private String         descripcion;
     private String         tipo;
-    private OffsetDateTime fechaActualizacion;
+    private boolean        esSecreto;
+    private OffsetDateTime createdAt;
+    private OffsetDateTime updatedAt;
 }
