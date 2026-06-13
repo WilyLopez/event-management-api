@@ -6,9 +6,7 @@ import com.playzone.pems.domain.evento.repository.EventoPrivadoRepository;
 import com.playzone.pems.infrastructure.persistence.calendario.jpa.TurnoJpaRepository;
 import com.playzone.pems.infrastructure.persistence.evento.jpa.EventoPrivadoJpaRepository;
 import com.playzone.pems.infrastructure.persistence.evento.mapper.EventoPrivadoEntityMapper;
-import com.playzone.pems.infrastructure.persistence.usuario.jpa.ClienteJpaRepository;
 import com.playzone.pems.infrastructure.persistence.usuario.jpa.SedeJpaRepository;
-import com.playzone.pems.infrastructure.persistence.usuario.jpa.UsuarioAdminJpaRepository;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -16,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -25,10 +24,8 @@ import java.util.Optional;
 public class EventoPrivadoPersistenceAdapter implements EventoPrivadoRepository {
 
     private final EventoPrivadoJpaRepository eventoJpa;
-    private final ClienteJpaRepository       clienteJpa;
     private final SedeJpaRepository          sedeJpa;
     private final TurnoJpaRepository         turnoJpa;
-    private final UsuarioAdminJpaRepository  adminJpa;
     private final EventoPrivadoEntityMapper  mapper;
 
     @Override public Optional<EventoPrivado> findById(Long id) {
@@ -36,7 +33,7 @@ public class EventoPrivadoPersistenceAdapter implements EventoPrivadoRepository 
     }
 
     @Override public Page<EventoPrivado> findByCliente(Long idCliente, Pageable pageable) {
-        return eventoJpa.findByCliente_Id(idCliente, pageable).map(mapper::toDomain);
+        return eventoJpa.findByClienteId(idCliente, pageable).map(mapper::toDomain);
     }
 
     @Override public Page<EventoPrivado> findBySedeAndEstado(Long idSede, EstadoEventoPrivado estado, Pageable pageable) {
@@ -81,15 +78,31 @@ public class EventoPrivadoPersistenceAdapter implements EventoPrivadoRepository 
     @Override
     @Transactional
     public EventoPrivado save(EventoPrivado evento) {
-        var cliente = clienteJpa.findById(evento.getIdCliente())
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente", evento.getIdCliente()));
         var sede = sedeJpa.findById(evento.getIdSede())
                 .orElseThrow(() -> new ResourceNotFoundException("Sede", evento.getIdSede()));
         var turno = turnoJpa.findById(evento.getIdTurno())
                 .orElseThrow(() -> new ResourceNotFoundException("Turno", evento.getIdTurno()));
-        var gestor = evento.getIdUsuarioGestor() != null
-                ? adminJpa.findById(evento.getIdUsuarioGestor()).orElse(null) : null;
 
-        return mapper.toDomain(eventoJpa.save(mapper.toEntity(evento, cliente, sede, turno, gestor)));
+        return mapper.toDomain(eventoJpa.save(mapper.toEntity(evento, sede, turno)));
+    }
+
+    @Override public BigDecimal sumAdelantosBySedeAndPeriodo(Long idSede, int anio, int mes) {
+        return eventoJpa.sumAdelantosBySedeAndPeriodo(idSede, anio, mes);
+    }
+
+    @Override public BigDecimal sumSaldoPendienteBySedeAndMes(Long idSede, int anio, int mes) {
+        return eventoJpa.sumSaldoPendienteBySedeAndMes(idSede, anio, mes);
+    }
+
+    @Override public int countBySedeAndEstado(Long idSede, EstadoEventoPrivado estado) {
+        return eventoJpa.countBySedeAndEstado(idSede, estado);
+    }
+
+    @Override public int countBySedeAndRangoAndEstado(Long idSede, LocalDate inicio, LocalDate fin, EstadoEventoPrivado estado) {
+        return eventoJpa.countBySedeAndRangoAndEstado(idSede, inicio, fin, estado);
+    }
+
+    @Override public int countConfirmadosConSaldo(Long idSede) {
+        return eventoJpa.countConfirmadosConSaldo(idSede);
     }
 }

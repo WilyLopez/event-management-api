@@ -9,8 +9,12 @@ import com.playzone.pems.application.evento.port.in.ConfirmarEventoPrivadoUseCas
 import com.playzone.pems.application.evento.port.in.ConsultarEventosPrivadosUseCase;
 import com.playzone.pems.application.evento.port.in.SolicitarEventoPrivadoUseCase;
 import com.playzone.pems.application.evento.port.out.EnviarNotificacionEventoPort;
-import com.playzone.pems.application.finanzas.port.in.RegistrarIngresoUseCase;
 import com.playzone.pems.domain.calendario.exception.FechaNoDisponibleException;
+import com.playzone.pems.domain.venta.model.Venta;
+import com.playzone.pems.domain.venta.model.VentaPago;
+import com.playzone.pems.domain.venta.repository.VentaPagoRepository;
+import com.playzone.pems.domain.venta.repository.VentaRepository;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.domain.calendario.model.ConfiguracionCalendario;
 import com.playzone.pems.domain.calendario.repository.BloqueCalendarioRepository;
 import com.playzone.pems.domain.calendario.repository.ConfiguracionCalendarioRepository;
@@ -24,14 +28,14 @@ import com.playzone.pems.domain.evento.model.enums.EstadoEventoPrivado;
 import com.playzone.pems.domain.evento.repository.EventoExtraRepository;
 import com.playzone.pems.domain.evento.repository.EventoPrivadoRepository;
 import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
-import com.playzone.pems.domain.finanzas.model.enums.CategoriaIngreso;
-import com.playzone.pems.domain.usuario.model.Cliente;
-import com.playzone.pems.domain.usuario.repository.ClienteRepository;
+import com.playzone.pems.domain.usuario.model.ClientePerfil;
+import com.playzone.pems.domain.usuario.repository.ClientePerfilRepository;
 import com.playzone.pems.domain.calendario.model.Turno;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import com.playzone.pems.shared.exception.ValidationException;
 import com.playzone.pems.shared.util.FechaUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -42,7 +46,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EventoPrivadoService
@@ -54,14 +60,16 @@ public class EventoPrivadoService
 
     private final EventoPrivadoRepository         eventoRepository;
     private final ReservaPublicaRepository        reservaRepository;
-    private final ClienteRepository               clienteRepository;
+    private final ClientePerfilRepository          clientePerfilRepository;
     private final BloqueCalendarioRepository      bloqueRepository;
     private final FeriadoRepository               feriadoRepository;
     private final TurnoRepository                 turnoRepository;
     private final ConfiguracionCalendarioRepository configRepository;
     private final EnviarNotificacionEventoPort    notificacionPort;
-    private final RegistrarIngresoUseCase         registrarIngresoUseCase;
     private final EventoExtraRepository           eventoExtraRepository;
+    private final VentaRepository                 ventaRepository;
+    private final VentaPagoRepository             ventaPagoRepository;
+    private final SupabaseAuthFacade              supabaseAuthFacade;
     private final ExtraPaqueteRepository          extraPaqueteRepository;
     private final ServicioCotizacionRepository    servicioCotizacionRepository;
 
@@ -128,7 +136,7 @@ public class EventoPrivadoService
                 .montoAdelanto(BigDecimal.ZERO)
                 .nombreNino(command.getNombreNino())
                 .edadCumple(command.getEdadCumple())
-                .observaciones(command.getObservaciones())
+                .notasInternas(command.getObservaciones())
                 .idPaquete(command.getIdPaquete())
                 .descripcionPersonalizada(command.getDescripcionPersonalizada())
                 .presupuestoEstimado(command.getPresupuestoEstimado())
@@ -139,11 +147,15 @@ public class EventoPrivadoService
         persistirExtras(guardado.getId(), command.getIdsExtras(), command.getExtrasLibres());
         persistirServiciosCotizacion(guardado.getId(), command.getIdsServiciosCotizacion());
 
-        Cliente cliente = obtenerCliente(guardado.getIdCliente());
-        Turno   turno   = obtenerTurno(guardado.getIdTurno());
+        ClientePerfil cliente = obtenerCliente(guardado.getIdCliente());
+        Turno         turno   = obtenerTurno(guardado.getIdTurno());
         EventoPrivadoQuery query = toQuery(guardado, cliente, turno, true);
 
-        notificacionPort.notificarSolicitudRecibida(cliente.getCorreo(), query);
+        if (cliente.getCorreo() != null) {
+            notificacionPort.notificarSolicitudRecibida(cliente.getCorreo(), query);
+        } else {
+            log.warn("Evento {} sin correo de cliente {}, no se envia notificacion solicitud", guardado.getId(), guardado.getIdCliente());
+        }
         notificacionPort.notificarAdminNuevaSolicitud(query);
         return query;
     }
@@ -151,8 +163,9 @@ public class EventoPrivadoService
     @Override
     @Transactional
     public EventoPrivadoQuery ejecutar(Long idEvento, BigDecimal precioTotal,
-                                       BigDecimal montoAdelanto, String medioPagoAdelanto,
-                                       Long idUsuarioGestor) {
+                                       BigDecimal montoAdelanto,
+                                       UUID idUsuarioGestor,
+                                       String medioPago) {
         EventoPrivado evento = obtenerEvento(idEvento);
 
         if (evento.getEstado() != EstadoEventoPrivado.SOLICITADA) {
@@ -163,32 +176,50 @@ public class EventoPrivadoService
                 .estado(EstadoEventoPrivado.CONFIRMADA)
                 .precioTotalContrato(precioTotal)
                 .montoAdelanto(montoAdelanto != null ? montoAdelanto : BigDecimal.ZERO)
-                .medioPagoAdelanto(medioPagoAdelanto)
                 .idUsuarioGestor(idUsuarioGestor)
                 .build();
 
         EventoPrivado guardado = eventoRepository.save(confirmado);
 
         if (montoAdelanto != null && montoAdelanto.compareTo(BigDecimal.ZERO) > 0) {
-            registrarIngresoUseCase.registrarAutomatico(
-                    CategoriaIngreso.ADELANTO_EVENTO,
-                    guardado.getIdSede(),
-                    null,
-                    guardado.getId(),
-                    montoAdelanto,
-                    guardado.getFechaEvento(),
-                    medioPagoAdelanto);
+            Venta ventaAdelanto = ventaRepository.save(Venta.builder()
+                    .idSede(guardado.getIdSede())
+                    .clienteId(guardado.getIdCliente())
+                    .eventoId(guardado.getId())
+                    .tipo("ADELANTO_EVENTO")
+                    .canalCodigo("MOSTRADOR")
+                    .subtotal(montoAdelanto)
+                    .descuento(BigDecimal.ZERO)
+                    .total(montoAdelanto)
+                    .efectivoRecibido(BigDecimal.ZERO)
+                    .vuelto(BigDecimal.ZERO)
+                    .actaFirmada(false)
+                    .esAnticipada(false)
+                    .createdBy(idUsuarioGestor)
+                    .build());
+            ventaPagoRepository.save(VentaPago.builder()
+                    .ventaId(ventaAdelanto.getId())
+                    .medioPagoCodigo(medioPago)
+                    .monto(montoAdelanto)
+                    .esValidado(true)
+                    .validadoPor(idUsuarioGestor)
+                    .validadoAt(java.time.OffsetDateTime.now())
+                    .build());
         }
 
-        Cliente cliente = obtenerCliente(guardado.getIdCliente());
-        Turno   turno   = obtenerTurno(guardado.getIdTurno());
+        ClientePerfil cliente = obtenerCliente(guardado.getIdCliente());
+        Turno         turno   = obtenerTurno(guardado.getIdTurno());
         EventoPrivadoQuery query = toQuery(guardado, cliente, turno, true);
-        notificacionPort.notificarEventoConfirmado(cliente.getCorreo(), query);
+        if (cliente.getCorreo() != null) {
+            notificacionPort.notificarEventoConfirmado(cliente.getCorreo(), query);
+        } else {
+            log.warn("Evento {} sin correo de cliente {}, no se envia notificacion confirmacion", guardado.getId(), guardado.getIdCliente());
+        }
         return query;
     }
 
     @Transactional
-    public EventoPrivadoQuery completar(Long idEvento, Long idUsuarioGestor) {
+    public EventoPrivadoQuery completar(Long idEvento, UUID idUsuarioGestor) {
         EventoPrivado evento = obtenerEvento(idEvento);
         if (evento.getEstado() != EstadoEventoPrivado.CONFIRMADA) {
             throw new ValidationException("Solo se pueden completar eventos en estado CONFIRMADA.");
@@ -202,17 +233,32 @@ public class EventoPrivadoService
     }
 
     @Transactional
-    public EventoPrivadoQuery registrarSaldo(Long idEvento, BigDecimal monto, String medioPago, Long idUsuarioGestor) {
+    public EventoPrivadoQuery registrarSaldo(Long idEvento, BigDecimal monto, String medioPago, UUID idUsuarioGestor) {
         EventoPrivado evento = obtenerEvento(idEvento);
 
-        registrarIngresoUseCase.registrarAutomatico(
-                CategoriaIngreso.SALDO_EVENTO,
-                evento.getIdSede(),
-                null,
-                evento.getId(),
-                monto,
-                LocalDate.now(),
-                medioPago);
+        Venta ventaSaldo = ventaRepository.save(Venta.builder()
+                .idSede(evento.getIdSede())
+                .clienteId(evento.getIdCliente())
+                .eventoId(evento.getId())
+                .tipo("SALDO_EVENTO")
+                .canalCodigo("MOSTRADOR")
+                .subtotal(monto)
+                .descuento(BigDecimal.ZERO)
+                .total(monto)
+                .efectivoRecibido(BigDecimal.ZERO)
+                .vuelto(BigDecimal.ZERO)
+                .actaFirmada(false)
+                .esAnticipada(false)
+                .createdBy(idUsuarioGestor)
+                .build());
+        ventaPagoRepository.save(VentaPago.builder()
+                .ventaId(ventaSaldo.getId())
+                .medioPagoCodigo(medioPago)
+                .monto(monto)
+                .esValidado(true)
+                .validadoPor(idUsuarioGestor)
+                .validadoAt(java.time.OffsetDateTime.now())
+                .build());
 
         BigDecimal nuevoAdelanto = (evento.getMontoAdelanto() != null ? evento.getMontoAdelanto() : BigDecimal.ZERO)
                 .add(monto);
@@ -239,10 +285,14 @@ public class EventoPrivadoService
                 .build();
 
         EventoPrivado guardado = eventoRepository.save(cancelado);
-        Cliente cliente = obtenerCliente(guardado.getIdCliente());
-        Turno   turno   = obtenerTurno(guardado.getIdTurno());
+        ClientePerfil cliente = obtenerCliente(guardado.getIdCliente());
+        Turno         turno   = obtenerTurno(guardado.getIdTurno());
         EventoPrivadoQuery query = toQuery(guardado, cliente, turno, false);
-        notificacionPort.notificarEventoCancelado(cliente.getCorreo(), query, motivoCancelacion);
+        if (cliente.getCorreo() != null) {
+            notificacionPort.notificarEventoCancelado(cliente.getCorreo(), query, motivoCancelacion);
+        } else {
+            log.warn("Evento {} sin correo de cliente {}, no se envia notificacion cancelacion", guardado.getId(), guardado.getIdCliente());
+        }
         return query;
     }
 
@@ -315,8 +365,8 @@ public class EventoPrivadoService
                 .orElseThrow(() -> new ResourceNotFoundException("EventoPrivado", id));
     }
 
-    private Cliente obtenerCliente(Long idCliente) {
-        return clienteRepository.findById(idCliente)
+    private ClientePerfil obtenerCliente(Long idCliente) {
+        return clientePerfilRepository.buscarPorId(idCliente)
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente", idCliente));
     }
 
@@ -325,7 +375,7 @@ public class EventoPrivadoService
                 .orElseThrow(() -> new ResourceNotFoundException("Turno", idTurno));
     }
 
-    private EventoPrivadoQuery toQuery(EventoPrivado e, Cliente c, Turno t, boolean cargarExtras) {
+    private EventoPrivadoQuery toQuery(EventoPrivado e, ClientePerfil c, Turno t, boolean cargarExtras) {
         List<EventoExtraQuery> extras = cargarExtras
                 ? eventoExtraRepository.findByEvento(e.getId()).stream()
                         .map(ex -> {
@@ -346,7 +396,7 @@ public class EventoPrivadoService
         return EventoPrivadoQuery.builder()
                 .id(e.getId())
                 .idCliente(e.getIdCliente())
-                .nombreCliente(c.getNombre())
+                .nombreCliente(c.nombreCompleto())
                 .correoCliente(c.getCorreo())
                 .telefonoCliente(c.getTelefono())
                 .idSede(e.getIdSede())
@@ -362,9 +412,7 @@ public class EventoPrivadoService
                 .precioTotalContrato(e.getPrecioTotalContrato())
                 .montoAdelanto(e.getMontoAdelanto())
                 .montoSaldo(e.calcularMontoSaldo())
-                .medioPagoAdelanto(e.getMedioPagoAdelanto())
-                .notasInternas(e.getNotasInternas())
-                .observaciones(e.getObservaciones())
+                .observaciones(e.getNotasInternas())
                 .nombreNino(e.getNombreNino())
                 .edadCumple(e.getEdadCumple())
                 .idPaquete(e.getIdPaquete())
@@ -377,7 +425,19 @@ public class EventoPrivadoService
                 .horaInicioReal(e.getHoraInicioReal())
                 .horaFinReal(e.getHoraFinReal())
                 .extras(extras)
+                .medioPago(fetchMedioPagoEvento(e.getId()))
                 .fechaCreacion(e.getFechaCreacion())
                 .build();
+    }
+
+    private String fetchMedioPagoEvento(Long idEvento) {
+        List<Venta> ventas = ventaRepository.findByEventoId(idEvento);
+        if (ventas.isEmpty()) return null;
+        List<VentaPago> pagos = ventas.stream()
+                .flatMap(v -> ventaPagoRepository.findByVentaId(v.getId()).stream())
+                .toList();
+        if (pagos.isEmpty()) return null;
+        long distinct = pagos.stream().map(VentaPago::getMedioPagoCodigo).distinct().count();
+        return distinct == 1 ? pagos.get(0).getMedioPagoCodigo() : "MULTIPLE";
     }
 }

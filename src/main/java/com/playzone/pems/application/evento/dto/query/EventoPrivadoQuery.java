@@ -5,7 +5,7 @@ import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Getter
@@ -30,8 +30,6 @@ public class EventoPrivadoQuery {
     private final BigDecimal                precioTotalContrato;
     private final BigDecimal                montoAdelanto;
     private final BigDecimal                montoSaldo;
-    private final String                    medioPagoAdelanto;
-    private final String                    notasInternas;
     private final String                    observaciones;
     private final String                    nombreNino;
     private final Integer                   edadCumple;
@@ -42,9 +40,10 @@ public class EventoPrivadoQuery {
     private final String                    usuarioGestor;
     private final String                    estadoOperativo;
     private final boolean                   checklistCompleto;
-    private final LocalDateTime             horaInicioReal;
-    private final LocalDateTime             horaFinReal;
+    private final OffsetDateTime             horaInicioReal;
+    private final OffsetDateTime             horaFinReal;
     private final List<ChecklistEventoQuery> checklist;
     private final List<EventoExtraQuery>    extras;
-    private final LocalDateTime             fechaCreacion;
+    private final String                    medioPago;
+    private final OffsetDateTime             fechaCreacion;
 }

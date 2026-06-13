@@ -9,12 +9,12 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public enum CanalReserva {
 
-    ONLINE(
-            "ONLINE",
+    WEB(
+            "WEB",
             "Reserva realizada desde el sitio web"
     ),
-    PRESENCIAL(
-            "PRESENCIAL",
+    MOSTRADOR(
+            "MOSTRADOR",
             "Registro realizado en el local"
     );
 
@@ -22,7 +22,7 @@ public enum CanalReserva {
     private final String descripcion;
 
     public boolean esAutoservicio() {
-        return this == ONLINE;
+        return this == WEB;
     }
 
     public static CanalReserva desdeCodigo(String codigo) {

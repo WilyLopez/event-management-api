@@ -5,6 +5,7 @@ import com.playzone.pems.domain.evento.model.enums.EstadoEventoPrivado;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -37,4 +38,14 @@ public interface EventoPrivadoRepository {
             Long idSede, EstadoEventoPrivado estadoEnum, LocalDate fecha, String searchPattern, Pageable pageable);
 
     EventoPrivado save(EventoPrivado evento);
+
+    BigDecimal sumAdelantosBySedeAndPeriodo(Long idSede, int anio, int mes);
+
+    BigDecimal sumSaldoPendienteBySedeAndMes(Long idSede, int anio, int mes);
+
+    int countBySedeAndEstado(Long idSede, EstadoEventoPrivado estado);
+
+    int countBySedeAndRangoAndEstado(Long idSede, LocalDate inicio, LocalDate fin, EstadoEventoPrivado estado);
+
+    int countConfirmadosConSaldo(Long idSede);
 }

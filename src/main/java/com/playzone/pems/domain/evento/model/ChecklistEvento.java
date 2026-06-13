@@ -5,7 +5,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder(toBuilder = true)
@@ -18,8 +19,8 @@ public class ChecklistEvento {
     private String        tarea;
     private boolean       completada;
     private int           orden;
-    private Long          idUsuarioCompleto;
+    private UUID          idUsuarioCompleto;
     private String        nombreUsuarioCompleto;
-    private LocalDateTime fechaCompletado;
-    private LocalDateTime fechaCreacion;
+    private OffsetDateTime fechaCompletado;
+    private OffsetDateTime fechaCreacion;
 }

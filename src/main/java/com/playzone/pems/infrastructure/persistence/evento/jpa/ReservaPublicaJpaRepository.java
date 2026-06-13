@@ -1,7 +1,7 @@
 package com.playzone.pems.infrastructure.persistence.evento.jpa;
 
-import com.playzone.pems.application.dashboard.dto.query.ReservasDiaQuery;
 import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
+import com.playzone.pems.domain.evento.query.ReservasPorDia;
 import com.playzone.pems.infrastructure.persistence.evento.entity.ReservaPublicaEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,7 +18,7 @@ public interface ReservaPublicaJpaRepository extends JpaRepository<ReservaPublic
 
     Optional<ReservaPublicaEntity> findByNumeroTicket(String numeroTicket);
 
-    Page<ReservaPublicaEntity> findByCliente_Id(Long idCliente, Pageable pageable);
+    Page<ReservaPublicaEntity> findByClienteId(Long clienteId, Pageable pageable);
 
     Page<ReservaPublicaEntity> findBySede_IdAndFechaEvento(Long idSede, LocalDate fecha, Pageable pageable);
 
@@ -38,7 +38,6 @@ public interface ReservaPublicaJpaRepository extends JpaRepository<ReservaPublic
               AND (CAST(:fecha AS localdate) IS NULL OR r.fechaEvento = :fecha)
               AND (CAST(:ingresado AS boolean) IS NULL OR r.ingresado = :ingresado)
               AND (CAST(:esReprogramacion AS boolean) IS NULL OR r.esReprogramacion = :esReprogramacion)
-              AND (:medioPago IS NULL OR r.medioPago = :medioPago)
               AND (:searchPattern IS NULL OR
                    LOWER(r.numeroTicket)      LIKE :searchPattern OR
                    LOWER(r.nombreNino)        LIKE :searchPattern OR
@@ -51,7 +50,6 @@ public interface ReservaPublicaJpaRepository extends JpaRepository<ReservaPublic
             @Param("fecha")            LocalDate            fecha,
             @Param("ingresado")        Boolean              ingresado,
             @Param("esReprogramacion") Boolean              esReprogramacion,
-            @Param("medioPago")        String               medioPago,
             @Param("searchPattern")    String               searchPattern,
             Pageable pageable
     );
@@ -117,15 +115,8 @@ public interface ReservaPublicaJpaRepository extends JpaRepository<ReservaPublic
     BigDecimal avgTicketBySedeAndPeriodo(
             @Param("idSede") Long idSede, @Param("anio") int anio, @Param("mes") int mes);
 
-    @Query("SELECT COALESCE(SUM(r.totalPagado), 0) FROM ReservaPublicaEntity r " +
-           "WHERE r.sede.id = :idSede AND YEAR(r.fechaEvento) = :anio AND MONTH(r.fechaEvento) = :mes " +
-           "AND r.estado <> 'CANCELADA' AND r.medioPago = :medioPago")
-    BigDecimal sumIngresosBySedeAndPeriodoAndMedioPago(
-            @Param("idSede") Long idSede, @Param("anio") int anio, @Param("mes") int mes,
-            @Param("medioPago") String medioPago);
-
     @Query("""
-            SELECT new com.playzone.pems.application.dashboard.dto.query.ReservasDiaQuery(
+            SELECT new com.playzone.pems.domain.evento.query.ReservasPorDia(
                 r.fechaEvento, COUNT(r))
             FROM ReservaPublicaEntity r
             WHERE r.sede.id = :idSede
@@ -134,7 +125,7 @@ public interface ReservaPublicaJpaRepository extends JpaRepository<ReservaPublic
             GROUP BY r.fechaEvento
             ORDER BY r.fechaEvento
             """)
-    List<ReservasDiaQuery> countAgrupadoPorDia(
+    List<ReservasPorDia> countAgrupadoPorDia(
             @Param("idSede") Long idSede,
             @Param("inicio") LocalDate inicio,
             @Param("fin")    LocalDate fin);

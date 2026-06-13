@@ -14,7 +14,7 @@ import java.util.List;
 
 public interface EventoPrivadoJpaRepository extends JpaRepository<EventoPrivadoEntity, Long> {
 
-    Page<EventoPrivadoEntity> findByCliente_Id(Long idCliente, Pageable pageable);
+    Page<EventoPrivadoEntity> findByClienteId(Long clienteId, Pageable pageable);
 
     Page<EventoPrivadoEntity> findBySede_IdAndEstado(Long idSede, EstadoEventoPrivado estado, Pageable pageable);
 
@@ -31,9 +31,7 @@ public interface EventoPrivadoJpaRepository extends JpaRepository<EventoPrivadoE
               AND (:estadoEnum IS NULL OR e.estado = :estadoEnum)
               AND (CAST(:fecha AS localdate) IS NULL OR e.fechaEvento = :fecha)
               AND (:searchPattern IS NULL OR
-                   LOWER(e.tipoEvento)             LIKE :searchPattern OR
-                   LOWER(e.cliente.nombre)         LIKE :searchPattern OR
-                   LOWER(e.cliente.correo)         LIKE :searchPattern
+                   LOWER(e.tipoEvento)             LIKE :searchPattern
               )
             """)
     Page<EventoPrivadoEntity> buscarAdmin(

@@ -8,7 +8,8 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder(toBuilder = true)
@@ -32,19 +33,17 @@ public class EventoPrivado {
     private String              notasInternas;
     private String              nombreNino;
     private Integer             edadCumple;
-    private String              medioPagoAdelanto;
-    private String              observaciones;
     private Long                idPaquete;
     private String              descripcionPersonalizada;
     private BigDecimal          presupuestoEstimado;
     private boolean             esCotizacionPersonalizada;
-    private Long                idUsuarioGestor;
-    private LocalDateTime       fechaCreacion;
-    private LocalDateTime       fechaActualizacion;
+    private UUID                idUsuarioGestor;
+    private OffsetDateTime       fechaCreacion;
+    private OffsetDateTime       fechaActualizacion;
     private String              estadoOperativo;
     private boolean             checklistCompleto;
-    private LocalDateTime       horaInicioReal;
-    private LocalDateTime       horaFinReal;
+    private OffsetDateTime       horaInicioReal;
+    private OffsetDateTime       horaFinReal;
 
     public BigDecimal calcularMontoSaldo() {
         if (precioTotalContrato == null) return null;

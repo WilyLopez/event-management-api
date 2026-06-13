@@ -14,8 +14,8 @@ import com.playzone.pems.domain.evento.model.ReservaPublica;
 import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
 import com.playzone.pems.domain.evento.repository.EventoPrivadoRepository;
 import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
-import com.playzone.pems.domain.usuario.model.Cliente;
-import com.playzone.pems.domain.usuario.repository.ClienteRepository;
+import com.playzone.pems.domain.usuario.model.ClientePerfil;
+import com.playzone.pems.domain.usuario.repository.ClientePerfilRepository;
 import com.playzone.pems.shared.exception.ValidationException;
 import com.playzone.pems.shared.util.FechaUtil;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +25,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -35,7 +36,7 @@ public class ReservaAdminService
                    BuscarReservasAdminUseCase {
 
     private final ReservaPublicaRepository          reservaRepository;
-    private final ClienteRepository                 clienteRepository;
+    private final ClientePerfilRepository            clientePerfilRepository;
     private final FeriadoRepository                 feriadoRepository;
     private final BloqueCalendarioRepository        bloqueRepository;
     private final ConfiguracionCalendarioRepository configRepository;
@@ -43,7 +44,7 @@ public class ReservaAdminService
 
     @Override
     @Transactional
-    public ReservaPublicaQuery ejecutar(Long idReserva, Long idUsuarioAdmin) {
+    public ReservaPublicaQuery ejecutar(Long idReserva, UUID idUsuarioAdmin) {
         ReservaPublica reserva = reservaRepository.findById(idReserva)
                 .orElseThrow(() -> new ReservaNotFoundException(idReserva));
 
@@ -55,12 +56,12 @@ public class ReservaAdminService
         ReservaPublica actualizada = reserva.toBuilder()
                 .estado(EstadoReservaPublica.COMPLETADA)
                 .ingresado(true)
-                .fechaIngreso(LocalDateTime.now(ZoneId.of("America/Lima")))
+                .fechaIngreso(OffsetDateTime.now(ZoneId.of("America/Lima")))
                 .build();
 
         ReservaPublica guardada = reservaRepository.save(actualizada);
-        String nombre = clienteRepository.findById(guardada.getIdCliente())
-                .map(Cliente::getNombre).orElse(null);
+        String nombre = clientePerfilRepository.buscarPorId(guardada.getIdCliente())
+                .map(ClientePerfil::nombreCompleto).orElse(null);
 
         return toQuery(guardada, nombre, null);
     }
@@ -70,7 +71,7 @@ public class ReservaAdminService
     public Page<ReservaPublicaQuery> buscar(
             Long idSede, String estado, LocalDate fecha,
             Boolean ingresado, Boolean esReprogramacion,
-            String search, String medioPago, Pageable pageable) {
+            String search, Pageable pageable) {
 
         EstadoReservaPublica estadoEnum = null;
         if (estado != null && !estado.isBlank()) {
@@ -80,18 +81,14 @@ public class ReservaAdminService
 
         String searchPattern = (search != null && !search.isBlank())
                 ? "%" + search.toLowerCase() + "%" : null;
-        String medioPagoFiltro = (medioPago != null && !medioPago.isBlank()) ? medioPago : null;
 
         return reservaRepository.buscarAdmin(
                 idSede, estadoEnum, fecha, ingresado, esReprogramacion,
-                searchPattern, medioPagoFiltro,
+                searchPattern,
                 pageable
         ).map(r -> {
-            String nombre = clienteRepository.findById(r.getIdCliente())
-                    .map(Cliente::getNombre).orElse(null);
-            String correo = clienteRepository.findById(r.getIdCliente())
-                    .map(Cliente::getCorreo).orElse(null);
-            return toQuery(r, nombre, correo);
+            var cp = clientePerfilRepository.buscarPorId(r.getIdCliente()).orElse(null);
+            return toQuery(r, cp != null ? cp.nombreCompleto() : null, cp != null ? cp.getCorreo() : null);
         });
     }
 
@@ -127,7 +124,7 @@ public class ReservaAdminService
         ReservaPublica actualizada = r.toBuilder()
                 .ingresado(true)
                 .estado(EstadoReservaPublica.COMPLETADA)
-                .fechaIngreso(LocalDateTime.now(ZoneId.of("America/Lima")))
+                .fechaIngreso(OffsetDateTime.now(ZoneId.of("America/Lima")))
                 .build();
         return toDetalle(reservaRepository.save(actualizada));
     }
@@ -220,8 +217,6 @@ public class ReservaAdminService
                 .ingresado(r.isIngresado())
                 .fechaIngreso(r.getFechaIngreso())
                 .codigoQr(r.getCodigoQr())
-                .medioPago(r.getMedioPago())
-                .referenciaPago(r.getReferenciaPago())
                 .fechaCreacion(r.getFechaCreacion())
                 .build();
     }

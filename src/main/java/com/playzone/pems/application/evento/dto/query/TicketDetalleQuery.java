@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder
@@ -18,7 +18,7 @@ public class TicketDetalleQuery {
     private String        numeroTicket;
     private String        estado;
     private boolean       yaIngreso;
-    private LocalDateTime fechaIngreso;
+    private OffsetDateTime fechaIngreso;
     private LocalDate     fechaVisita;
     private boolean       esHoy;
     private String        nombreNino;

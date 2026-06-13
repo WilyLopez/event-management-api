@@ -7,20 +7,13 @@ import com.playzone.pems.application.evento.dto.query.ReservaPublicaQuery;
 import com.playzone.pems.application.evento.dto.query.TicketDetalleQuery;
 import com.playzone.pems.application.evento.port.in.*;
 import com.playzone.pems.application.evento.service.ReservaAdminService;
-import com.playzone.pems.application.finanzas.port.in.RegistrarIngresoUseCase;
-import com.playzone.pems.domain.evento.model.ReservaPublica;
-import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
-import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
-import com.playzone.pems.domain.finanzas.model.enums.CategoriaIngreso;
-import com.playzone.pems.domain.storage.StoragePort;
-import com.playzone.pems.domain.usuario.repository.ClienteRepository;
-import com.playzone.pems.domain.usuario.repository.SedeRepository;
+import com.playzone.pems.application.evento.service.ReservaPublicaService;
 import com.playzone.pems.interfaces.rest.evento.request.CrearReservaRequest;
 import com.playzone.pems.interfaces.rest.evento.request.ReprogramarReservaRequest;
 import com.playzone.pems.interfaces.rest.evento.response.MetricasReservaResponse;
 import com.playzone.pems.interfaces.rest.evento.response.ReservaPublicaResponse;
 import com.playzone.pems.interfaces.rest.evento.response.TicketDetalleResponse;
-import com.playzone.pems.shared.exception.ResourceNotFoundException;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.shared.exception.ValidationException;
 import com.playzone.pems.shared.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -32,9 +25,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 
@@ -49,39 +44,37 @@ public class ReservaPublicaController {
     private final ConsultarReservasUseCase    consultarUseCase;
     private final BuscarReservasAdminUseCase  buscarAdminUseCase;
     private final ConfirmarIngresoUseCase     ingresoUseCase;
-    private final RegistrarIngresoUseCase     registrarIngresoUseCase;
-    private final ReservaPublicaRepository    reservaRepository;
-    private final ClienteRepository           clienteRepository;
-    private final SedeRepository              sedeRepository;
-    private final StoragePort                 storagePort;
+    private final ReservaPublicaService       reservaService;
     private final ReservaAdminService         reservaAdminService;
+    private final SupabaseAuthFacade          supabaseAuthFacade;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('CLIENTE','ADMIN')")
+    @PreAuthorize("hasAuthority('reserva.ver')")
     public ResponseEntity<ApiResponse<Page<ReservaPublicaResponse>>> listar(
             @RequestParam(required = false) Long idCliente,
             @RequestParam(required = false) Long idSede,
             @RequestParam(required = false) String estado,
             @RequestParam(required = false)
                 @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
-            @RequestAttribute("idUsuario") Long idUsuario,
             Pageable pageable) {
 
+        Long idClienteEfectivo = resolverIdCliente(idCliente);
         Page<ReservaPublicaQuery> result;
-        if (idCliente != null) {
-            result = consultarUseCase.consultarPorCliente(idCliente, pageable);
+        if (idClienteEfectivo != null) {
+            result = consultarUseCase.consultarPorCliente(idClienteEfectivo, pageable);
         } else if (idSede != null && fecha != null) {
             result = consultarUseCase.consultarPorSedeYFecha(idSede, fecha, pageable);
         } else if (idSede != null && estado != null) {
             result = consultarUseCase.consultarPorSedeYEstado(idSede, estado, pageable);
         } else {
-            result = consultarUseCase.consultarPorCliente(idUsuario, pageable);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Se requiere idCliente o filtros de sede");
         }
         return ResponseEntity.ok(ApiResponse.ok(result.map(this::toResponse)));
     }
 
     @GetMapping("/admin")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('reserva.ver')")
     public ResponseEntity<ApiResponse<Page<ReservaPublicaResponse>>> buscarAdmin(
             @RequestParam(required = false)                    Long      idSede,
             @RequestParam(required = false)                    String    estado,
@@ -90,7 +83,6 @@ public class ReservaPublicaController {
             @RequestParam(required = false)                    Boolean   ingresado,
             @RequestParam(required = false)                    Boolean   esReprogramacion,
             @RequestParam(required = false)                    String    search,
-            @RequestParam(required = false)                    String    medioPago,
             @RequestParam(defaultValue = "0")                  int       page,
             @RequestParam(defaultValue = "20")                 int       size,
             @RequestParam(defaultValue = "fechaEvento,asc")    String    sort) {
@@ -101,12 +93,12 @@ public class ReservaPublicaController {
         Pageable       pageable = PageRequest.of(page, size, Sort.by(dir, parts[0]));
 
         return ResponseEntity.ok(ApiResponse.ok(
-                buscarAdminUseCase.buscar(idSede, estado, fecha, ingresado, esReprogramacion, search, medioPago, pageable)
+                buscarAdminUseCase.buscar(idSede, estado, fecha, ingresado, esReprogramacion, search, pageable)
                         .map(this::toResponse)));
     }
 
     @GetMapping("/admin/metricas")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('reserva.ver')")
     public ResponseEntity<ApiResponse<MetricasReservaResponse>> metricas(
             @RequestParam(required = false) Long idSede,
             @RequestParam(required = false)
@@ -128,27 +120,21 @@ public class ReservaPublicaController {
     }
 
     @GetMapping("/ticket/{numeroTicket}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('reserva.ver')")
     public ResponseEntity<ApiResponse<ReservaPublicaResponse>> obtenerPorTicket(
             @PathVariable String numeroTicket) {
-
-        ReservaPublica r = reservaRepository.findByNumeroTicket(numeroTicket)
-                .orElseThrow(() -> new ResourceNotFoundException("Reserva", "numeroTicket", numeroTicket));
-        return ResponseEntity.ok(ApiResponse.ok(toResponse(buildQueryFromRepo(r))));
+        return ResponseEntity.ok(ApiResponse.ok(toResponse(reservaService.consultarPorNumeroTicket(numeroTicket))));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('CLIENTE','ADMIN')")
+    @PreAuthorize("hasAuthority('reserva.ver')")
     public ResponseEntity<ApiResponse<ReservaPublicaResponse>> obtenerPorId(
             @PathVariable Long id) {
-
-        ReservaPublica r = reservaRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Reserva", id));
-        return ResponseEntity.ok(ApiResponse.ok(toResponse(buildQueryFromRepo(r))));
+        return ResponseEntity.ok(ApiResponse.ok(toResponse(reservaService.consultarPorId(id))));
     }
 
     @PostMapping("/clientes/{idCliente}/sedes/{idSede}")
-    @PreAuthorize("hasAnyRole('CLIENTE','ADMIN')")
+    @PreAuthorize("hasAuthority('reserva.crear')")
     public ResponseEntity<ApiResponse<ReservaPublicaResponse>> crear(
             @PathVariable Long idCliente,
             @PathVariable Long idSede,
@@ -165,8 +151,6 @@ public class ReservaPublicaController {
                         .dniAcompanante(request.getDniAcompanante())
                         .firmoConsentimiento(request.getFirmoConsentimiento())
                         .idPromocionManual(request.getIdPromocionManual())
-                        .medioPago(request.getMedioPago())
-                        .referenciaPago(request.getReferenciaPago())
                         .build());
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -174,7 +158,7 @@ public class ReservaPublicaController {
     }
 
     @PostMapping("/{idReserva}/reprogramar")
-    @PreAuthorize("hasAnyRole('CLIENTE','ADMIN')")
+    @PreAuthorize("hasAuthority('reserva.reprogramar')")
     public ResponseEntity<ApiResponse<ReservaPublicaResponse>> reprogramar(
             @PathVariable Long idReserva,
             @Valid @RequestBody ReprogramarReservaRequest request) {
@@ -187,7 +171,7 @@ public class ReservaPublicaController {
     }
 
     @PostMapping("/{idReserva}/cancelar")
-    @PreAuthorize("hasAnyRole('CLIENTE','ADMIN')")
+    @PreAuthorize("hasAuthority('reserva.cancelar')")
     public ResponseEntity<ApiResponse<ReservaPublicaResponse>> cancelar(
             @PathVariable Long idReserva,
             @RequestParam String motivo) {
@@ -197,41 +181,26 @@ public class ReservaPublicaController {
     }
 
     @PostMapping("/{idReserva}/ingreso")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('reserva.marcar_ingreso')")
     public ResponseEntity<ApiResponse<ReservaPublicaResponse>> confirmarIngreso(
-            @PathVariable Long idReserva,
-            @RequestAttribute Long idUsuarioAdmin) {
+            @PathVariable Long idReserva) {
 
         return ResponseEntity.ok(ApiResponse.ok(
-                toResponse(ingresoUseCase.ejecutar(idReserva, idUsuarioAdmin))));
+                toResponse(ingresoUseCase.ejecutar(idReserva,
+                        supabaseAuthFacade.usuarioActualId()
+                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado"))))));
     }
 
     @PostMapping("/{id}/confirmar-pago")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('reserva.confirmar_pago')")
     public ResponseEntity<ApiResponse<ReservaPublicaResponse>> confirmarPago(
-            @PathVariable Long id) {
-
-        ReservaPublica reserva = reservaRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Reserva", id));
-        if (reserva.getEstado() != EstadoReservaPublica.PENDIENTE) {
-            throw new ValidationException("Solo se pueden confirmar reservas en estado PENDIENTE.");
-        }
-        ReservaPublica guardada = reservaRepository.save(
-                reserva.toBuilder().estado(EstadoReservaPublica.CONFIRMADA).build());
-        registrarIngresoUseCase.registrarAutomatico(
-                CategoriaIngreso.RESERVA_PUBLICA,
-                guardada.getIdSede(),
-                guardada.getId(),
-                null,
-                guardada.getTotalPagado(),
-                guardada.getFechaEvento(),
-                guardada.getMedioPago()
-        );
-        return ResponseEntity.ok(ApiResponse.ok(toResponse(buildQueryFromRepo(guardada))));
+            @PathVariable Long id,
+            @RequestParam String medioPago) {
+        return ResponseEntity.ok(ApiResponse.ok(toResponse(reservaService.confirmarPago(id, medioPago))));
     }
 
     @PostMapping("/{idReserva}/comprobante")
-    @PreAuthorize("hasAnyRole('CLIENTE','ADMIN')")
+    @PreAuthorize("hasAuthority('reserva.editar')")
     public ResponseEntity<ApiResponse<ReservaPublicaResponse>> subirComprobante(
             @PathVariable Long idReserva,
             @RequestParam("archivo") MultipartFile archivo) {
@@ -243,20 +212,12 @@ public class ReservaPublicaController {
         if (archivo.getSize() > 10L * 1024 * 1024) {
             throw new ValidationException("El archivo no puede superar 10 MB.");
         }
-
-        String urlComprobante = storagePort.guardar(archivo, "comprobantes");
-
-        ReservaPublica reserva = reservaRepository.findById(idReserva)
-                .orElseThrow(() -> new ResourceNotFoundException("Reserva", idReserva));
-
-        ReservaPublica guardada = reservaRepository.save(
-                reserva.toBuilder().referenciaPago(urlComprobante).build());
-
-        return ResponseEntity.ok(ApiResponse.ok(toResponse(buildQueryFromRepo(guardada))));
+        return ResponseEntity.ok(ApiResponse.ok(
+                toResponse(reservaService.actualizarReferenciaPago(idReserva, archivo))));
     }
 
     @GetMapping("/control-acceso/ticket/{numeroTicket}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('reserva.marcar_ingreso')")
     public ResponseEntity<ApiResponse<TicketDetalleResponse>> buscarTicketDetalle(
             @PathVariable String numeroTicket) {
         TicketDetalleQuery q = reservaAdminService.buscarTicketDetalle(numeroTicket);
@@ -264,7 +225,7 @@ public class ReservaPublicaController {
     }
 
     @PostMapping("/control-acceso/{idReserva}/marcar-entrada")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('reserva.marcar_ingreso')")
     public ResponseEntity<ApiResponse<TicketDetalleResponse>> marcarEntrada(
             @PathVariable Long idReserva) {
         TicketDetalleQuery q = reservaAdminService.marcarEntrada(idReserva);
@@ -272,12 +233,25 @@ public class ReservaPublicaController {
     }
 
     @PatchMapping("/control-acceso/{idReserva}/fecha")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('reserva.editar')")
     public ResponseEntity<ApiResponse<TicketDetalleResponse>> editarFecha(
             @PathVariable Long idReserva,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate nuevaFecha) {
         TicketDetalleQuery q = reservaAdminService.editarFecha(idReserva, nuevaFecha);
         return ResponseEntity.ok(ApiResponse.ok(toDetalleResponse(q)));
+    }
+
+    private Long resolverIdCliente(Long solicitado) {
+        if (supabaseAuthFacade.tieneRol("CLIENTE")) {
+            Long propio = supabaseAuthFacade.clientePerfilId()
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN,
+                            "Cliente sin perfil asociado"));
+            if (solicitado != null && !solicitado.equals(propio)) {
+                throw new AccessDeniedException("No puedes consultar datos de otro cliente");
+            }
+            return propio;
+        }
+        return solicitado;
     }
 
     private TicketDetalleResponse toDetalleResponse(TicketDetalleQuery q) {
@@ -296,44 +270,6 @@ public class ReservaPublicaController {
                 .montoPagado(q.getMontoPagado())
                 .estadoPago(q.getEstadoPago())
                 .codigoQr(q.getCodigoQr())
-                .build();
-    }
-
-    private ReservaPublicaQuery buildQueryFromRepo(ReservaPublica r) {
-        String nombreCliente = clienteRepository.findById(r.getIdCliente())
-                .map(c -> c.getNombre()).orElse(null);
-        String correoCliente = clienteRepository.findById(r.getIdCliente())
-                .map(c -> c.getCorreo()).orElse(null);
-        String nombreSede = sedeRepository.findById(r.getIdSede())
-                .map(s -> s.getNombre()).orElse("Sede Principal");
-        return ReservaPublicaQuery.builder()
-                .id(r.getId())
-                .idCliente(r.getIdCliente())
-                .nombreCliente(nombreCliente)
-                .correoCliente(correoCliente)
-                .idSede(r.getIdSede())
-                .nombreSede(nombreSede)
-                .estado(r.getEstado().getCodigo())
-                .canalReserva(r.getCanalReserva() != null ? r.getCanalReserva().getCodigo() : null)
-                .tipoDia(r.getTipoDia() != null ? r.getTipoDia().getCodigo() : null)
-                .fechaEvento(r.getFechaEvento())
-                .numeroTicket(r.getNumeroTicket())
-                .precioHistorico(r.getPrecioHistorico())
-                .descuentoAplicado(r.getDescuentoAplicado())
-                .totalPagado(r.getTotalPagado())
-                .nombreNino(r.getNombreNino())
-                .edadNino(r.getEdadNino())
-                .nombreAcompanante(r.getNombreAcompanante())
-                .dniAcompanante(r.getDniAcompanante())
-                .firmoConsentimiento(r.isFirmoConsentimiento())
-                .esReprogramacion(r.isEsReprogramacion())
-                .vecesReprogramada(r.getVecesReprogramada())
-                .ingresado(r.isIngresado())
-                .fechaIngreso(r.getFechaIngreso())
-                .codigoQr(r.getCodigoQr())
-                .medioPago(r.getMedioPago())
-                .referenciaPago(r.getReferenciaPago())
-                .fechaCreacion(r.getFechaCreacion())
                 .build();
     }
 
@@ -364,7 +300,6 @@ public class ReservaPublicaController {
                 .fechaIngreso(q.getFechaIngreso())
                 .codigoQr(q.getCodigoQr())
                 .medioPago(q.getMedioPago())
-                .referenciaPago(q.getReferenciaPago())
                 .fechaCreacion(q.getFechaCreacion())
                 .build();
     }

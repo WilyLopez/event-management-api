@@ -16,7 +16,6 @@ public interface BuscarReservasAdminUseCase {
         Boolean   ingresado,
         Boolean   esReprogramacion,
         String    search,
-        String    medioPago,
         Pageable  pageable
     );
 

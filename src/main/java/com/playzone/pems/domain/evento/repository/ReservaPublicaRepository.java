@@ -3,9 +3,11 @@ package com.playzone.pems.domain.evento.repository;
 import com.playzone.pems.application.evento.dto.query.MetricasReservaQuery;
 import com.playzone.pems.domain.evento.model.ReservaPublica;
 import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
+import com.playzone.pems.domain.evento.query.ReservasPorDia;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -42,7 +44,27 @@ public interface ReservaPublicaRepository {
     Page<ReservaPublica> buscarAdmin(
             Long idSede, EstadoReservaPublica estadoEnum, LocalDate fecha,
             Boolean ingresado, Boolean esReprogramacion, String searchPattern,
-            String medioPago, Pageable pageable);
+            Pageable pageable);
 
     MetricasReservaQuery calcularMetricas(Long idSede, LocalDate fecha);
+
+    BigDecimal sumIngresosBySedeAndPeriodo(Long idSede, int anio, int mes);
+
+    BigDecimal sumIngresosBySedeAndFecha(Long idSede, LocalDate fecha);
+
+    BigDecimal sumIngresosBySedeAndRango(Long idSede, LocalDate inicio, LocalDate fin);
+
+    long countConfirmadasBySedeAndRango(Long idSede, LocalDate inicio, LocalDate fin);
+
+    long countConfirmadasBySedeAndPeriodo(Long idSede, int anio, int mes);
+
+    long countCanceladasBySedeAndPeriodo(Long idSede, int anio, int mes);
+
+    long countCompletadasBySedeAndPeriodo(Long idSede, int anio, int mes);
+
+    BigDecimal avgTicketBySedeAndPeriodo(Long idSede, int anio, int mes);
+
+    int countBySedeAndFechaAndEstado(Long idSede, LocalDate fecha, EstadoReservaPublica estado);
+
+    List<ReservasPorDia> countAgrupadoPorDia(Long idSede, LocalDate inicio, LocalDate fin);
 }

@@ -10,7 +10,8 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder(toBuilder = true)
@@ -39,13 +40,14 @@ public class ReservaPublica {
     private String               dniAcompanante;
     private boolean              firmoConsentimiento;
     private String               motivoCancelacion;
-    private LocalDateTime        fechaCreacion;
-    private LocalDateTime        fechaActualizacion;
+    private OffsetDateTime        fechaCreacion;
+    private OffsetDateTime        fechaActualizacion;
     private boolean              ingresado;
-    private LocalDateTime        fechaIngreso;
+    private OffsetDateTime        fechaIngreso;
     private String               codigoQr;
-    private String               medioPago;
-    private String               referenciaPago;
+    private UUID                 createdBy;
+    private UUID                 updatedBy;
+    private OffsetDateTime        deletedAt;
 
     public boolean puedeReprogramarse(int maxReprogramaciones) {
         return estado.esReprogramable() && vecesReprogramada < maxReprogramaciones;
