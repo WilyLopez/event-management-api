@@ -1,16 +1,9 @@
 package com.playzone.pems.infrastructure.persistence.finanzas.adapter;
 
 import com.playzone.pems.domain.finanzas.model.RegistroIngreso;
-import com.playzone.pems.domain.finanzas.model.enums.CategoriaIngreso;
 import com.playzone.pems.domain.finanzas.repository.RegistroIngresoRepository;
-import com.playzone.pems.infrastructure.persistence.evento.entity.EventoPrivadoEntity;
-import com.playzone.pems.infrastructure.persistence.evento.entity.ReservaPublicaEntity;
-import com.playzone.pems.infrastructure.persistence.evento.jpa.EventoPrivadoJpaRepository;
-import com.playzone.pems.infrastructure.persistence.evento.jpa.ReservaPublicaJpaRepository;
 import com.playzone.pems.infrastructure.persistence.finanzas.entity.RegistroIngresoEntity;
-import com.playzone.pems.infrastructure.persistence.finanzas.entity.TipoIngresoEntity;
 import com.playzone.pems.infrastructure.persistence.finanzas.jpa.RegistroIngresoJpaRepository;
-import com.playzone.pems.infrastructure.persistence.finanzas.jpa.TipoIngresoJpaRepository;
 import com.playzone.pems.infrastructure.persistence.usuario.entity.SedeEntity;
 import com.playzone.pems.infrastructure.persistence.usuario.jpa.SedeJpaRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,11 +23,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RegistroIngresoPersistenceAdapter implements RegistroIngresoRepository {
 
-    private final RegistroIngresoJpaRepository  jpaRepository;
-    private final TipoIngresoJpaRepository      tipoIngresoJpaRepository;
-    private final SedeJpaRepository             sedeJpaRepository;
-    private final ReservaPublicaJpaRepository   reservaPublicaJpaRepository;
-    private final EventoPrivadoJpaRepository    eventoPrivadoJpaRepository;
+    private final RegistroIngresoJpaRepository jpaRepository;
+    private final SedeJpaRepository            sedeJpaRepository;
 
     @Override
     public Optional<RegistroIngreso> findById(Long id) {
@@ -69,16 +59,10 @@ public class RegistroIngresoPersistenceAdapter implements RegistroIngresoReposit
     }
 
     @Override
-    public BigDecimal sumMontoBySedeAndPeriodoAndCategoria(Long idSede, int anio, int mes, String categoria) {
-        return jpaRepository.sumMontoBySedeAndPeriodoAndCategoria(idSede, anio, mes,
-                CategoriaIngreso.valueOf(categoria));
-    }
-
-    @Override
-    public Map<Long, BigDecimal> sumMontoAgrupadoPorTipo(Long idSede, int anio, int mes) {
+    public Map<String, BigDecimal> sumMontoAgrupadoPorTipo(Long idSede, int anio, int mes) {
         return jpaRepository.sumMontoAgrupadoPorTipo(idSede, anio, mes).stream()
                 .collect(Collectors.toMap(
-                        row -> (Long) row[0],
+                        row -> (String) row[0],
                         row -> (BigDecimal) row[1]
                 ));
     }
@@ -86,24 +70,19 @@ public class RegistroIngresoPersistenceAdapter implements RegistroIngresoReposit
     @Override
     @Transactional
     public RegistroIngreso save(RegistroIngreso ingreso) {
-        TipoIngresoEntity tipo = tipoIngresoJpaRepository.getReferenceById(ingreso.getIdTipoIngreso());
-        SedeEntity sede        = sedeJpaRepository.getReferenceById(ingreso.getIdSede());
-        ReservaPublicaEntity reserva = ingreso.getIdReservaPublica() != null
-                ? reservaPublicaJpaRepository.getReferenceById(ingreso.getIdReservaPublica()) : null;
-        EventoPrivadoEntity evento = ingreso.getIdEventoPrivado() != null
-                ? eventoPrivadoJpaRepository.getReferenceById(ingreso.getIdEventoPrivado()) : null;
+        SedeEntity sede = sedeJpaRepository.getReferenceById(ingreso.getIdSede());
         RegistroIngresoEntity entity = RegistroIngresoEntity.builder()
                 .id(ingreso.getId())
-                .tipoIngreso(tipo)
+                .tipoCodigo(ingreso.getTipoIngresoCodigo())
                 .sede(sede)
-                .reservaPublica(reserva)
-                .eventoPrivado(evento)
+                .reservaId(ingreso.getIdReservaPublica())
+                .eventoId(ingreso.getIdEventoPrivado())
                 .monto(ingreso.getMonto())
                 .fecha(ingreso.getFecha())
-                .medioPago(ingreso.getMedioPago())
+                .medioPagoCodigo(ingreso.getMedioPago())
                 .descripcion(ingreso.getDescripcion())
                 .esAutomatico(ingreso.isEsAutomatico())
-                .idUsuarioRegistra(ingreso.getIdUsuarioRegistra())
+                .createdBy(ingreso.getIdUsuarioRegistra())
                 .build();
         return toDomain(jpaRepository.save(entity));
     }
@@ -117,19 +96,17 @@ public class RegistroIngresoPersistenceAdapter implements RegistroIngresoReposit
     private RegistroIngreso toDomain(RegistroIngresoEntity e) {
         return RegistroIngreso.builder()
                 .id(e.getId())
-                .idTipoIngreso(e.getTipoIngreso().getId())
-                .nombreTipoIngreso(e.getTipoIngreso().getNombre())
-                .categoriaIngreso(e.getTipoIngreso().getCategoria())
+                .tipoIngresoCodigo(e.getTipoCodigo())
                 .idSede(e.getSede().getId())
-                .idReservaPublica(e.getReservaPublica() != null ? e.getReservaPublica().getId() : null)
-                .idEventoPrivado(e.getEventoPrivado() != null ? e.getEventoPrivado().getId() : null)
+                .idReservaPublica(e.getReservaId())
+                .idEventoPrivado(e.getEventoId())
                 .monto(e.getMonto())
                 .fecha(e.getFecha())
-                .medioPago(e.getMedioPago())
+                .medioPago(e.getMedioPagoCodigo())
                 .descripcion(e.getDescripcion())
                 .esAutomatico(e.isEsAutomatico())
-                .idUsuarioRegistra(e.getIdUsuarioRegistra())
-                .fechaCreacion(e.getFechaCreacion())
+                .idUsuarioRegistra(e.getCreatedBy())
+                .fechaCreacion(e.getCreatedAt() != null ? e.getCreatedAt() : null)
                 .build();
     }
 }

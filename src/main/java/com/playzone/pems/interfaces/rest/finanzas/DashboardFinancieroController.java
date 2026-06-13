@@ -12,12 +12,12 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/dashboard-financiero")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class DashboardFinancieroController {
 
     private final ConsultarDashboardFinancieroUseCase useCase;
 
     @GetMapping("/sedes/{idSede}")
+    @PreAuthorize("hasAuthority('finanzas.ver')")
     public ResponseEntity<ApiResponse<DashboardFinancieroResponse>> consultar(
             @PathVariable Long idSede,
             @RequestParam int anio,

@@ -1,6 +1,5 @@
 package com.playzone.pems.infrastructure.persistence.finanzas.jpa;
 
-import com.playzone.pems.domain.finanzas.model.enums.CategoriaEgreso;
 import com.playzone.pems.infrastructure.persistence.finanzas.entity.RegistroEgresoEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,16 +13,16 @@ import java.util.List;
 
 public interface RegistroEgresoJpaRepository extends JpaRepository<RegistroEgresoEntity, Long> {
 
-    @Query(value = "SELECT r FROM RegistroEgresoEntity r JOIN FETCH r.tipoEgreso WHERE r.sede.id = :idSede",
+    @Query(value = "SELECT r FROM RegistroEgresoEntity r WHERE r.sede.id = :idSede",
            countQuery = "SELECT COUNT(r) FROM RegistroEgresoEntity r WHERE r.sede.id = :idSede")
     Page<RegistroEgresoEntity> findBySede_IdWithTipo(@Param("idSede") Long idSede, Pageable pageable);
 
-    @Query("SELECT r FROM RegistroEgresoEntity r JOIN FETCH r.tipoEgreso " +
+    @Query("SELECT r FROM RegistroEgresoEntity r " +
            "WHERE r.sede.id = :idSede AND r.periodoAnio = :anio AND r.periodoMes = :mes")
     List<RegistroEgresoEntity> findBySede_IdAndPeriodoWithTipo(
             @Param("idSede") Long idSede, @Param("anio") int anio, @Param("mes") int mes);
 
-    @Query("SELECT r FROM RegistroEgresoEntity r JOIN FETCH r.tipoEgreso " +
+    @Query("SELECT r FROM RegistroEgresoEntity r " +
            "WHERE r.sede.id = :idSede AND r.fecha BETWEEN :inicio AND :fin")
     List<RegistroEgresoEntity> findBySede_IdAndFechaBetweenWithTipo(
             @Param("idSede") Long idSede, @Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
@@ -35,9 +34,9 @@ public interface RegistroEgresoJpaRepository extends JpaRepository<RegistroEgres
             @Param("anio") int anio,
             @Param("mes") int mes);
 
-    @Query("SELECT r.tipoEgreso.id, COALESCE(SUM(r.monto), 0) FROM RegistroEgresoEntity r " +
+    @Query("SELECT r.tipoCodigo, COALESCE(SUM(r.monto), 0) FROM RegistroEgresoEntity r " +
            "WHERE r.sede.id = :idSede AND r.periodoAnio = :anio AND r.periodoMes = :mes " +
-           "GROUP BY r.tipoEgreso.id")
+           "GROUP BY r.tipoCodigo")
     List<Object[]> sumMontoAgrupadoPorTipo(
             @Param("idSede") Long idSede, @Param("anio") int anio, @Param("mes") int mes);
 
@@ -46,10 +45,10 @@ public interface RegistroEgresoJpaRepository extends JpaRepository<RegistroEgres
     BigDecimal sumMontoBySedeAndRango(
             @Param("idSede") Long idSede, @Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
 
-    @Query("SELECT COALESCE(SUM(r.monto), 0) FROM RegistroEgresoEntity r " +
+    @Query("SELECT t.categoria, COALESCE(SUM(r.monto), 0) FROM RegistroEgresoEntity r " +
+           "JOIN TipoEgresoEntity t ON t.codigo = r.tipoCodigo " +
            "WHERE r.sede.id = :idSede AND r.periodoAnio = :anio AND r.periodoMes = :mes " +
-           "AND r.tipoEgreso.categoria = :categoria")
-    BigDecimal sumMontoBySedeAndPeriodoAndCategoria(
-            @Param("idSede") Long idSede, @Param("anio") int anio, @Param("mes") int mes,
-            @Param("categoria") CategoriaEgreso categoria);
+           "GROUP BY t.categoria")
+    List<Object[]> sumMontoAgrupadoPorCategoria(
+            @Param("idSede") Long idSede, @Param("anio") int anio, @Param("mes") int mes);
 }

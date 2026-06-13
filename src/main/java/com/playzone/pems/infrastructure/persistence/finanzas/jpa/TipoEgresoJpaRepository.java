@@ -9,13 +9,13 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface TipoEgresoJpaRepository extends JpaRepository<TipoEgresoEntity, Long> {
+public interface TipoEgresoJpaRepository extends JpaRepository<TipoEgresoEntity, String> {
 
     List<TipoEgresoEntity> findByActivoTrue();
 
     List<TipoEgresoEntity> findByCategoriaAndActivoTrue(CategoriaEgreso categoria);
 
     @Modifying
-    @Query("UPDATE TipoEgresoEntity t SET t.activo = false WHERE t.id = :id")
-    void desactivar(@Param("id") Long id);
+    @Query("UPDATE TipoEgresoEntity t SET t.activo = false WHERE t.codigo = :codigo")
+    void desactivar(@Param("codigo") String codigo);
 }

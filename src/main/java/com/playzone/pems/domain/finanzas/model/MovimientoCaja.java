@@ -4,7 +4,8 @@ import com.playzone.pems.domain.finanzas.model.enums.TipoMovimientoCaja;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder
@@ -19,8 +20,8 @@ public class MovimientoCaja {
     private String             medioPago;
     private Long               idRegistroIngreso;
     private Long               idRegistroEgreso;
-    private Long               idReservaPublica;
+    private Long               idVenta;
     private boolean            esManual;
-    private Long               idUsuarioRegistra;
-    private LocalDateTime      fechaCreacion;
+    private UUID               idUsuarioRegistra;
+    private OffsetDateTime      fechaCreacion;
 }

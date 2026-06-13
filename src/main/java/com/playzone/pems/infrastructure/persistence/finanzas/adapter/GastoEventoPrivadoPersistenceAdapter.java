@@ -2,8 +2,6 @@ package com.playzone.pems.infrastructure.persistence.finanzas.adapter;
 
 import com.playzone.pems.domain.finanzas.model.GastoEventoPrivado;
 import com.playzone.pems.domain.finanzas.repository.GastoEventoPrivadoRepository;
-import com.playzone.pems.infrastructure.persistence.evento.entity.EventoPrivadoEntity;
-import com.playzone.pems.infrastructure.persistence.evento.jpa.EventoPrivadoJpaRepository;
 import com.playzone.pems.infrastructure.persistence.finanzas.entity.GastoEventoPrivadoEntity;
 import com.playzone.pems.infrastructure.persistence.finanzas.jpa.GastoEventoPrivadoJpaRepository;
 import com.playzone.pems.infrastructure.persistence.finanzas.mapper.FinanzasEntityMapper;
@@ -22,12 +20,11 @@ import java.util.stream.Collectors;
 public class GastoEventoPrivadoPersistenceAdapter implements GastoEventoPrivadoRepository {
 
     private final GastoEventoPrivadoJpaRepository jpaRepository;
-    private final EventoPrivadoJpaRepository      eventoJpaRepository;
     private final FinanzasEntityMapper            mapper;
 
     @Override
     public List<GastoEventoPrivado> findByEvento(Long idEvento) {
-        return jpaRepository.findByEventoPrivado_Id(idEvento).stream()
+        return jpaRepository.findByEventoId(idEvento).stream()
                 .map(mapper::toDomain).toList();
     }
 
@@ -49,14 +46,13 @@ public class GastoEventoPrivadoPersistenceAdapter implements GastoEventoPrivadoR
     @Override
     @Transactional
     public GastoEventoPrivado save(GastoEventoPrivado gasto) {
-        EventoPrivadoEntity evento = eventoJpaRepository.getReferenceById(gasto.getIdEventoPrivado());
         GastoEventoPrivadoEntity entity = GastoEventoPrivadoEntity.builder()
                 .id(gasto.getId())
-                .eventoPrivado(evento)
+                .eventoId(gasto.getIdEventoPrivado())
                 .descripcion(gasto.getDescripcion())
                 .monto(gasto.getMonto())
-                .comprobanteUrl(gasto.getComprobanteUrl())
-                .idUsuarioRegistra(gasto.getIdUsuarioRegistra())
+                .comprobantePath(gasto.getComprobanteUrl())
+                .createdBy(gasto.getIdUsuarioRegistra())
                 .build();
         return mapper.toDomain(jpaRepository.save(entity));
     }

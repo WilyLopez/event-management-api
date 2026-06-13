@@ -3,7 +3,8 @@ package com.playzone.pems.domain.finanzas.model;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder
@@ -15,6 +16,6 @@ public class GastoEventoPrivado {
     private String        descripcion;
     private BigDecimal    monto;
     private String        comprobanteUrl;
-    private Long          idUsuarioRegistra;
-    private LocalDateTime fechaCreacion;
+    private UUID          idUsuarioRegistra;
+    private OffsetDateTime fechaCreacion;
 }

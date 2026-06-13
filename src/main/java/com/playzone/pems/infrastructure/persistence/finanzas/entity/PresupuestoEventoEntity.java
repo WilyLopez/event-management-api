@@ -1,17 +1,17 @@
 package com.playzone.pems.infrastructure.persistence.finanzas.entity;
 
 import com.playzone.pems.domain.finanzas.model.enums.EstadoPresupuesto;
-import com.playzone.pems.infrastructure.persistence.evento.entity.EventoPrivadoEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "presupuestoevento")
+@Table(name = "presupuesto_evento")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -21,12 +21,11 @@ public class PresupuestoEventoEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idpresupuesto")
+    @Column(name = "id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "ideventoprivado", nullable = false)
-    private EventoPrivadoEntity eventoPrivado;
+    @Column(name = "evento_id", nullable = false)
+    private Long eventoId;
 
     @Column(name = "concepto", nullable = false, length = 200)
     private String concepto;
@@ -34,10 +33,10 @@ public class PresupuestoEventoEntity {
     @Column(name = "categoria", length = 50)
     private String categoria;
 
-    @Column(name = "montoestimado", nullable = false, precision = 10, scale = 2)
+    @Column(name = "monto_estimado", nullable = false, precision = 10, scale = 2)
     private BigDecimal montoEstimado;
 
-    @Column(name = "montoreal", precision = 10, scale = 2)
+    @Column(name = "monto_real", precision = 10, scale = 2)
     private BigDecimal montoReal;
 
     @Enumerated(EnumType.STRING)
@@ -45,14 +44,20 @@ public class PresupuestoEventoEntity {
     @Builder.Default
     private EstadoPresupuesto estado = EstadoPresupuesto.PENDIENTE;
 
-    @Column(name = "idusuarioregistra")
-    private Long idUsuarioRegistra;
+    @Column(name = "orden")
+    private int orden;
+
+    @Column(name = "created_by", columnDefinition = "uuid")
+    private UUID createdBy;
+
+    @Column(name = "updated_by", columnDefinition = "uuid")
+    private UUID updatedBy;
 
     @CreationTimestamp
-    @Column(name = "fechacreacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "fechaactualizacion", nullable = false)
-    private LocalDateTime fechaActualizacion;
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt;
 }

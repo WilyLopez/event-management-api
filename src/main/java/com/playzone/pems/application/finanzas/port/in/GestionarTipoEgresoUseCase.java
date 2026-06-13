@@ -9,5 +9,5 @@ public interface GestionarTipoEgresoUseCase {
     TipoEgresoQuery crear(CrearTipoEgresoCommand command);
     List<TipoEgresoQuery> listar();
     List<TipoEgresoQuery> listarPorCategoria(String categoria);
-    void desactivar(Long id);
+    void desactivar(String codigo);
 }

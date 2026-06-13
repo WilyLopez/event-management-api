@@ -5,7 +5,6 @@ import com.playzone.pems.application.finanzas.dto.query.RegistroIngresoQuery;
 import com.playzone.pems.application.finanzas.port.in.RegistrarIngresoUseCase;
 import com.playzone.pems.domain.finanzas.model.RegistroIngreso;
 import com.playzone.pems.domain.finanzas.model.TipoIngreso;
-import com.playzone.pems.domain.finanzas.model.enums.CategoriaIngreso;
 import com.playzone.pems.domain.finanzas.repository.RegistroIngresoRepository;
 import com.playzone.pems.domain.finanzas.repository.TipoIngresoRepository;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
@@ -16,7 +15,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -30,13 +28,13 @@ public class IngresoService implements RegistrarIngresoUseCase {
 
     @Override
     public RegistroIngresoQuery registrar(RegistrarIngresoManualCommand command) {
-        TipoIngreso tipo = tipoIngresoRepository.findById(command.getIdTipoIngreso())
+        TipoIngreso tipo = tipoIngresoRepository.findById(command.getTipoIngresoCodigo())
                 .orElseThrow(() -> new ResourceNotFoundException("Tipo de ingreso no encontrado."));
         if (!tipo.isActivo()) {
             throw new ValidationException("El tipo de ingreso seleccionado no está activo.");
         }
         RegistroIngreso ingreso = RegistroIngreso.builder()
-                .idTipoIngreso(tipo.getId())
+                .tipoIngresoCodigo(command.getTipoIngresoCodigo())
                 .idSede(command.getIdSede())
                 .monto(command.getMonto())
                 .fecha(command.getFecha())
@@ -46,24 +44,6 @@ public class IngresoService implements RegistrarIngresoUseCase {
                 .idUsuarioRegistra(command.getIdUsuarioRegistra())
                 .build();
         return toQuery(registroIngresoRepository.save(ingreso));
-    }
-
-    @Override
-    public void registrarAutomatico(CategoriaIngreso categoria, Long idSede, Long idReservaPublica,
-                                    Long idEventoPrivado, BigDecimal monto, LocalDate fecha, String medioPago) {
-        tipoIngresoRepository.findActivoByCategoria(categoria).ifPresent(tipo -> {
-            RegistroIngreso ingreso = RegistroIngreso.builder()
-                    .idTipoIngreso(tipo.getId())
-                    .idSede(idSede)
-                    .idReservaPublica(idReservaPublica)
-                    .idEventoPrivado(idEventoPrivado)
-                    .monto(monto)
-                    .fecha(fecha)
-                    .medioPago(medioPago)
-                    .esAutomatico(true)
-                    .build();
-            registroIngresoRepository.save(ingreso);
-        });
     }
 
     @Override
@@ -87,9 +67,7 @@ public class IngresoService implements RegistrarIngresoUseCase {
     private RegistroIngresoQuery toQuery(RegistroIngreso r) {
         return RegistroIngresoQuery.builder()
                 .id(r.getId())
-                .idTipoIngreso(r.getIdTipoIngreso())
-                .nombreTipoIngreso(r.getNombreTipoIngreso())
-                .categoriaIngreso(r.getCategoriaIngreso())
+                .tipoIngresoCodigo(r.getTipoIngresoCodigo())
                 .idSede(r.getIdSede())
                 .idReservaPublica(r.getIdReservaPublica())
                 .idEventoPrivado(r.getIdEventoPrivado())

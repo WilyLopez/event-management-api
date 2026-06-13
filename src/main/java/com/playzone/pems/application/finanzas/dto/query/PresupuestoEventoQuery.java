@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder
@@ -17,6 +17,6 @@ public class PresupuestoEventoQuery {
     private BigDecimal       montoEstimado;
     private BigDecimal       montoReal;
     private EstadoPresupuesto estado;
-    private LocalDateTime    fechaCreacion;
-    private LocalDateTime    fechaActualizacion;
+    private OffsetDateTime    fechaCreacion;
+    private OffsetDateTime    fechaActualizacion;
 }

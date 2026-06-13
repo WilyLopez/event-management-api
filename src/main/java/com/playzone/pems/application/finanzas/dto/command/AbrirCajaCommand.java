@@ -5,6 +5,7 @@ import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Getter
 @Builder
@@ -12,6 +13,6 @@ public class AbrirCajaCommand {
     private Long       idSede;
     private LocalDate  fecha;
     private BigDecimal saldoInicial;
-    private Long       idUsuarioApertura;
+    private UUID       idUsuarioApertura;
     private String     observaciones;
 }

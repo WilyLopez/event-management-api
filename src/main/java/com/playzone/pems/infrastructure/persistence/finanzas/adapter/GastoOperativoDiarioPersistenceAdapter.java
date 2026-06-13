@@ -66,8 +66,8 @@ public class GastoOperativoDiarioPersistenceAdapter implements GastoOperativoDia
                 .fecha(gasto.getFecha())
                 .descripcion(gasto.getDescripcion())
                 .monto(gasto.getMonto())
-                .comprobanteUrl(gasto.getComprobanteUrl())
-                .idUsuarioRegistra(gasto.getIdUsuarioRegistra())
+                .comprobantePath(gasto.getComprobanteUrl())
+                .createdBy(gasto.getIdUsuarioRegistra())
                 .build();
         return mapper.toDomain(jpaRepository.save(entity));
     }

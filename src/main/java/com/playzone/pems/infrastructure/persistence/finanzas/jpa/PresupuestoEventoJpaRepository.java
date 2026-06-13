@@ -10,13 +10,13 @@ import java.util.List;
 
 public interface PresupuestoEventoJpaRepository extends JpaRepository<PresupuestoEventoEntity, Long> {
 
-    List<PresupuestoEventoEntity> findByEventoPrivado_IdOrderByFechaCreacionAsc(Long idEventoPrivado);
+    List<PresupuestoEventoEntity> findByEventoIdOrderByCreatedAtAsc(Long eventoId);
 
     @Query("SELECT COALESCE(SUM(p.montoEstimado), 0) FROM PresupuestoEventoEntity p " +
-           "WHERE p.eventoPrivado.id = :idEvento")
-    BigDecimal sumMontoEstimadoByEvento(@Param("idEvento") Long idEvento);
+           "WHERE p.eventoId = :eventoId")
+    BigDecimal sumMontoEstimadoByEvento(@Param("eventoId") Long eventoId);
 
     @Query("SELECT COALESCE(SUM(p.montoReal), 0) FROM PresupuestoEventoEntity p " +
-           "WHERE p.eventoPrivado.id = :idEvento AND p.montoReal IS NOT NULL")
-    BigDecimal sumMontoRealByEvento(@Param("idEvento") Long idEvento);
+           "WHERE p.eventoId = :eventoId AND p.montoReal IS NOT NULL")
+    BigDecimal sumMontoRealByEvento(@Param("eventoId") Long eventoId);
 }

@@ -4,9 +4,7 @@ import com.playzone.pems.domain.finanzas.model.RegistroEgreso;
 import com.playzone.pems.domain.finanzas.model.enums.CategoriaEgreso;
 import com.playzone.pems.domain.finanzas.repository.RegistroEgresoRepository;
 import com.playzone.pems.infrastructure.persistence.finanzas.entity.RegistroEgresoEntity;
-import com.playzone.pems.infrastructure.persistence.finanzas.entity.TipoEgresoEntity;
 import com.playzone.pems.infrastructure.persistence.finanzas.jpa.RegistroEgresoJpaRepository;
-import com.playzone.pems.infrastructure.persistence.finanzas.jpa.TipoEgresoJpaRepository;
 import com.playzone.pems.infrastructure.persistence.finanzas.mapper.FinanzasEntityMapper;
 import com.playzone.pems.infrastructure.persistence.usuario.entity.SedeEntity;
 import com.playzone.pems.infrastructure.persistence.usuario.jpa.SedeJpaRepository;
@@ -28,7 +26,6 @@ import java.util.stream.Collectors;
 public class RegistroEgresoPersistenceAdapter implements RegistroEgresoRepository {
 
     private final RegistroEgresoJpaRepository jpaRepository;
-    private final TipoEgresoJpaRepository     tipoEgresoJpaRepository;
     private final SedeJpaRepository           sedeJpaRepository;
     private final FinanzasEntityMapper        mapper;
 
@@ -65,15 +62,19 @@ public class RegistroEgresoPersistenceAdapter implements RegistroEgresoRepositor
     }
 
     @Override
-    public BigDecimal sumMontoBySedeAndPeriodoAndCategoria(Long idSede, int anio, int mes, String categoria) {
-        return jpaRepository.sumMontoBySedeAndPeriodoAndCategoria(idSede, anio, mes, CategoriaEgreso.valueOf(categoria));
+    public Map<String, BigDecimal> sumMontoAgrupadoPorTipo(Long idSede, int anio, int mes) {
+        return jpaRepository.sumMontoAgrupadoPorTipo(idSede, anio, mes).stream()
+                .collect(Collectors.toMap(
+                        row -> (String) row[0],
+                        row -> (BigDecimal) row[1]
+                ));
     }
 
     @Override
-    public Map<Long, BigDecimal> sumMontoAgrupadoPorTipo(Long idSede, int anio, int mes) {
-        return jpaRepository.sumMontoAgrupadoPorTipo(idSede, anio, mes).stream()
+    public Map<CategoriaEgreso, BigDecimal> sumMontoAgrupadoPorCategoria(Long idSede, int anio, int mes) {
+        return jpaRepository.sumMontoAgrupadoPorCategoria(idSede, anio, mes).stream()
                 .collect(Collectors.toMap(
-                        row -> (Long) row[0],
+                        row -> (CategoriaEgreso) row[0],
                         row -> (BigDecimal) row[1]
                 ));
     }
@@ -81,20 +82,19 @@ public class RegistroEgresoPersistenceAdapter implements RegistroEgresoRepositor
     @Override
     @Transactional
     public RegistroEgreso save(RegistroEgreso registro) {
-        TipoEgresoEntity tipo = tipoEgresoJpaRepository.getReferenceById(registro.getIdTipoEgreso());
-        SedeEntity sede       = sedeJpaRepository.getReferenceById(registro.getIdSede());
+        SedeEntity sede = sedeJpaRepository.getReferenceById(registro.getIdSede());
         RegistroEgresoEntity entity = RegistroEgresoEntity.builder()
                 .id(registro.getId())
-                .tipoEgreso(tipo)
+                .tipoCodigo(registro.getTipoEgresoCodigo())
                 .sede(sede)
                 .monto(registro.getMonto())
                 .fecha(registro.getFecha())
                 .periodoAnio(registro.getPeriodoAnio())
                 .periodoMes(registro.getPeriodoMes())
                 .descripcion(registro.getDescripcion())
-                .comprobanteUrl(registro.getComprobanteUrl())
+                .comprobantePath(registro.getComprobanteUrl())
                 .esRecurrente(registro.isEsRecurrente())
-                .idUsuarioRegistra(registro.getIdUsuarioRegistra())
+                .createdBy(registro.getIdUsuarioRegistra())
                 .build();
         return mapper.toDomain(jpaRepository.save(entity));
     }

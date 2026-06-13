@@ -6,10 +6,11 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "movimientocaja")
+@Table(name = "movimiento_caja")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,43 +20,43 @@ public class MovimientoCajaEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idmovimientocaja")
+    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "idaperturacaja", nullable = false)
+    @JoinColumn(name = "apertura_caja_id", nullable = false)
     private AperturaCajaEntity aperturaCaja;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo", nullable = false, length = 20)
     private TipoMovimientoCaja tipo;
 
-    @Column(name = "concepto", nullable = false, length = 200)
+    @Column(name = "concepto", nullable = false)
     private String concepto;
 
     @Column(name = "monto", nullable = false, precision = 10, scale = 2)
     private BigDecimal monto;
 
-    @Column(name = "mediopago", length = 30)
+    @Column(name = "medio_pago_codigo", length = 30)
     private String medioPago;
 
-    @Column(name = "idregistroingreso")
+    @Column(name = "registro_ingreso_id")
     private Long idRegistroIngreso;
 
-    @Column(name = "idregistroegreso")
+    @Column(name = "registro_egreso_id")
     private Long idRegistroEgreso;
 
-    @Column(name = "idreservapublica")
-    private Long idReservaPublica;
+    @Column(name = "venta_id", insertable = false, updatable = false)
+    private Long ventaId;
 
-    @Column(name = "esmanual", nullable = false)
+    @Column(name = "es_manual", nullable = false)
     @Builder.Default
     private boolean esManual = false;
 
-    @Column(name = "idusuarioregistra")
-    private Long idUsuarioRegistra;
+    @Column(name = "created_by", columnDefinition = "uuid")
+    private UUID createdBy;
 
     @CreationTimestamp
-    @Column(name = "fechacreacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime fechaCreacion;
 }

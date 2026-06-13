@@ -1,6 +1,7 @@
 package com.playzone.pems.infrastructure.persistence.finanzas.adapter;
 
 import com.playzone.pems.domain.finanzas.model.AperturaCaja;
+import com.playzone.pems.domain.finanzas.model.enums.EstadoCaja;
 import com.playzone.pems.domain.finanzas.repository.AperturaCajaRepository;
 import com.playzone.pems.infrastructure.persistence.finanzas.entity.AperturaCajaEntity;
 import com.playzone.pems.infrastructure.persistence.finanzas.jpa.AperturaCajaJpaRepository;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,6 +34,11 @@ public class AperturaCajaPersistenceAdapter implements AperturaCajaRepository {
     }
 
     @Override
+    public Optional<AperturaCaja> findActivaBySede(Long idSede) {
+        return jpaRepository.findBySede_IdAndEstado(idSede, EstadoCaja.ABIERTA).map(this::toDomain);
+    }
+
+    @Override
     public List<AperturaCaja> findBySedeAndRango(Long idSede, LocalDate inicio, LocalDate fin) {
         return jpaRepository.findBySede_IdAndFechaBetweenOrderByFechaAsc(idSede, inicio, fin)
                 .stream().map(this::toDomain).toList();
@@ -50,10 +57,10 @@ public class AperturaCajaPersistenceAdapter implements AperturaCajaRepository {
                 .totalIngresos(apertura.getTotalIngresos())
                 .totalEgresos(apertura.getTotalEgresos())
                 .estado(apertura.getEstado())
-                .idUsuarioApertura(apertura.getIdUsuarioApertura())
-                .idUsuarioCierre(apertura.getIdUsuarioCierre())
-                .fechaApertura(apertura.getFechaApertura())
-                .fechaCierre(apertura.getFechaCierre())
+                .aperturaPor(apertura.getIdUsuarioApertura())
+                .cierrePor(apertura.getIdUsuarioCierre())
+                .fechaApertura(apertura.getFechaApertura() != null ? apertura.getFechaApertura() : null)
+                .fechaCierre(apertura.getFechaCierre() != null ? apertura.getFechaCierre() : null)
                 .observaciones(apertura.getObservaciones())
                 .build();
         return toDomain(jpaRepository.save(entity));
@@ -69,12 +76,12 @@ public class AperturaCajaPersistenceAdapter implements AperturaCajaRepository {
                 .totalIngresos(e.getTotalIngresos())
                 .totalEgresos(e.getTotalEgresos())
                 .estado(e.getEstado())
-                .idUsuarioApertura(e.getIdUsuarioApertura())
-                .idUsuarioCierre(e.getIdUsuarioCierre())
-                .fechaApertura(e.getFechaApertura())
-                .fechaCierre(e.getFechaCierre())
+                .idUsuarioApertura(e.getAperturaPor())
+                .idUsuarioCierre(e.getCierrePor())
+                .fechaApertura(e.getFechaApertura() != null ? e.getFechaApertura() : null)
+                .fechaCierre(e.getFechaCierre() != null ? e.getFechaCierre() : null)
                 .observaciones(e.getObservaciones())
-                .fechaCreacion(e.getFechaCreacion())
+                .fechaCreacion(e.getFechaCreacion() != null ? e.getFechaCreacion() : null)
                 .build();
     }
 }

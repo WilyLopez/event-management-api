@@ -17,8 +17,7 @@ public interface RegistroIngresoRepository {
     List<RegistroIngreso> findBySedeAndPeriodo(Long idSede, int anio, int mes);
     BigDecimal sumMontoBySedeAndPeriodo(Long idSede, int anio, int mes);
     BigDecimal sumMontoBySedeAndRango(Long idSede, LocalDate inicio, LocalDate fin);
-    BigDecimal sumMontoBySedeAndPeriodoAndCategoria(Long idSede, int anio, int mes, String categoria);
-    Map<Long, BigDecimal> sumMontoAgrupadoPorTipo(Long idSede, int anio, int mes);
+    Map<String, BigDecimal> sumMontoAgrupadoPorTipo(Long idSede, int anio, int mes);
     RegistroIngreso save(RegistroIngreso registro);
     void deleteById(Long id);
 }

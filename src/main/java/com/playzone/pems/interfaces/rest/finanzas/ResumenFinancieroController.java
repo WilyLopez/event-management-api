@@ -24,7 +24,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/finanzas")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAuthority('finanzas.reportes')")
 public class ResumenFinancieroController {
 
     private final ConsultarResumenFinancieroUseCase useCase;
@@ -129,7 +129,6 @@ public class ResumenFinancieroController {
                 .fechaEvento(q.getFechaEvento())
                 .ingresoContrato(q.getIngresoContrato())
                 .montoAdelanto(q.getMontoAdelanto())
-                .totalGastosProveedores(q.getTotalGastosProveedores())
                 .totalGastosAdicionales(q.getTotalGastosAdicionales())
                 .totalGastos(q.getTotalGastos())
                 .utilidadBruta(q.getUtilidadBruta())

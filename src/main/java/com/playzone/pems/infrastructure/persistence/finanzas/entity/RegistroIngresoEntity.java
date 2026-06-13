@@ -1,18 +1,18 @@
 package com.playzone.pems.infrastructure.persistence.finanzas.entity;
 
-import com.playzone.pems.infrastructure.persistence.evento.entity.EventoPrivadoEntity;
-import com.playzone.pems.infrastructure.persistence.evento.entity.ReservaPublicaEntity;
 import com.playzone.pems.infrastructure.persistence.usuario.entity.SedeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "registroingreso")
+@Table(name = "registro_ingreso")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -22,24 +22,27 @@ public class RegistroIngresoEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idregistroingreso")
+    @Column(name = "id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "idtipoingreso", nullable = false)
-    private TipoIngresoEntity tipoIngreso;
+    @Column(name = "tipo_codigo", nullable = false, length = 50)
+    private String tipoCodigo;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "idsede", nullable = false)
+    @JoinColumn(name = "sede_id", nullable = false)
     private SedeEntity sede;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "idreservapublica")
-    private ReservaPublicaEntity reservaPublica;
+    @Column(name = "reserva_id")
+    private Long reservaId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ideventoprivado")
-    private EventoPrivadoEntity eventoPrivado;
+    @Column(name = "evento_id")
+    private Long eventoId;
+
+    @Column(name = "venta_id")
+    private Long ventaId;
+
+    @Column(name = "venta_pago_id")
+    private Long ventaPagoId;
 
     @Column(name = "monto", nullable = false, precision = 10, scale = 2)
     private BigDecimal monto;
@@ -47,20 +50,30 @@ public class RegistroIngresoEntity {
     @Column(name = "fecha", nullable = false)
     private LocalDate fecha;
 
-    @Column(name = "mediopago", length = 30)
-    private String medioPago;
+    @Column(name = "medio_pago_codigo", length = 30)
+    private String medioPagoCodigo;
+
+    @Column(name = "referencia", length = 200)
+    private String referencia;
 
     @Column(name = "descripcion", length = 300)
     private String descripcion;
 
-    @Column(name = "esautomatico", nullable = false)
+    @Column(name = "es_automatico", nullable = false)
     @Builder.Default
     private boolean esAutomatico = false;
 
-    @Column(name = "idusuarioregistra")
-    private Long idUsuarioRegistra;
+    @Column(name = "created_by", columnDefinition = "uuid")
+    private UUID createdBy;
 
     @CreationTimestamp
-    @Column(name = "fechacreacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private OffsetDateTime updatedAt;
+
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
 }

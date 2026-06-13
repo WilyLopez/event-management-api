@@ -39,9 +39,8 @@ public class MovimientoCajaPersistenceAdapter implements MovimientoCajaRepositor
                 .medioPago(movimiento.getMedioPago())
                 .idRegistroIngreso(movimiento.getIdRegistroIngreso())
                 .idRegistroEgreso(movimiento.getIdRegistroEgreso())
-                .idReservaPublica(movimiento.getIdReservaPublica())
                 .esManual(movimiento.isEsManual())
-                .idUsuarioRegistra(movimiento.getIdUsuarioRegistra())
+                .createdBy(movimiento.getIdUsuarioRegistra())
                 .build();
         return toDomain(jpaRepository.save(entity));
     }
@@ -62,10 +61,10 @@ public class MovimientoCajaPersistenceAdapter implements MovimientoCajaRepositor
                 .medioPago(e.getMedioPago())
                 .idRegistroIngreso(e.getIdRegistroIngreso())
                 .idRegistroEgreso(e.getIdRegistroEgreso())
-                .idReservaPublica(e.getIdReservaPublica())
+                .idVenta(e.getVentaId())
                 .esManual(e.isEsManual())
-                .idUsuarioRegistra(e.getIdUsuarioRegistra())
-                .fechaCreacion(e.getFechaCreacion())
+                .idUsuarioRegistra(e.getCreatedBy())
+                .fechaCreacion(e.getFechaCreacion() != null ? e.getFechaCreacion() : null)
                 .build();
     }
 }

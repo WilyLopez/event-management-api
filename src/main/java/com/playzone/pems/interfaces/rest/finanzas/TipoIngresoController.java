@@ -18,40 +18,43 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/tipos-ingreso")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class TipoIngresoController {
 
     private final GestionarTipoIngresoUseCase useCase;
 
     @GetMapping
+    @PreAuthorize("hasAuthority('ingreso.ver')")
     public ResponseEntity<ApiResponse<List<TipoIngresoResponse>>> listar() {
         List<TipoIngresoResponse> body = useCase.listar().stream().map(this::toResponse).toList();
         return ResponseEntity.ok(ApiResponse.ok(body));
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('catalogo.editar')")
     public ResponseEntity<ApiResponse<TipoIngresoResponse>> crear(
             @Valid @RequestBody CrearTipoIngresoRequest request) {
         TipoIngresoQuery query = useCase.crear(CrearTipoIngresoCommand.builder()
+                .codigo(request.getCodigo())
                 .nombre(request.getNombre())
                 .descripcion(request.getDescripcion())
-                .categoria(request.getCategoria())
                 .build());
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(query)));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> desactivar(@PathVariable Long id) {
-        useCase.desactivar(id);
+    @DeleteMapping("/{codigo}")
+    @PreAuthorize("hasAuthority('catalogo.editar')")
+    public ResponseEntity<ApiResponse<Void>> desactivar(@PathVariable String codigo) {
+        useCase.desactivar(codigo);
         return ResponseEntity.ok(ApiResponse.noContent());
     }
 
     private TipoIngresoResponse toResponse(TipoIngresoQuery q) {
         return TipoIngresoResponse.builder()
-                .id(q.getId())
+                .codigo(q.getCodigo())
                 .nombre(q.getNombre())
                 .descripcion(q.getDescripcion())
-                .categoria(q.getCategoria())
+                .esSistema(q.isEsSistema())
+                .orden(q.getOrden())
                 .activo(q.isActivo())
                 .build();
     }

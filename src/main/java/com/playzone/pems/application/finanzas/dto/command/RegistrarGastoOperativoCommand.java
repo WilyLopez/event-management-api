@@ -5,6 +5,7 @@ import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Getter
 @Builder
@@ -14,5 +15,5 @@ public class RegistrarGastoOperativoCommand {
     private String     descripcion;
     private BigDecimal monto;
     private String     comprobanteUrl;
-    private Long       idUsuarioRegistra;
+    private UUID       idUsuarioRegistra;
 }

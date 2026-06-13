@@ -7,10 +7,11 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "gastoopertaiviodiario")
+@Table(name = "gasto_operativo_diario")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,11 +21,11 @@ public class GastoOperativoDiarioEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idgastooperativo")
+    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "idsede", nullable = false)
+    @JoinColumn(name = "sede_id", nullable = false)
     private SedeEntity sede;
 
     @Column(name = "fecha", nullable = false)
@@ -36,13 +37,16 @@ public class GastoOperativoDiarioEntity {
     @Column(name = "monto", nullable = false, precision = 10, scale = 2)
     private BigDecimal monto;
 
-    @Column(name = "comprobanteurl", length = 500)
-    private String comprobanteUrl;
+    @Column(name = "comprobante_path", length = 500)
+    private String comprobantePath;
 
-    @Column(name = "idusuarioregistra", nullable = false)
-    private Long idUsuarioRegistra;
+    @Column(name = "created_by", columnDefinition = "uuid")
+    private UUID createdBy;
 
     @CreationTimestamp
-    @Column(name = "fechacreacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
+
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
 }

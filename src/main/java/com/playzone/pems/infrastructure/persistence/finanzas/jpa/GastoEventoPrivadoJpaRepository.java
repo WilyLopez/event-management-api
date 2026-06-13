@@ -10,12 +10,12 @@ import java.util.List;
 
 public interface GastoEventoPrivadoJpaRepository extends JpaRepository<GastoEventoPrivadoEntity, Long> {
 
-    List<GastoEventoPrivadoEntity> findByEventoPrivado_Id(Long idEvento);
+    List<GastoEventoPrivadoEntity> findByEventoId(Long eventoId);
 
-    @Query("SELECT COALESCE(SUM(g.monto), 0) FROM GastoEventoPrivadoEntity g WHERE g.eventoPrivado.id = :idEvento")
-    BigDecimal sumMontoByEvento(@Param("idEvento") Long idEvento);
+    @Query("SELECT COALESCE(SUM(g.monto), 0) FROM GastoEventoPrivadoEntity g WHERE g.eventoId = :eventoId")
+    BigDecimal sumMontoByEvento(@Param("eventoId") Long eventoId);
 
-    @Query("SELECT g.eventoPrivado.id, COALESCE(SUM(g.monto), 0) FROM GastoEventoPrivadoEntity g " +
-           "WHERE g.eventoPrivado.id IN :ids GROUP BY g.eventoPrivado.id")
+    @Query("SELECT g.eventoId, COALESCE(SUM(g.monto), 0) FROM GastoEventoPrivadoEntity g " +
+           "WHERE g.eventoId IN :ids GROUP BY g.eventoId")
     List<Object[]> sumMontoByEventoIds(@Param("ids") List<Long> ids);
 }

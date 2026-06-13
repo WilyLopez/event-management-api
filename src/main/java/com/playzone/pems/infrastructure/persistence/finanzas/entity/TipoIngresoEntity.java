@@ -1,14 +1,14 @@
 package com.playzone.pems.infrastructure.persistence.finanzas.entity;
 
-import com.playzone.pems.domain.finanzas.model.enums.CategoriaIngreso;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "tipoingreso")
+@Table(name = "tipo_ingreso")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -17,9 +17,8 @@ import java.time.LocalDateTime;
 public class TipoIngresoEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idtipoingreso")
-    private Long id;
+    @Column(name = "codigo", nullable = false, length = 50)
+    private String codigo;
 
     @Column(name = "nombre", nullable = false, length = 120)
     private String nombre;
@@ -27,15 +26,22 @@ public class TipoIngresoEntity {
     @Column(name = "descripcion", length = 300)
     private String descripcion;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "categoria", nullable = false, length = 30)
-    private CategoriaIngreso categoria;
+    @Column(name = "es_sistema", nullable = false)
+    @Builder.Default
+    private boolean esSistema = false;
+
+    @Column(name = "orden", nullable = false)
+    private int orden;
 
     @Column(name = "activo", nullable = false)
     @Builder.Default
     private boolean activo = true;
 
     @CreationTimestamp
-    @Column(name = "fechacreacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private OffsetDateTime updatedAt;
 }

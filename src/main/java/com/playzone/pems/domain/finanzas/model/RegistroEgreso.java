@@ -1,22 +1,20 @@
 package com.playzone.pems.domain.finanzas.model;
 
-import com.playzone.pems.domain.finanzas.model.enums.CategoriaEgreso;
 import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class RegistroEgreso {
-    private Long            id;
-    private Long            idTipoEgreso;
-    private String          nombreTipoEgreso;
-    private CategoriaEgreso categoriaEgreso;
-    private Long            idSede;
+    private Long          id;
+    private String        tipoEgresoCodigo;
+    private Long          idSede;
     private BigDecimal    monto;
     private LocalDate     fecha;
     private Integer       periodoAnio;
@@ -24,6 +22,6 @@ public class RegistroEgreso {
     private String        descripcion;
     private String        comprobanteUrl;
     private boolean       esRecurrente;
-    private Long          idUsuarioRegistra;
-    private LocalDateTime fechaCreacion;
+    private UUID          idUsuarioRegistra;
+    private OffsetDateTime fechaCreacion;
 }

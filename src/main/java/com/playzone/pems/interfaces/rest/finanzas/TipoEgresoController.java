@@ -18,18 +18,19 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/tipos-egreso")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class TipoEgresoController {
 
     private final GestionarTipoEgresoUseCase useCase;
 
     @GetMapping
+    @PreAuthorize("hasAuthority('egreso.ver')")
     public ResponseEntity<ApiResponse<List<TipoEgresoResponse>>> listar() {
         List<TipoEgresoResponse> body = useCase.listar().stream().map(this::toResponse).toList();
         return ResponseEntity.ok(ApiResponse.ok(body));
     }
 
     @GetMapping("/categoria/{categoria}")
+    @PreAuthorize("hasAuthority('egreso.ver')")
     public ResponseEntity<ApiResponse<List<TipoEgresoResponse>>> listarPorCategoria(
             @PathVariable String categoria) {
         List<TipoEgresoResponse> body = useCase.listarPorCategoria(categoria).stream()
@@ -38,30 +39,33 @@ public class TipoEgresoController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('catalogo.editar')")
     public ResponseEntity<ApiResponse<TipoEgresoResponse>> crear(
-            @Valid @RequestBody CrearTipoEgresoRequest request,
-            @RequestAttribute Long idUsuarioAdmin) {
+            @Valid @RequestBody CrearTipoEgresoRequest request) {
         TipoEgresoQuery query = useCase.crear(CrearTipoEgresoCommand.builder()
+                .codigo(request.getCodigo())
                 .nombre(request.getNombre())
                 .descripcion(request.getDescripcion())
                 .categoria(request.getCategoria())
-                .idUsuarioCreador(idUsuarioAdmin)
                 .build());
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(query)));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> desactivar(@PathVariable Long id) {
-        useCase.desactivar(id);
+    @DeleteMapping("/{codigo}")
+    @PreAuthorize("hasAuthority('catalogo.editar')")
+    public ResponseEntity<ApiResponse<Void>> desactivar(@PathVariable String codigo) {
+        useCase.desactivar(codigo);
         return ResponseEntity.ok(ApiResponse.noContent());
     }
 
     private TipoEgresoResponse toResponse(TipoEgresoQuery q) {
         return TipoEgresoResponse.builder()
-                .id(q.getId())
+                .codigo(q.getCodigo())
                 .nombre(q.getNombre())
                 .descripcion(q.getDescripcion())
                 .categoria(q.getCategoria())
+                .esSistema(q.isEsSistema())
+                .orden(q.getOrden())
                 .activo(q.isActivo())
                 .build();
     }

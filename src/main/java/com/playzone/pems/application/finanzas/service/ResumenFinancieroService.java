@@ -2,14 +2,16 @@ package com.playzone.pems.application.finanzas.service;
 
 import com.playzone.pems.application.finanzas.dto.query.*;
 import com.playzone.pems.application.finanzas.port.in.ConsultarResumenFinancieroUseCase;
+import com.playzone.pems.domain.evento.model.EventoPrivado;
+import com.playzone.pems.domain.evento.repository.EventoPrivadoRepository;
+import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
+import com.playzone.pems.domain.usuario.model.ClientePerfil;
+import com.playzone.pems.domain.usuario.repository.ClientePerfilRepository;
 import com.playzone.pems.domain.finanzas.repository.GastoEventoPrivadoRepository;
 import com.playzone.pems.domain.finanzas.repository.GastoOperativoDiarioRepository;
 import com.playzone.pems.domain.finanzas.repository.RegistroEgresoRepository;
 import com.playzone.pems.domain.finanzas.repository.TipoEgresoRepository;
-import com.playzone.pems.infrastructure.persistence.contrato.jpa.ContratoProveedorJpaRepository;
-import com.playzone.pems.infrastructure.persistence.evento.entity.EventoPrivadoEntity;
-import com.playzone.pems.infrastructure.persistence.evento.jpa.EventoPrivadoJpaRepository;
-import com.playzone.pems.infrastructure.persistence.evento.jpa.ReservaPublicaJpaRepository;
+import com.playzone.pems.domain.venta.repository.VentaPagoRepository;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,43 +30,44 @@ import java.util.Map;
 @Transactional(readOnly = true)
 public class ResumenFinancieroService implements ConsultarResumenFinancieroUseCase {
 
-    private final ReservaPublicaJpaRepository    reservaJpaRepository;
-    private final EventoPrivadoJpaRepository     eventoJpaRepository;
-    private final ContratoProveedorJpaRepository contratoProveedorJpaRepository;
+    private final ReservaPublicaRepository       reservaPublicaRepository;
+    private final EventoPrivadoRepository        eventoPrivadoRepository;
     private final RegistroEgresoRepository       registroEgresoRepository;
+    private final ClientePerfilRepository        clientePerfilRepository;
     private final GastoEventoPrivadoRepository   gastoEventoRepository;
     private final GastoOperativoDiarioRepository gastoOperativoRepository;
     private final TipoEgresoRepository           tipoEgresoRepository;
+    private final VentaPagoRepository            ventaPagoRepository;
 
     @Override
     public ResumenFinancieroQuery resumenMensual(Long idSede, int anio, int mes) {
-        BigDecimal ingresoReservas  = reservaJpaRepository.sumIngresosBySedeAndPeriodo(idSede, anio, mes);
-        BigDecimal adelantoEventos  = eventoJpaRepository.sumAdelantosBySedeAndPeriodo(idSede, anio, mes);
-        BigDecimal ingresoOtros     = BigDecimal.ZERO;
-        BigDecimal ingresoGeneral   = ingresoReservas.add(adelantoEventos).add(ingresoOtros);
+        BigDecimal ingresoReservas = reservaPublicaRepository.sumIngresosBySedeAndPeriodo(idSede, anio, mes);
+        BigDecimal adelantoEventos = eventoPrivadoRepository.sumAdelantosBySedeAndPeriodo(idSede, anio, mes);
+        BigDecimal ingresoOtros    = BigDecimal.ZERO;
+        BigDecimal ingresoGeneral  = ingresoReservas.add(adelantoEventos).add(ingresoOtros);
 
-        BigDecimal egresoGeneral    = registroEgresoRepository.sumMontoBySedeAndPeriodo(idSede, anio, mes);
-        BigDecimal egresoOperativo  = gastoOperativoRepository.sumMontoBySedeAndPeriodo(idSede, anio, mes);
+        BigDecimal egresoGeneral   = registroEgresoRepository.sumMontoBySedeAndPeriodo(idSede, anio, mes);
+        BigDecimal egresoOperativo = gastoOperativoRepository.sumMontoBySedeAndPeriodo(idSede, anio, mes);
 
         LocalDate inicio = LocalDate.of(anio, mes, 1);
         LocalDate fin    = YearMonth.of(anio, mes).atEndOfMonth();
-        List<Long> idsEventos = eventoJpaRepository
-                .findBySede_IdAndFechaEventoBetween(idSede, inicio, fin)
-                .stream().map(EventoPrivadoEntity::getId).toList();
+        List<Long> idsEventos = eventoPrivadoRepository
+                .findBySedeAndFechaBetween(idSede, inicio, fin)
+                .stream().map(EventoPrivado::getId).toList();
         Map<Long, BigDecimal> montosPorEvento = gastoEventoRepository.sumMontoByEventoIds(idsEventos);
         BigDecimal egresoEventos = montosPorEvento.values().stream()
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal egresoNeto    = egresoGeneral.add(egresoOperativo).add(egresoEventos);
-        BigDecimal utilidadNeta  = ingresoGeneral.subtract(egresoNeto);
+        BigDecimal egresoNeto   = egresoGeneral.add(egresoOperativo).add(egresoEventos);
+        BigDecimal utilidadNeta = ingresoGeneral.subtract(egresoNeto);
 
-        Map<Long, BigDecimal> montoPorTipo = registroEgresoRepository.sumMontoAgrupadoPorTipo(idSede, anio, mes);
+        Map<String, BigDecimal> montoPorTipo = registroEgresoRepository.sumMontoAgrupadoPorTipo(idSede, anio, mes);
         List<DesgloseTipoEgresoQuery> desglose = tipoEgresoRepository.findAllActivos().stream()
-                .filter(tipo -> montoPorTipo.containsKey(tipo.getId()))
+                .filter(tipo -> montoPorTipo.containsKey(tipo.getCodigo()))
                 .map(tipo -> DesgloseTipoEgresoQuery.builder()
                         .nombreTipo(tipo.getNombre())
                         .categoria(tipo.getCategoria())
-                        .totalMonto(montoPorTipo.get(tipo.getId()))
+                        .totalMonto(montoPorTipo.get(tipo.getCodigo()))
                         .build())
                 .toList();
 
@@ -86,7 +89,7 @@ public class ResumenFinancieroService implements ConsultarResumenFinancieroUseCa
 
     @Override
     public ResumenEventoFinancieroQuery resumenEvento(Long idEvento) {
-        EventoPrivadoEntity evento = eventoJpaRepository.findById(idEvento)
+        EventoPrivado evento = eventoPrivadoRepository.findById(idEvento)
                 .orElseThrow(() -> new ResourceNotFoundException("Evento privado no encontrado."));
 
         BigDecimal ingresoContrato = evento.getPrecioTotalContrato() != null
@@ -94,20 +97,19 @@ public class ResumenFinancieroService implements ConsultarResumenFinancieroUseCa
         BigDecimal montoAdelanto   = evento.getMontoAdelanto() != null
                 ? evento.getMontoAdelanto() : BigDecimal.ZERO;
 
-        BigDecimal gastosProveedores = contratoProveedorJpaRepository
-                .sumMontoAcordadoByEventoAndContratadoPorEmpresa(idEvento);
         BigDecimal gastosAdicionales = gastoEventoRepository.sumMontoByEvento(idEvento);
-        BigDecimal totalGastos       = gastosProveedores.add(gastosAdicionales);
+        BigDecimal totalGastos       = gastosAdicionales;
         BigDecimal utilidadBruta     = ingresoContrato.subtract(totalGastos);
 
         return ResumenEventoFinancieroQuery.builder()
                 .idEvento(evento.getId())
                 .tipoEvento(evento.getTipoEvento())
-                .nombreCliente(evento.getCliente().getNombre())
+                .nombreCliente(clientePerfilRepository.buscarPorId(evento.getIdCliente())
+                        .map(ClientePerfil::nombreCompleto)
+                        .orElse(null))
                 .fechaEvento(evento.getFechaEvento())
                 .ingresoContrato(ingresoContrato)
                 .montoAdelanto(montoAdelanto)
-                .totalGastosProveedores(gastosProveedores)
                 .totalGastosAdicionales(gastosAdicionales)
                 .totalGastos(totalGastos)
                 .utilidadBruta(utilidadBruta)
@@ -119,9 +121,9 @@ public class ResumenFinancieroService implements ConsultarResumenFinancieroUseCa
         List<ResumenDiarioFinancieroQuery> resultado = new ArrayList<>();
         LocalDate cursor = inicio;
         while (!cursor.isAfter(fin)) {
-            BigDecimal ingresoReservas = reservaJpaRepository.sumIngresosBySedeAndFecha(idSede, cursor);
+            BigDecimal ingresoReservas = reservaPublicaRepository.sumIngresosBySedeAndFecha(idSede, cursor);
             BigDecimal gastoOperativo  = gastoOperativoRepository.sumMontoBySedeAndFecha(idSede, cursor);
-            int cantidadReservas       = reservaJpaRepository.countConfirmadasBySedeAndFecha(idSede, cursor);
+            int cantidadReservas       = reservaPublicaRepository.countConfirmadasBySedeAndFecha(idSede, cursor);
             BigDecimal utilidadDia     = ingresoReservas.subtract(gastoOperativo);
             BigDecimal ticketPromedio  = cantidadReservas > 0
                     ? ingresoReservas.divide(BigDecimal.valueOf(cantidadReservas), 2, RoundingMode.HALF_UP)
@@ -141,12 +143,12 @@ public class ResumenFinancieroService implements ConsultarResumenFinancieroUseCa
 
     @Override
     public ResumenRangoQuery resumenPorRango(Long idSede, LocalDate inicio, LocalDate fin) {
-        BigDecimal ingresoReservas  = reservaJpaRepository.sumIngresosBySedeAndRango(idSede, inicio, fin);
-        BigDecimal egresoGeneral    = registroEgresoRepository.sumMontoBySedeAndRango(idSede, inicio, fin);
-        BigDecimal egresoOperativo  = gastoOperativoRepository.sumMontoBySedeAndRango(idSede, inicio, fin);
-        BigDecimal egresoNeto       = egresoGeneral.add(egresoOperativo);
-        BigDecimal utilidadNeta     = ingresoReservas.subtract(egresoNeto);
-        long cantidadReservas       = reservaJpaRepository.countConfirmadasBySedeAndRango(idSede, inicio, fin);
+        BigDecimal ingresoReservas = reservaPublicaRepository.sumIngresosBySedeAndRango(idSede, inicio, fin);
+        BigDecimal egresoGeneral   = registroEgresoRepository.sumMontoBySedeAndRango(idSede, inicio, fin);
+        BigDecimal egresoOperativo = gastoOperativoRepository.sumMontoBySedeAndRango(idSede, inicio, fin);
+        BigDecimal egresoNeto      = egresoGeneral.add(egresoOperativo);
+        BigDecimal utilidadNeta    = ingresoReservas.subtract(egresoNeto);
+        long cantidadReservas      = reservaPublicaRepository.countConfirmadasBySedeAndRango(idSede, inicio, fin);
         return ResumenRangoQuery.builder()
                 .inicio(inicio)
                 .fin(fin)
@@ -161,13 +163,15 @@ public class ResumenFinancieroService implements ConsultarResumenFinancieroUseCa
 
     @Override
     public MetricasReservasQuery metricasReservas(Long idSede, int anio, int mes) {
-        long confirmadas   = reservaJpaRepository.countConfirmadasBySedeAndPeriodo(idSede, anio, mes);
-        long canceladas    = reservaJpaRepository.countCanceladasBySedeAndPeriodo(idSede, anio, mes);
-        long completadas   = reservaJpaRepository.countCompletadasBySedeAndPeriodo(idSede, anio, mes);
-        BigDecimal ingreso = reservaJpaRepository.sumIngresosBySedeAndPeriodo(idSede, anio, mes);
-        BigDecimal ticket  = reservaJpaRepository.avgTicketBySedeAndPeriodo(idSede, anio, mes);
-        BigDecimal efectivo = reservaJpaRepository.sumIngresosBySedeAndPeriodoAndMedioPago(idSede, anio, mes, "CAJA");
-        BigDecimal yape     = reservaJpaRepository.sumIngresosBySedeAndPeriodoAndMedioPago(idSede, anio, mes, "YAPE");
+        long confirmadas   = reservaPublicaRepository.countConfirmadasBySedeAndPeriodo(idSede, anio, mes);
+        long canceladas    = reservaPublicaRepository.countCanceladasBySedeAndPeriodo(idSede, anio, mes);
+        long completadas   = reservaPublicaRepository.countCompletadasBySedeAndPeriodo(idSede, anio, mes);
+        BigDecimal ingreso = reservaPublicaRepository.sumIngresosBySedeAndPeriodo(idSede, anio, mes);
+        BigDecimal ticket  = reservaPublicaRepository.avgTicketBySedeAndPeriodo(idSede, anio, mes);
+        BigDecimal efectivo = ventaPagoRepository
+                .sumValidadosBySedeAndPeriodoAndMedioPago(idSede, anio, mes, "EFECTIVO");
+        BigDecimal yape = ventaPagoRepository
+                .sumValidadosBySedeAndPeriodoAndMedioPago(idSede, anio, mes, "YAPE");
         return MetricasReservasQuery.builder()
                 .anio(anio)
                 .mes(mes)

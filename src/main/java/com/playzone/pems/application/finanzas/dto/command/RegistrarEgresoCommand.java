@@ -5,11 +5,12 @@ import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Getter
 @Builder
 public class RegistrarEgresoCommand {
-    private Long       idTipoEgreso;
+    private String     tipoEgresoCodigo;
     private Long       idSede;
     private BigDecimal monto;
     private LocalDate  fecha;
@@ -18,5 +19,5 @@ public class RegistrarEgresoCommand {
     private String     descripcion;
     private String     comprobanteUrl;
     private boolean    esRecurrente;
-    private Long       idUsuarioRegistra;
+    private UUID       idUsuarioRegistra;
 }

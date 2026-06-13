@@ -3,6 +3,7 @@ package com.playzone.pems.interfaces.rest.finanzas;
 import com.playzone.pems.application.finanzas.dto.command.GuardarPresupuestoCommand;
 import com.playzone.pems.application.finanzas.dto.query.PresupuestoEventoQuery;
 import com.playzone.pems.application.finanzas.port.in.GestionarPresupuestoEventoUseCase;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.interfaces.rest.finanzas.request.EjecutarPresupuestoRequest;
 import com.playzone.pems.interfaces.rest.finanzas.request.GuardarPresupuestoRequest;
 import com.playzone.pems.interfaces.rest.finanzas.response.PresupuestoEventoResponse;
@@ -19,12 +20,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/presupuesto-eventos")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class PresupuestoEventoController {
 
     private final GestionarPresupuestoEventoUseCase useCase;
+    private final SupabaseAuthFacade                supabaseAuthFacade;
 
     @GetMapping("/eventos/{idEvento}")
+    @PreAuthorize("hasAuthority('egreso.ver')")
     public ResponseEntity<ApiResponse<List<PresupuestoEventoResponse>>> listarPorEvento(
             @PathVariable Long idEvento) {
         List<PresupuestoEventoResponse> body = useCase.listarPorEvento(idEvento)
@@ -33,21 +35,22 @@ public class PresupuestoEventoController {
     }
 
     @PostMapping("/eventos/{idEvento}")
+    @PreAuthorize("hasAuthority('egreso.crear')")
     public ResponseEntity<ApiResponse<PresupuestoEventoResponse>> guardar(
             @PathVariable Long idEvento,
-            @Valid @RequestBody GuardarPresupuestoRequest request,
-            @RequestAttribute Long idUsuarioAdmin) {
+            @Valid @RequestBody GuardarPresupuestoRequest request) {
         PresupuestoEventoQuery query = useCase.guardar(GuardarPresupuestoCommand.builder()
                 .idEventoPrivado(idEvento)
                 .concepto(request.getConcepto())
                 .categoria(request.getCategoria())
                 .montoEstimado(request.getMontoEstimado())
-                .idUsuarioRegistra(idUsuarioAdmin)
+                .idUsuarioRegistra(supabaseAuthFacade.usuarioActualId().orElseThrow())
                 .build());
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(query)));
     }
 
     @PutMapping("/{id}/ejecutar")
+    @PreAuthorize("hasAuthority('egreso.editar')")
     public ResponseEntity<ApiResponse<PresupuestoEventoResponse>> marcarEjecutado(
             @PathVariable Long id,
             @Valid @RequestBody EjecutarPresupuestoRequest request) {
@@ -56,6 +59,7 @@ public class PresupuestoEventoController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('egreso.eliminar')")
     public ResponseEntity<ApiResponse<Void>> eliminar(@PathVariable Long id) {
         useCase.eliminar(id);
         return ResponseEntity.ok(ApiResponse.noContent());

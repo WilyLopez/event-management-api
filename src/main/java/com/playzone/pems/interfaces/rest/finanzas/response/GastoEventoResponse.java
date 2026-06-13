@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder
@@ -14,5 +14,5 @@ public class GastoEventoResponse {
     private String        descripcion;
     private BigDecimal    monto;
     private String        comprobanteUrl;
-    private LocalDateTime fechaCreacion;
+    private OffsetDateTime fechaCreacion;
 }

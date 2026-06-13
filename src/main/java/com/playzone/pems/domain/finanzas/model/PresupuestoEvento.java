@@ -4,7 +4,8 @@ import com.playzone.pems.domain.finanzas.model.enums.EstadoPresupuesto;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder
@@ -18,7 +19,8 @@ public class PresupuestoEvento {
     private BigDecimal       montoEstimado;
     private BigDecimal       montoReal;
     private EstadoPresupuesto estado;
-    private Long             idUsuarioRegistra;
-    private LocalDateTime    fechaCreacion;
-    private LocalDateTime    fechaActualizacion;
+    private UUID             idUsuarioRegistra;
+    private UUID             idUsuarioEditor;
+    private OffsetDateTime    fechaCreacion;
+    private OffsetDateTime    fechaActualizacion;
 }

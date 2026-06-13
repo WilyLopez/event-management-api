@@ -2,8 +2,6 @@ package com.playzone.pems.infrastructure.persistence.finanzas.adapter;
 
 import com.playzone.pems.domain.finanzas.model.PresupuestoEvento;
 import com.playzone.pems.domain.finanzas.repository.PresupuestoEventoRepository;
-import com.playzone.pems.infrastructure.persistence.evento.entity.EventoPrivadoEntity;
-import com.playzone.pems.infrastructure.persistence.evento.jpa.EventoPrivadoJpaRepository;
 import com.playzone.pems.infrastructure.persistence.finanzas.entity.PresupuestoEventoEntity;
 import com.playzone.pems.infrastructure.persistence.finanzas.jpa.PresupuestoEventoJpaRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +17,6 @@ import java.util.Optional;
 public class PresupuestoEventoPersistenceAdapter implements PresupuestoEventoRepository {
 
     private final PresupuestoEventoJpaRepository jpaRepository;
-    private final EventoPrivadoJpaRepository     eventoPrivadoJpaRepository;
 
     @Override
     public Optional<PresupuestoEvento> findById(Long id) {
@@ -28,7 +25,7 @@ public class PresupuestoEventoPersistenceAdapter implements PresupuestoEventoRep
 
     @Override
     public List<PresupuestoEvento> findByEvento(Long idEventoPrivado) {
-        return jpaRepository.findByEventoPrivado_IdOrderByFechaCreacionAsc(idEventoPrivado)
+        return jpaRepository.findByEventoIdOrderByCreatedAtAsc(idEventoPrivado)
                 .stream().map(this::toDomain).toList();
     }
 
@@ -45,17 +42,16 @@ public class PresupuestoEventoPersistenceAdapter implements PresupuestoEventoRep
     @Override
     @Transactional
     public PresupuestoEvento save(PresupuestoEvento presupuesto) {
-        EventoPrivadoEntity evento = eventoPrivadoJpaRepository
-                .getReferenceById(presupuesto.getIdEventoPrivado());
         PresupuestoEventoEntity entity = PresupuestoEventoEntity.builder()
                 .id(presupuesto.getId())
-                .eventoPrivado(evento)
+                .eventoId(presupuesto.getIdEventoPrivado())
                 .concepto(presupuesto.getConcepto())
                 .categoria(presupuesto.getCategoria())
                 .montoEstimado(presupuesto.getMontoEstimado())
                 .montoReal(presupuesto.getMontoReal())
                 .estado(presupuesto.getEstado())
-                .idUsuarioRegistra(presupuesto.getIdUsuarioRegistra())
+                .createdBy(presupuesto.getIdUsuarioRegistra())
+                .updatedBy(presupuesto.getIdUsuarioEditor())
                 .build();
         return toDomain(jpaRepository.save(entity));
     }
@@ -69,15 +65,16 @@ public class PresupuestoEventoPersistenceAdapter implements PresupuestoEventoRep
     private PresupuestoEvento toDomain(PresupuestoEventoEntity e) {
         return PresupuestoEvento.builder()
                 .id(e.getId())
-                .idEventoPrivado(e.getEventoPrivado().getId())
+                .idEventoPrivado(e.getEventoId())
                 .concepto(e.getConcepto())
                 .categoria(e.getCategoria())
                 .montoEstimado(e.getMontoEstimado())
                 .montoReal(e.getMontoReal())
                 .estado(e.getEstado())
-                .idUsuarioRegistra(e.getIdUsuarioRegistra())
-                .fechaCreacion(e.getFechaCreacion())
-                .fechaActualizacion(e.getFechaActualizacion())
+                .idUsuarioRegistra(e.getCreatedBy())
+                .idUsuarioEditor(e.getUpdatedBy())
+                .fechaCreacion(e.getCreatedAt() != null ? e.getCreatedAt() : null)
+                .fechaActualizacion(e.getUpdatedAt() != null ? e.getUpdatedAt() : null)
                 .build();
     }
 }

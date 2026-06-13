@@ -8,5 +8,5 @@ import java.util.List;
 public interface GestionarTipoIngresoUseCase {
     TipoIngresoQuery crear(CrearTipoIngresoCommand command);
     List<TipoIngresoQuery> listar();
-    void desactivar(Long id);
+    void desactivar(String codigo);
 }

@@ -5,7 +5,8 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder
@@ -20,10 +21,10 @@ public class AperturaCaja {
     private BigDecimal totalIngresos;
     private BigDecimal totalEgresos;
     private EstadoCaja estado;
-    private Long       idUsuarioApertura;
-    private Long       idUsuarioCierre;
-    private LocalDateTime fechaApertura;
-    private LocalDateTime fechaCierre;
+    private UUID       idUsuarioApertura;
+    private UUID       idUsuarioCierre;
+    private OffsetDateTime fechaApertura;
+    private OffsetDateTime fechaCierre;
     private String     observaciones;
-    private LocalDateTime fechaCreacion;
+    private OffsetDateTime fechaCreacion;
 }

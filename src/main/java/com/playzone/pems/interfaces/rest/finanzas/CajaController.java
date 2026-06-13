@@ -6,6 +6,7 @@ import com.playzone.pems.application.finanzas.dto.command.RegistrarMovimientoMan
 import com.playzone.pems.application.finanzas.dto.query.AperturaCajaQuery;
 import com.playzone.pems.application.finanzas.dto.query.MovimientoCajaQuery;
 import com.playzone.pems.application.finanzas.port.in.GestionarCajaUseCase;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.interfaces.rest.finanzas.request.AbrirCajaRequest;
 import com.playzone.pems.interfaces.rest.finanzas.request.CerrarCajaRequest;
 import com.playzone.pems.interfaces.rest.finanzas.request.RegistrarMovimientoManualRequest;
@@ -26,41 +27,42 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/caja")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class CajaController {
 
     private final GestionarCajaUseCase useCase;
+    private final SupabaseAuthFacade   supabaseAuthFacade;
 
     @PostMapping("/sedes/{idSede}/abrir")
+    @PreAuthorize("hasAuthority('caja.abrir')")
     public ResponseEntity<ApiResponse<AperturaCajaResponse>> abrir(
             @PathVariable Long idSede,
-            @Valid @RequestBody AbrirCajaRequest request,
-            @RequestAttribute Long idUsuarioAdmin) {
+            @Valid @RequestBody AbrirCajaRequest request) {
         AperturaCajaQuery query = useCase.abrir(AbrirCajaCommand.builder()
                 .idSede(idSede)
                 .fecha(request.getFecha())
                 .saldoInicial(request.getSaldoInicial())
-                .idUsuarioApertura(idUsuarioAdmin)
+                .idUsuarioApertura(supabaseAuthFacade.usuarioActualId().orElseThrow())
                 .observaciones(request.getObservaciones())
                 .build());
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(query)));
     }
 
     @PutMapping("/{idApertura}/cerrar")
+    @PreAuthorize("hasAuthority('caja.cerrar')")
     public ResponseEntity<ApiResponse<AperturaCajaResponse>> cerrar(
             @PathVariable Long idApertura,
-            @Valid @RequestBody CerrarCajaRequest request,
-            @RequestAttribute Long idUsuarioAdmin) {
+            @Valid @RequestBody CerrarCajaRequest request) {
         AperturaCajaQuery query = useCase.cerrar(CerrarCajaCommand.builder()
                 .idAperturaCaja(idApertura)
                 .saldoFinal(request.getSaldoFinal())
-                .idUsuarioCierre(idUsuarioAdmin)
+                .idUsuarioCierre(supabaseAuthFacade.usuarioActualId().orElseThrow())
                 .observaciones(request.getObservaciones())
                 .build());
         return ResponseEntity.ok(ApiResponse.ok(toResponse(query)));
     }
 
     @GetMapping("/sedes/{idSede}/fecha/{fecha}")
+    @PreAuthorize("hasAuthority('caja.ver_historial')")
     public ResponseEntity<ApiResponse<AperturaCajaResponse>> obtenerPorFecha(
             @PathVariable Long idSede,
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
@@ -68,6 +70,7 @@ public class CajaController {
     }
 
     @GetMapping("/sedes/{idSede}/rango")
+    @PreAuthorize("hasAuthority('caja.ver_historial')")
     public ResponseEntity<ApiResponse<List<AperturaCajaResponse>>> listarPorRango(
             @PathVariable Long idSede,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
@@ -78,6 +81,7 @@ public class CajaController {
     }
 
     @GetMapping("/{idApertura}/movimientos")
+    @PreAuthorize("hasAuthority('caja.ver_historial')")
     public ResponseEntity<ApiResponse<List<MovimientoCajaResponse>>> listarMovimientos(
             @PathVariable Long idApertura) {
         List<MovimientoCajaResponse> body = useCase.listarMovimientos(idApertura)
@@ -86,22 +90,23 @@ public class CajaController {
     }
 
     @PostMapping("/{idApertura}/movimientos")
+    @PreAuthorize("hasAuthority('caja.movimiento')")
     public ResponseEntity<ApiResponse<MovimientoCajaResponse>> registrarMovimiento(
             @PathVariable Long idApertura,
-            @Valid @RequestBody RegistrarMovimientoManualRequest request,
-            @RequestAttribute Long idUsuarioAdmin) {
+            @Valid @RequestBody RegistrarMovimientoManualRequest request) {
         MovimientoCajaQuery query = useCase.registrarMovimiento(RegistrarMovimientoManualCommand.builder()
                 .idAperturaCaja(idApertura)
                 .tipo(request.getTipo())
                 .concepto(request.getConcepto())
                 .monto(request.getMonto())
                 .medioPago(request.getMedioPago())
-                .idUsuarioRegistra(idUsuarioAdmin)
+                .idUsuarioRegistra(supabaseAuthFacade.usuarioActualId().orElseThrow())
                 .build());
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toMovimientoResponse(query)));
     }
 
     @DeleteMapping("/movimientos/{idMovimiento}")
+    @PreAuthorize("hasAuthority('caja.movimiento')")
     public ResponseEntity<ApiResponse<Void>> eliminarMovimiento(@PathVariable Long idMovimiento) {
         useCase.eliminarMovimiento(idMovimiento);
         return ResponseEntity.ok(ApiResponse.noContent());
@@ -135,7 +140,7 @@ public class CajaController {
                 .medioPago(q.getMedioPago())
                 .idRegistroIngreso(q.getIdRegistroIngreso())
                 .idRegistroEgreso(q.getIdRegistroEgreso())
-                .idReservaPublica(q.getIdReservaPublica())
+                .idVenta(q.getIdVenta())
                 .esManual(q.isEsManual())
                 .fechaCreacion(q.getFechaCreacion())
                 .build();

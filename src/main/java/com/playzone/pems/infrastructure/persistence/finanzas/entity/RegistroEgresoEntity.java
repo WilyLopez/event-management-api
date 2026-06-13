@@ -4,13 +4,15 @@ import com.playzone.pems.infrastructure.persistence.usuario.entity.SedeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "registroegreso")
+@Table(name = "registro_egreso")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,15 +22,14 @@ public class RegistroEgresoEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idregistroegreso")
+    @Column(name = "id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "idtipoegreso", nullable = false)
-    private TipoEgresoEntity tipoEgreso;
+    @Column(name = "tipo_codigo", nullable = false, length = 50)
+    private String tipoCodigo;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "idsede", nullable = false)
+    @JoinColumn(name = "sede_id", nullable = false)
     private SedeEntity sede;
 
     @Column(name = "monto", nullable = false, precision = 10, scale = 2)
@@ -37,26 +38,36 @@ public class RegistroEgresoEntity {
     @Column(name = "fecha", nullable = false)
     private LocalDate fecha;
 
-    @Column(name = "periodoaño")
+    @Column(name = "periodo_anio")
     private Integer periodoAnio;
 
-    @Column(name = "periodomes")
+    @Column(name = "periodo_mes")
     private Integer periodoMes;
 
     @Column(name = "descripcion", length = 300)
     private String descripcion;
 
-    @Column(name = "comprobanteurl", length = 500)
-    private String comprobanteUrl;
+    @Column(name = "comprobante_path", length = 500)
+    private String comprobantePath;
 
-    @Column(name = "esrecurrente", nullable = false)
+    @Column(name = "medio_pago_codigo", length = 30)
+    private String medioPagoCodigo;
+
+    @Column(name = "es_recurrente", nullable = false)
     @Builder.Default
     private boolean esRecurrente = false;
 
-    @Column(name = "idusuarioregistra", nullable = false)
-    private Long idUsuarioRegistra;
+    @Column(name = "created_by", columnDefinition = "uuid")
+    private UUID createdBy;
 
     @CreationTimestamp
-    @Column(name = "fechacreacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private OffsetDateTime updatedAt;
+
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
 }

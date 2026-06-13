@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder
@@ -18,7 +18,7 @@ public class MovimientoCajaQuery {
     private String             medioPago;
     private Long               idRegistroIngreso;
     private Long               idRegistroEgreso;
-    private Long               idReservaPublica;
+    private Long               idVenta;
     private boolean            esManual;
-    private LocalDateTime      fechaCreacion;
+    private OffsetDateTime      fechaCreacion;
 }

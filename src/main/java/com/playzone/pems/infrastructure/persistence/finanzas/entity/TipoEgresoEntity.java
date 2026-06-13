@@ -4,11 +4,12 @@ import com.playzone.pems.domain.finanzas.model.enums.CategoriaEgreso;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "tipoegreso")
+@Table(name = "tipo_egreso")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -17,9 +18,8 @@ import java.time.LocalDateTime;
 public class TipoEgresoEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idtipoegreso")
-    private Long id;
+    @Column(name = "codigo", nullable = false, length = 50)
+    private String codigo;
 
     @Column(name = "nombre", nullable = false, length = 120)
     private String nombre;
@@ -31,14 +31,22 @@ public class TipoEgresoEntity {
     @Column(name = "categoria", nullable = false, length = 30)
     private CategoriaEgreso categoria;
 
+    @Column(name = "es_sistema", nullable = false)
+    @Builder.Default
+    private boolean esSistema = false;
+
+    @Column(name = "orden", nullable = false)
+    private int orden;
+
     @Column(name = "activo", nullable = false)
     @Builder.Default
     private boolean activo = true;
 
-    @Column(name = "idusuariocreador")
-    private Long idUsuarioCreador;
-
     @CreationTimestamp
-    @Column(name = "fechacreacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private OffsetDateTime updatedAt;
 }

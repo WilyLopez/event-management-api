@@ -3,6 +3,7 @@ package com.playzone.pems.interfaces.rest.finanzas;
 import com.playzone.pems.application.finanzas.dto.command.RegistrarGastoEventoCommand;
 import com.playzone.pems.application.finanzas.dto.query.GastoEventoQuery;
 import com.playzone.pems.application.finanzas.port.in.GestionarGastoEventoUseCase;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.interfaces.rest.finanzas.request.RegistrarGastoEventoRequest;
 import com.playzone.pems.interfaces.rest.finanzas.response.GastoEventoResponse;
 import com.playzone.pems.shared.response.ApiResponse;
@@ -18,12 +19,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/eventos-privados/{idEvento}/gastos")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class GastoEventoController {
 
     private final GestionarGastoEventoUseCase useCase;
+    private final SupabaseAuthFacade          supabaseAuthFacade;
 
     @GetMapping
+    @PreAuthorize("hasAuthority('egreso.ver')")
     public ResponseEntity<ApiResponse<List<GastoEventoResponse>>> listar(@PathVariable Long idEvento) {
         List<GastoEventoResponse> body = useCase.listarPorEvento(idEvento)
                 .stream().map(this::toResponse).toList();
@@ -31,21 +33,22 @@ public class GastoEventoController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('egreso.crear')")
     public ResponseEntity<ApiResponse<GastoEventoResponse>> registrar(
             @PathVariable Long idEvento,
-            @Valid @RequestBody RegistrarGastoEventoRequest request,
-            @RequestAttribute Long idUsuarioAdmin) {
+            @Valid @RequestBody RegistrarGastoEventoRequest request) {
         GastoEventoQuery query = useCase.registrar(RegistrarGastoEventoCommand.builder()
                 .idEventoPrivado(idEvento)
                 .descripcion(request.getDescripcion())
                 .monto(request.getMonto())
                 .comprobanteUrl(request.getComprobanteUrl())
-                .idUsuarioRegistra(idUsuarioAdmin)
+                .idUsuarioRegistra(supabaseAuthFacade.usuarioActualId().orElseThrow())
                 .build());
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(query)));
     }
 
     @DeleteMapping("/{idGasto}")
+    @PreAuthorize("hasAuthority('egreso.eliminar')")
     public ResponseEntity<ApiResponse<Void>> eliminar(@PathVariable Long idGasto) {
         useCase.eliminar(idGasto);
         return ResponseEntity.ok(ApiResponse.noContent());

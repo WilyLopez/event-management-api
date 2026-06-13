@@ -15,7 +15,6 @@ public class ResumenEventoFinancieroResponse {
     private LocalDate  fechaEvento;
     private BigDecimal ingresoContrato;
     private BigDecimal montoAdelanto;
-    private BigDecimal totalGastosProveedores;
     private BigDecimal totalGastosAdicionales;
     private BigDecimal totalGastos;
     private BigDecimal utilidadBruta;

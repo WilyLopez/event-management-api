@@ -2,16 +2,28 @@ package com.playzone.pems.infrastructure.persistence.finanzas.entity;
 
 import com.playzone.pems.domain.finanzas.model.enums.EstadoCaja;
 import com.playzone.pems.infrastructure.persistence.usuario.entity.SedeEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "aperturacaja")
+@Table(name = "apertura_caja")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -21,52 +33,56 @@ public class AperturaCajaEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idaperturacaja")
+    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "idsede", nullable = false)
+    @JoinColumn(name = "sede_id", nullable = false)
     private SedeEntity sede;
 
     @Column(name = "fecha", nullable = false)
     private LocalDate fecha;
 
-    @Column(name = "saldoinicial", nullable = false, precision = 10, scale = 2)
+    @Column(name = "saldo_inicial", nullable = false, precision = 10, scale = 2)
     @Builder.Default
     private BigDecimal saldoInicial = BigDecimal.ZERO;
 
-    @Column(name = "saldofinal", precision = 10, scale = 2)
+    @Column(name = "saldo_final", precision = 10, scale = 2)
     private BigDecimal saldoFinal;
 
-    @Column(name = "totalingresos", nullable = false, precision = 10, scale = 2)
+    @Column(name = "total_ingresos", nullable = false, precision = 10, scale = 2)
     @Builder.Default
     private BigDecimal totalIngresos = BigDecimal.ZERO;
 
-    @Column(name = "totalegresos", nullable = false, precision = 10, scale = 2)
+    @Column(name = "total_egresos", nullable = false, precision = 10, scale = 2)
     @Builder.Default
     private BigDecimal totalEgresos = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = false, length = 20)
+    @Column(name = "estado_codigo", nullable = false, length = 20)
     @Builder.Default
     private EstadoCaja estado = EstadoCaja.ABIERTA;
 
-    @Column(name = "idusuarioapertura")
-    private Long idUsuarioApertura;
+    @Column(name = "apertura_at", nullable = false)
+    private OffsetDateTime fechaApertura;
 
-    @Column(name = "idusuariocierre")
-    private Long idUsuarioCierre;
+    @Column(name = "apertura_por", columnDefinition = "uuid")
+    private UUID aperturaPor;
 
-    @Column(name = "fechaapertura", nullable = false)
-    private LocalDateTime fechaApertura;
+    @Column(name = "cierre_at")
+    private OffsetDateTime fechaCierre;
 
-    @Column(name = "fechacierre")
-    private LocalDateTime fechaCierre;
+    @Column(name = "cierre_por", columnDefinition = "uuid")
+    private UUID cierrePor;
 
-    @Column(name = "observaciones", length = 500)
+    @Column(name = "observaciones")
     private String observaciones;
 
     @CreationTimestamp
-    @Column(name = "fechacreacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime fechaCreacion;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private OffsetDateTime updatedAt;
 }

@@ -9,6 +9,9 @@ import lombok.NoArgsConstructor;
 public class CrearTipoEgresoRequest {
 
     @NotBlank
+    private String codigo;
+
+    @NotBlank
     private String nombre;
 
     private String descripcion;

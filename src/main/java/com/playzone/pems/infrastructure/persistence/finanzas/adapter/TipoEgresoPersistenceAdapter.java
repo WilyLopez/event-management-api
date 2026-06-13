@@ -3,7 +3,6 @@ package com.playzone.pems.infrastructure.persistence.finanzas.adapter;
 import com.playzone.pems.domain.finanzas.model.TipoEgreso;
 import com.playzone.pems.domain.finanzas.model.enums.CategoriaEgreso;
 import com.playzone.pems.domain.finanzas.repository.TipoEgresoRepository;
-import com.playzone.pems.infrastructure.persistence.finanzas.entity.TipoEgresoEntity;
 import com.playzone.pems.infrastructure.persistence.finanzas.jpa.TipoEgresoJpaRepository;
 import com.playzone.pems.infrastructure.persistence.finanzas.mapper.FinanzasEntityMapper;
 import lombok.RequiredArgsConstructor;
@@ -21,8 +20,8 @@ public class TipoEgresoPersistenceAdapter implements TipoEgresoRepository {
     private final FinanzasEntityMapper    mapper;
 
     @Override
-    public Optional<TipoEgreso> findById(Long id) {
-        return jpaRepository.findById(id).map(mapper::toDomain);
+    public Optional<TipoEgreso> findById(String codigo) {
+        return jpaRepository.findById(codigo).map(mapper::toDomain);
     }
 
     @Override
@@ -39,13 +38,12 @@ public class TipoEgresoPersistenceAdapter implements TipoEgresoRepository {
     @Override
     @Transactional
     public TipoEgreso save(TipoEgreso tipo) {
-        TipoEgresoEntity entity = mapper.toEntity(tipo);
-        return mapper.toDomain(jpaRepository.save(entity));
+        return mapper.toDomain(jpaRepository.save(mapper.toEntity(tipo)));
     }
 
     @Override
     @Transactional
-    public void desactivar(Long id) {
-        jpaRepository.desactivar(id);
+    public void desactivar(String codigo) {
+        jpaRepository.desactivar(codigo);
     }
 }

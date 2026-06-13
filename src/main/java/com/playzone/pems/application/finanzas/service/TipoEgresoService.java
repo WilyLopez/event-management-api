@@ -6,6 +6,7 @@ import com.playzone.pems.application.finanzas.port.in.GestionarTipoEgresoUseCase
 import com.playzone.pems.domain.finanzas.model.TipoEgreso;
 import com.playzone.pems.domain.finanzas.model.enums.CategoriaEgreso;
 import com.playzone.pems.domain.finanzas.repository.TipoEgresoRepository;
+import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import com.playzone.pems.shared.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -34,11 +35,11 @@ public class TipoEgresoService implements GestionarTipoEgresoUseCase {
             throw new ValidationException("Categoría inválida: " + command.getCategoria());
         }
         TipoEgreso tipo = TipoEgreso.builder()
+                .codigo(command.getCodigo())
                 .nombre(command.getNombre())
                 .descripcion(command.getDescripcion())
                 .categoria(categoria)
                 .activo(true)
-                .idUsuarioCreador(command.getIdUsuarioCreador())
                 .build();
         return toQuery(tipoEgresoRepository.save(tipo));
     }
@@ -62,16 +63,23 @@ public class TipoEgresoService implements GestionarTipoEgresoUseCase {
     }
 
     @Override
-    public void desactivar(Long id) {
-        tipoEgresoRepository.desactivar(id);
+    public void desactivar(String codigo) {
+        TipoEgreso tipo = tipoEgresoRepository.findById(codigo)
+                .orElseThrow(() -> new ResourceNotFoundException("TipoEgreso", "codigo", codigo));
+        if (tipo.isEsSistema()) {
+            throw new IllegalStateException("No se puede modificar un registro del sistema.");
+        }
+        tipoEgresoRepository.desactivar(codigo);
     }
 
     private TipoEgresoQuery toQuery(TipoEgreso t) {
         return TipoEgresoQuery.builder()
-                .id(t.getId())
+                .codigo(t.getCodigo())
                 .nombre(t.getNombre())
                 .descripcion(t.getDescripcion())
                 .categoria(t.getCategoria())
+                .esSistema(t.isEsSistema())
+                .orden(t.getOrden())
                 .activo(t.isActivo())
                 .build();
     }

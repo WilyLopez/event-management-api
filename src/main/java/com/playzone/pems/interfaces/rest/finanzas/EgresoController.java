@@ -4,6 +4,7 @@ import com.playzone.pems.application.finanzas.dto.command.ActualizarEgresoComman
 import com.playzone.pems.application.finanzas.dto.command.RegistrarEgresoCommand;
 import com.playzone.pems.application.finanzas.dto.query.RegistroEgresoQuery;
 import com.playzone.pems.application.finanzas.port.in.RegistrarEgresoUseCase;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.interfaces.rest.finanzas.request.RegistrarEgresoRequest;
 import com.playzone.pems.interfaces.rest.finanzas.response.RegistroEgresoResponse;
 import com.playzone.pems.shared.response.ApiResponse;
@@ -24,12 +25,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/egresos")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class EgresoController {
 
     private final RegistrarEgresoUseCase useCase;
+    private final SupabaseAuthFacade     supabaseAuthFacade;
 
     @GetMapping("/sedes/{idSede}")
+    @PreAuthorize("hasAuthority('egreso.ver')")
     public ResponseEntity<ApiResponse<PagedResponse<RegistroEgresoResponse>>> listar(
             @PathVariable Long idSede,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -39,6 +41,7 @@ public class EgresoController {
     }
 
     @GetMapping("/sedes/{idSede}/periodo")
+    @PreAuthorize("hasAuthority('egreso.ver')")
     public ResponseEntity<ApiResponse<List<RegistroEgresoResponse>>> listarPorPeriodo(
             @PathVariable Long idSede,
             @RequestParam int anio,
@@ -49,6 +52,7 @@ public class EgresoController {
     }
 
     @GetMapping("/sedes/{idSede}/rango")
+    @PreAuthorize("hasAuthority('egreso.ver')")
     public ResponseEntity<ApiResponse<List<RegistroEgresoResponse>>> listarPorRango(
             @PathVariable Long idSede,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
@@ -59,12 +63,12 @@ public class EgresoController {
     }
 
     @PostMapping("/sedes/{idSede}")
+    @PreAuthorize("hasAuthority('egreso.crear')")
     public ResponseEntity<ApiResponse<RegistroEgresoResponse>> registrar(
             @PathVariable Long idSede,
-            @Valid @RequestBody RegistrarEgresoRequest request,
-            @RequestAttribute Long idUsuarioAdmin) {
+            @Valid @RequestBody RegistrarEgresoRequest request) {
         RegistroEgresoQuery query = useCase.registrar(RegistrarEgresoCommand.builder()
-                .idTipoEgreso(request.getIdTipoEgreso())
+                .tipoEgresoCodigo(request.getTipoEgresoCodigo())
                 .idSede(idSede)
                 .monto(request.getMonto())
                 .fecha(request.getFecha())
@@ -73,18 +77,19 @@ public class EgresoController {
                 .descripcion(request.getDescripcion())
                 .comprobanteUrl(request.getComprobanteUrl())
                 .esRecurrente(request.isEsRecurrente())
-                .idUsuarioRegistra(idUsuarioAdmin)
+                .idUsuarioRegistra(supabaseAuthFacade.usuarioActualId().orElseThrow())
                 .build());
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(query)));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('egreso.editar')")
     public ResponseEntity<ApiResponse<RegistroEgresoResponse>> actualizar(
             @PathVariable Long id,
             @Valid @RequestBody RegistrarEgresoRequest request) {
         RegistroEgresoQuery query = useCase.actualizar(ActualizarEgresoCommand.builder()
                 .id(id)
-                .idTipoEgreso(request.getIdTipoEgreso())
+                .tipoEgresoCodigo(request.getTipoEgresoCodigo())
                 .monto(request.getMonto())
                 .fecha(request.getFecha())
                 .periodoAnio(request.getPeriodoAnio())
@@ -97,6 +102,7 @@ public class EgresoController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('egreso.eliminar')")
     public ResponseEntity<ApiResponse<Void>> eliminar(@PathVariable Long id) {
         useCase.eliminar(id);
         return ResponseEntity.ok(ApiResponse.noContent());
@@ -105,9 +111,7 @@ public class EgresoController {
     private RegistroEgresoResponse toResponse(RegistroEgresoQuery q) {
         return RegistroEgresoResponse.builder()
                 .id(q.getId())
-                .idTipoEgreso(q.getIdTipoEgreso())
-                .nombreTipoEgreso(q.getNombreTipoEgreso())
-                .categoriaEgreso(q.getCategoriaEgreso())
+                .tipoEgresoCodigo(q.getTipoEgresoCodigo())
                 .idSede(q.getIdSede())
                 .monto(q.getMonto())
                 .fecha(q.getFecha())

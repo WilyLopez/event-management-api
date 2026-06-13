@@ -15,55 +15,54 @@ public class FinanzasEntityMapper {
 
     public TipoEgreso toDomain(TipoEgresoEntity e) {
         return TipoEgreso.builder()
-                .id(e.getId())
+                .codigo(e.getCodigo())
                 .nombre(e.getNombre())
                 .descripcion(e.getDescripcion())
                 .categoria(e.getCategoria())
+                .esSistema(e.isEsSistema())
+                .orden(e.getOrden())
                 .activo(e.isActivo())
-                .idUsuarioCreador(e.getIdUsuarioCreador())
-                .fechaCreacion(e.getFechaCreacion())
+                .createdAt(e.getCreatedAt() != null ? e.getCreatedAt() : null)
+                .updatedAt(e.getUpdatedAt() != null ? e.getUpdatedAt() : null)
                 .build();
     }
 
     public TipoEgresoEntity toEntity(TipoEgreso d) {
         return TipoEgresoEntity.builder()
-                .id(d.getId())
+                .codigo(d.getCodigo())
                 .nombre(d.getNombre())
                 .descripcion(d.getDescripcion())
                 .categoria(d.getCategoria())
                 .activo(d.isActivo())
-                .idUsuarioCreador(d.getIdUsuarioCreador())
                 .build();
     }
 
     public RegistroEgreso toDomain(RegistroEgresoEntity e) {
         return RegistroEgreso.builder()
                 .id(e.getId())
-                .idTipoEgreso(e.getTipoEgreso().getId())
-                .nombreTipoEgreso(e.getTipoEgreso().getNombre())
-                .categoriaEgreso(e.getTipoEgreso().getCategoria())
+                .tipoEgresoCodigo(e.getTipoCodigo())
                 .idSede(e.getSede().getId())
                 .monto(e.getMonto())
                 .fecha(e.getFecha())
                 .periodoAnio(e.getPeriodoAnio())
                 .periodoMes(e.getPeriodoMes())
                 .descripcion(e.getDescripcion())
-                .comprobanteUrl(e.getComprobanteUrl())
+                .comprobanteUrl(e.getComprobantePath())
                 .esRecurrente(e.isEsRecurrente())
-                .idUsuarioRegistra(e.getIdUsuarioRegistra())
-                .fechaCreacion(e.getFechaCreacion())
+                .idUsuarioRegistra(e.getCreatedBy())
+                .fechaCreacion(e.getCreatedAt() != null ? e.getCreatedAt() : null)
                 .build();
     }
 
     public GastoEventoPrivado toDomain(GastoEventoPrivadoEntity e) {
         return GastoEventoPrivado.builder()
                 .id(e.getId())
-                .idEventoPrivado(e.getEventoPrivado().getId())
+                .idEventoPrivado(e.getEventoId())
                 .descripcion(e.getDescripcion())
                 .monto(e.getMonto())
-                .comprobanteUrl(e.getComprobanteUrl())
-                .idUsuarioRegistra(e.getIdUsuarioRegistra())
-                .fechaCreacion(e.getFechaCreacion())
+                .comprobanteUrl(e.getComprobantePath())
+                .idUsuarioRegistra(e.getCreatedBy())
+                .fechaCreacion(e.getCreatedAt() != null ? e.getCreatedAt() : null)
                 .build();
     }
 
@@ -74,9 +73,9 @@ public class FinanzasEntityMapper {
                 .fecha(e.getFecha())
                 .descripcion(e.getDescripcion())
                 .monto(e.getMonto())
-                .comprobanteUrl(e.getComprobanteUrl())
-                .idUsuarioRegistra(e.getIdUsuarioRegistra())
-                .fechaCreacion(e.getFechaCreacion())
+                .comprobanteUrl(e.getComprobantePath())
+                .idUsuarioRegistra(e.getCreatedBy())
+                .fechaCreacion(e.getCreatedAt() != null ? e.getCreatedAt() : null)
                 .build();
     }
 }

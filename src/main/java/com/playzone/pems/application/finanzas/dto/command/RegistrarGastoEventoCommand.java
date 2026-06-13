@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Getter
 @Builder
@@ -12,5 +13,5 @@ public class RegistrarGastoEventoCommand {
     private String     descripcion;
     private BigDecimal monto;
     private String     comprobanteUrl;
-    private Long       idUsuarioRegistra;
+    private UUID       idUsuarioRegistra;
 }

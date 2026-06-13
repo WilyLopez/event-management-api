@@ -10,7 +10,7 @@ import java.time.LocalDate;
 @Builder
 public class ActualizarEgresoCommand {
     private Long       id;
-    private Long       idTipoEgreso;
+    private String     tipoEgresoCodigo;
     private BigDecimal monto;
     private LocalDate  fecha;
     private Integer    periodoAnio;

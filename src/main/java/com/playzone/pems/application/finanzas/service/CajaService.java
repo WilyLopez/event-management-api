@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Service
@@ -44,7 +44,7 @@ public class CajaService implements GestionarCajaUseCase {
                 .totalEgresos(BigDecimal.ZERO)
                 .estado(EstadoCaja.ABIERTA)
                 .idUsuarioApertura(command.getIdUsuarioApertura())
-                .fechaApertura(LocalDateTime.now())
+                .fechaApertura(OffsetDateTime.now())
                 .observaciones(command.getObservaciones())
                 .build();
         return toQuery(aperturaCajaRepository.save(apertura));
@@ -69,7 +69,7 @@ public class CajaService implements GestionarCajaUseCase {
                 .idUsuarioApertura(existente.getIdUsuarioApertura())
                 .idUsuarioCierre(command.getIdUsuarioCierre())
                 .fechaApertura(existente.getFechaApertura())
-                .fechaCierre(LocalDateTime.now())
+                .fechaCierre(OffsetDateTime.now())
                 .observaciones(command.getObservaciones() != null
                         ? command.getObservaciones() : existente.getObservaciones())
                 .build();
@@ -150,7 +150,7 @@ public class CajaService implements GestionarCajaUseCase {
                 .medioPago(m.getMedioPago())
                 .idRegistroIngreso(m.getIdRegistroIngreso())
                 .idRegistroEgreso(m.getIdRegistroEgreso())
-                .idReservaPublica(m.getIdReservaPublica())
+                .idVenta(m.getIdVenta())
                 .esManual(m.isEsManual())
                 .fechaCreacion(m.getFechaCreacion())
                 .build();

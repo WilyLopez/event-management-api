@@ -29,13 +29,13 @@ public class EgresoService implements RegistrarEgresoUseCase {
 
     @Override
     public RegistroEgresoQuery registrar(RegistrarEgresoCommand command) {
-        TipoEgreso tipo = tipoEgresoRepository.findById(command.getIdTipoEgreso())
+        TipoEgreso tipo = tipoEgresoRepository.findById(command.getTipoEgresoCodigo())
                 .orElseThrow(() -> new ResourceNotFoundException("Tipo de egreso no encontrado."));
         if (!tipo.isActivo()) {
             throw new ValidationException("El tipo de egreso seleccionado no está activo.");
         }
         RegistroEgreso egreso = RegistroEgreso.builder()
-                .idTipoEgreso(tipo.getId())
+                .tipoEgresoCodigo(command.getTipoEgresoCodigo())
                 .idSede(command.getIdSede())
                 .monto(command.getMonto())
                 .fecha(command.getFecha())
@@ -53,14 +53,14 @@ public class EgresoService implements RegistrarEgresoUseCase {
     public RegistroEgresoQuery actualizar(ActualizarEgresoCommand command) {
         RegistroEgreso existente = registroEgresoRepository.findById(command.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Egreso no encontrado."));
-        TipoEgreso tipo = tipoEgresoRepository.findById(command.getIdTipoEgreso())
+        TipoEgreso tipo = tipoEgresoRepository.findById(command.getTipoEgresoCodigo())
                 .orElseThrow(() -> new ResourceNotFoundException("Tipo de egreso no encontrado."));
         if (!tipo.isActivo()) {
             throw new ValidationException("El tipo de egreso seleccionado no está activo.");
         }
         RegistroEgreso actualizado = RegistroEgreso.builder()
                 .id(existente.getId())
-                .idTipoEgreso(tipo.getId())
+                .tipoEgresoCodigo(command.getTipoEgresoCodigo())
                 .idSede(existente.getIdSede())
                 .monto(command.getMonto())
                 .fecha(command.getFecha())
@@ -104,9 +104,7 @@ public class EgresoService implements RegistrarEgresoUseCase {
     private RegistroEgresoQuery toQuery(RegistroEgreso r) {
         return RegistroEgresoQuery.builder()
                 .id(r.getId())
-                .idTipoEgreso(r.getIdTipoEgreso())
-                .nombreTipoEgreso(r.getNombreTipoEgreso())
-                .categoriaEgreso(r.getCategoriaEgreso())
+                .tipoEgresoCodigo(r.getTipoEgresoCodigo())
                 .idSede(r.getIdSede())
                 .monto(r.getMonto())
                 .fecha(r.getFecha())

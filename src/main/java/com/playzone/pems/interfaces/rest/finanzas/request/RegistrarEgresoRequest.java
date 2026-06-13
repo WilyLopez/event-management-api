@@ -2,6 +2,7 @@ package com.playzone.pems.interfaces.rest.finanzas.request;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,8 +14,8 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class RegistrarEgresoRequest {
 
-    @NotNull
-    private Long idTipoEgreso;
+    @NotBlank
+    private String tipoEgresoCodigo;
 
     @NotNull
     @DecimalMin("0.01")

@@ -1,6 +1,7 @@
 package com.playzone.pems.domain.finanzas.repository;
 
 import com.playzone.pems.domain.finanzas.model.RegistroEgreso;
+import com.playzone.pems.domain.finanzas.model.enums.CategoriaEgreso;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -17,8 +18,8 @@ public interface RegistroEgresoRepository {
     List<RegistroEgreso> findBySedeAndRangoFecha(Long idSede, LocalDate inicio, LocalDate fin);
     BigDecimal sumMontoBySedeAndPeriodo(Long idSede, int anio, int mes);
     BigDecimal sumMontoBySedeAndRango(Long idSede, LocalDate inicio, LocalDate fin);
-    BigDecimal sumMontoBySedeAndPeriodoAndCategoria(Long idSede, int anio, int mes, String categoria);
-    Map<Long, BigDecimal> sumMontoAgrupadoPorTipo(Long idSede, int anio, int mes);
+    Map<String, BigDecimal> sumMontoAgrupadoPorTipo(Long idSede, int anio, int mes);
+    Map<CategoriaEgreso, BigDecimal> sumMontoAgrupadoPorCategoria(Long idSede, int anio, int mes);
     RegistroEgreso save(RegistroEgreso registro);
     void deleteById(Long id);
 }

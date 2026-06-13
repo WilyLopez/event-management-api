@@ -3,6 +3,7 @@ package com.playzone.pems.interfaces.rest.finanzas;
 import com.playzone.pems.application.finanzas.dto.command.RegistrarIngresoManualCommand;
 import com.playzone.pems.application.finanzas.dto.query.RegistroIngresoQuery;
 import com.playzone.pems.application.finanzas.port.in.RegistrarIngresoUseCase;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.interfaces.rest.finanzas.request.RegistrarIngresoManualRequest;
 import com.playzone.pems.interfaces.rest.finanzas.response.RegistroIngresoResponse;
 import com.playzone.pems.shared.response.ApiResponse;
@@ -23,12 +24,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/ingresos")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class IngresoController {
 
     private final RegistrarIngresoUseCase useCase;
+    private final SupabaseAuthFacade      supabaseAuthFacade;
 
     @GetMapping("/sedes/{idSede}")
+    @PreAuthorize("hasAuthority('ingreso.ver')")
     public ResponseEntity<ApiResponse<PagedResponse<RegistroIngresoResponse>>> listar(
             @PathVariable Long idSede,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -38,6 +40,7 @@ public class IngresoController {
     }
 
     @GetMapping("/sedes/{idSede}/rango")
+    @PreAuthorize("hasAuthority('ingreso.ver')")
     public ResponseEntity<ApiResponse<List<RegistroIngresoResponse>>> listarPorRango(
             @PathVariable Long idSede,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
@@ -48,23 +51,24 @@ public class IngresoController {
     }
 
     @PostMapping("/sedes/{idSede}")
+    @PreAuthorize("hasAuthority('ingreso.crear')")
     public ResponseEntity<ApiResponse<RegistroIngresoResponse>> registrar(
             @PathVariable Long idSede,
-            @Valid @RequestBody RegistrarIngresoManualRequest request,
-            @RequestAttribute Long idUsuarioAdmin) {
+            @Valid @RequestBody RegistrarIngresoManualRequest request) {
         RegistroIngresoQuery query = useCase.registrar(RegistrarIngresoManualCommand.builder()
-                .idTipoIngreso(request.getIdTipoIngreso())
+                .tipoIngresoCodigo(request.getTipoIngresoCodigo())
                 .idSede(idSede)
                 .monto(request.getMonto())
                 .fecha(request.getFecha())
                 .medioPago(request.getMedioPago())
                 .descripcion(request.getDescripcion())
-                .idUsuarioRegistra(idUsuarioAdmin)
+                .idUsuarioRegistra(supabaseAuthFacade.usuarioActualId().orElseThrow())
                 .build());
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(query)));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('ingreso.eliminar')")
     public ResponseEntity<ApiResponse<Void>> eliminar(@PathVariable Long id) {
         useCase.eliminar(id);
         return ResponseEntity.ok(ApiResponse.noContent());
@@ -73,9 +77,7 @@ public class IngresoController {
     private RegistroIngresoResponse toResponse(RegistroIngresoQuery q) {
         return RegistroIngresoResponse.builder()
                 .id(q.getId())
-                .idTipoIngreso(q.getIdTipoIngreso())
-                .nombreTipoIngreso(q.getNombreTipoIngreso())
-                .categoriaIngreso(q.getCategoriaIngreso())
+                .tipoIngresoCodigo(q.getTipoIngresoCodigo())
                 .idSede(q.getIdSede())
                 .idReservaPublica(q.getIdReservaPublica())
                 .idEventoPrivado(q.getIdEventoPrivado())

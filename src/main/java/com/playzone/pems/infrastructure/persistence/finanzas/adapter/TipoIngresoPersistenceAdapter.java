@@ -1,7 +1,6 @@
 package com.playzone.pems.infrastructure.persistence.finanzas.adapter;
 
 import com.playzone.pems.domain.finanzas.model.TipoIngreso;
-import com.playzone.pems.domain.finanzas.model.enums.CategoriaIngreso;
 import com.playzone.pems.domain.finanzas.repository.TipoIngresoRepository;
 import com.playzone.pems.infrastructure.persistence.finanzas.entity.TipoIngresoEntity;
 import com.playzone.pems.infrastructure.persistence.finanzas.jpa.TipoIngresoJpaRepository;
@@ -24,23 +23,19 @@ public class TipoIngresoPersistenceAdapter implements TipoIngresoRepository {
     }
 
     @Override
-    public Optional<TipoIngreso> findById(Long id) {
-        return jpaRepository.findById(id).map(this::toDomain);
-    }
-
-    @Override
-    public Optional<TipoIngreso> findActivoByCategoria(CategoriaIngreso categoria) {
-        return jpaRepository.findFirstByCategoriaAndActivoTrue(categoria).map(this::toDomain);
+    public Optional<TipoIngreso> findById(String codigo) {
+        return jpaRepository.findById(codigo).map(this::toDomain);
     }
 
     @Override
     @Transactional
     public TipoIngreso save(TipoIngreso tipoIngreso) {
         TipoIngresoEntity entity = TipoIngresoEntity.builder()
-                .id(tipoIngreso.getId())
+                .codigo(tipoIngreso.getCodigo())
                 .nombre(tipoIngreso.getNombre())
                 .descripcion(tipoIngreso.getDescripcion())
-                .categoria(tipoIngreso.getCategoria())
+                .esSistema(tipoIngreso.isEsSistema())
+                .orden(tipoIngreso.getOrden())
                 .activo(tipoIngreso.isActivo())
                 .build();
         return toDomain(jpaRepository.save(entity));
@@ -48,18 +43,20 @@ public class TipoIngresoPersistenceAdapter implements TipoIngresoRepository {
 
     @Override
     @Transactional
-    public void desactivar(Long id) {
-        jpaRepository.desactivar(id);
+    public void desactivar(String codigo) {
+        jpaRepository.desactivar(codigo);
     }
 
     private TipoIngreso toDomain(TipoIngresoEntity e) {
         return TipoIngreso.builder()
-                .id(e.getId())
+                .codigo(e.getCodigo())
                 .nombre(e.getNombre())
                 .descripcion(e.getDescripcion())
-                .categoria(e.getCategoria())
+                .esSistema(e.isEsSistema())
+                .orden(e.getOrden())
                 .activo(e.isActivo())
-                .fechaCreacion(e.getFechaCreacion())
+                .createdAt(e.getCreatedAt() != null ? e.getCreatedAt() : null)
+                .updatedAt(e.getUpdatedAt() != null ? e.getUpdatedAt() : null)
                 .build();
     }
 }
