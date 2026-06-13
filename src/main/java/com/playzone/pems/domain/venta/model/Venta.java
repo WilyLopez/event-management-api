@@ -3,7 +3,9 @@ package com.playzone.pems.domain.venta.model;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder(toBuilder = true)
@@ -11,15 +13,29 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class Venta {
 
-    private Long           id;
-    private Long           idSede;
-    private Long           idUsuario;
-    private Long           idReservaPublica;
-    private Long           idEventoPrivado;
-    private BigDecimal     subtotal;
-    private BigDecimal     descuento;
-    private BigDecimal     total;
-    private LocalDateTime  fechaVenta;
+    private Long          id;
+    private Long          idSede;
+    private Long          clienteId;
+    private Long          eventoId;
+    private String        tipo;
+    private String        canalCodigo;
+    private LocalDate     fechaVisita;
+    private String        nombreAcompanante;
+    private String        dniAcompanante;
+    private String        telefonoAcompanante;
+    private Long          promocionId;
+    private BigDecimal    subtotal;
+    private BigDecimal    descuento;
+    private BigDecimal    total;
+    private BigDecimal    efectivoRecibido;
+    private BigDecimal    vuelto;
+    private boolean       actaFirmada;
+    private boolean       esAnticipada;
+    private String        notas;
+    private OffsetDateTime createdAt;
+    private OffsetDateTime updatedAt;
+    private UUID          createdBy;
+    private OffsetDateTime deletedAt;
 
     public boolean totalEsCoherente() {
         BigDecimal esperado = subtotal.subtract(descuento);
@@ -27,7 +43,7 @@ public class Venta {
     }
 
     public boolean estaVinculadaAEvento() {
-        return idReservaPublica != null || idEventoPrivado != null;
+        return eventoId != null;
     }
 
     public boolean tuvoDescuento() {

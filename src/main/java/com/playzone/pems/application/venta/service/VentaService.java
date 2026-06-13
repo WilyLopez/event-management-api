@@ -5,9 +5,7 @@ import com.playzone.pems.application.venta.dto.query.VentaQuery;
 import com.playzone.pems.application.venta.port.in.ConsultarVentasUseCase;
 import com.playzone.pems.application.venta.port.in.ProcesarVentaUseCase;
 import com.playzone.pems.domain.venta.exception.VentaNotFoundException;
-import com.playzone.pems.domain.venta.model.DetalleVenta;
 import com.playzone.pems.domain.venta.model.Venta;
-import com.playzone.pems.domain.venta.repository.DetalleVentaRepository;
 import com.playzone.pems.domain.venta.repository.VentaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -17,98 +15,82 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.List;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 @Service
 @RequiredArgsConstructor
 public class VentaService implements ProcesarVentaUseCase, ConsultarVentasUseCase {
 
-    private final VentaRepository        ventaRepository;
-    private final DetalleVentaRepository detalleRepository;
+    private final VentaRepository ventaRepository;
 
     @Override
     @Transactional
     public VentaQuery ejecutar(ProcesarVentaCommand command) {
-        BigDecimal subtotal = BigDecimal.ZERO;
-
-        List<DetalleVenta> detalles = command.getLineas().stream()
-                .map((ProcesarVentaCommand.LineaVentaCommand linea) -> {
-                    BigDecimal subtotalLinea = linea.getPrecioUnitario()
-                            .multiply(BigDecimal.valueOf(linea.getCantidad()));
-                    return DetalleVenta.builder()
-                            .idProducto(linea.getIdProducto())
-                            .cantidad(linea.getCantidad())
-                            .precioUnitario(linea.getPrecioUnitario())
-                            .subtotalLinea(subtotalLinea)
-                            .build();
-                })
-                .toList();
-
-        for (DetalleVenta d : detalles) {
-            subtotal = subtotal.add(d.getSubtotalLinea());
-        }
+        BigDecimal subtotal = command.getLineas().stream()
+                .map(l -> l.getPrecioUnitario().multiply(BigDecimal.valueOf(l.getCantidad())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal descuento = command.getDescuento() != null ? command.getDescuento() : BigDecimal.ZERO;
-        BigDecimal total = subtotal.subtract(descuento);
+        BigDecimal total     = subtotal.subtract(descuento);
 
         Venta venta = Venta.builder()
                 .idSede(command.getIdSede())
-                .idUsuario(command.getIdUsuario())
-                .idReservaPublica(command.getIdReservaPublica())
-                .idEventoPrivado(command.getIdEventoPrivado())
+                .createdBy(command.getCreatedBy())
+                .clienteId(command.getClienteId())
+                .eventoId(command.getEventoId())
+                .tipo(command.getTipo())
+                .canalCodigo(command.getCanalCodigo())
+                .fechaVisita(command.getFechaVisita())
+                .nombreAcompanante(command.getNombreAcompanante())
+                .dniAcompanante(command.getDniAcompanante())
+                .telefonoAcompanante(command.getTelefonoAcompanante())
+                .promocionId(command.getPromocionId())
+                .efectivoRecibido(command.getEfectivoRecibido() != null ? command.getEfectivoRecibido() : BigDecimal.ZERO)
+                .vuelto(command.getVuelto() != null ? command.getVuelto() : BigDecimal.ZERO)
+                .actaFirmada(command.isActaFirmada())
+                .esAnticipada(command.isEsAnticipada())
+                .notas(command.getNotas())
                 .subtotal(subtotal)
                 .descuento(descuento)
                 .total(total)
                 .build();
 
-        Venta guardada = ventaRepository.save(venta);
-
-        List<DetalleVenta> detallesGuardados = detalles.stream()
-                .map(d -> detalleRepository.save(d.toBuilder().idVenta(guardada.getId()).build()))
-                .toList();
-
-        return toQuery(guardada, detallesGuardados);
+        return toQuery(ventaRepository.save(venta));
     }
 
     @Override
     @Transactional(readOnly = true)
     public VentaQuery consultarPorId(Long idVenta) {
-        Venta venta = ventaRepository.findById(idVenta)
-                .orElseThrow(() -> new VentaNotFoundException(idVenta));
-        List<DetalleVenta> detalles = detalleRepository.findByVenta(idVenta);
-        return toQuery(venta, detalles);
+        return toQuery(ventaRepository.findById(idVenta)
+                .orElseThrow(() -> new VentaNotFoundException(idVenta)));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<VentaQuery> consultarPorSedeYFechas(
             Long idSede, LocalDate desde, LocalDate hasta, Pageable pageable) {
-        LocalDateTime inicio = desde.atStartOfDay();
-        LocalDateTime fin    = hasta.atTime(LocalTime.MAX);
+        OffsetDateTime inicio = desde.atStartOfDay().atOffset(ZoneOffset.UTC);
+        OffsetDateTime fin    = hasta.atTime(LocalTime.MAX).atOffset(ZoneOffset.UTC);
         return ventaRepository.findBySedeAndFechasBetween(idSede, inicio, fin, pageable)
-                .map(v -> toQuery(v, detalleRepository.findByVenta(v.getId())));
+                .map(this::toQuery);
     }
 
-    private VentaQuery toQuery(Venta v, List<DetalleVenta> detalles) {
+    private VentaQuery toQuery(Venta v) {
         return VentaQuery.builder()
                 .id(v.getId())
                 .idSede(v.getIdSede())
-                .idReservaPublica(v.getIdReservaPublica())
-                .idEventoPrivado(v.getIdEventoPrivado())
+                .clienteId(v.getClienteId())
+                .eventoId(v.getEventoId())
+                .tipo(v.getTipo())
+                .canalCodigo(v.getCanalCodigo())
+                .fechaVisita(v.getFechaVisita())
                 .subtotal(v.getSubtotal())
                 .descuento(v.getDescuento())
                 .total(v.getTotal())
-                .fechaVenta(v.getFechaVenta())
-                .detalles(detalles.stream()
-                        .map(d -> VentaQuery.DetalleVentaQuery.builder()
-                                .idProducto(d.getIdProducto())
-                                .cantidad(d.getCantidad())
-                                .precioUnitario(d.getPrecioUnitario())
-                                .subtotalLinea(d.getSubtotalLinea())
-                                .build())
-                        .toList())
+                .notas(v.getNotas())
+                .createdAt(v.getCreatedAt())
                 .build();
     }
 }
