@@ -28,8 +28,8 @@ public class SeccionWebService implements GestionarSeccionWebUseCase {
                 .codigo(command.codigo().toUpperCase())
                 .nombre(command.nombre())
                 .descripcion(command.descripcion())
-                .ordenVisualizacion(command.ordenVisualizacion())
-                .visible(true)
+                .orden(command.orden())
+                .activo(true)
                 .build();
         return SeccionWebQuery.from(seccionRepository.save(seccion));
     }
@@ -37,11 +37,11 @@ public class SeccionWebService implements GestionarSeccionWebUseCase {
     @Override
     @Transactional
     public SeccionWebQuery actualizar(ActualizarCommand command) {
-        SeccionWeb existente = findOrThrow(command.idSeccion());
+        SeccionWeb existente = findOrThrow(command.codigoSeccion());
         SeccionWeb actualizado = existente.toBuilder()
                 .nombre(command.nombre())
                 .descripcion(command.descripcion())
-                .ordenVisualizacion(command.ordenVisualizacion())
+                .orden(command.orden())
                 .build();
         return SeccionWebQuery.from(seccionRepository.save(actualizado));
     }
@@ -54,33 +54,33 @@ public class SeccionWebService implements GestionarSeccionWebUseCase {
 
     @Override
     @Transactional(readOnly = true)
-    public List<SeccionWebQuery> listarVisibles() {
-        return seccionRepository.findVisibles().stream().map(SeccionWebQuery::from).toList();
+    public List<SeccionWebQuery> listarActivas() {
+        return seccionRepository.findActivas().stream().map(SeccionWebQuery::from).toList();
     }
 
     @Override
     @Transactional
-    public void activar(Long idSeccion) {
-        SeccionWeb s = findOrThrow(idSeccion);
-        seccionRepository.save(s.toBuilder().visible(true).build());
+    public void activar(String codigoSeccion) {
+        SeccionWeb s = findOrThrow(codigoSeccion);
+        seccionRepository.save(s.toBuilder().activo(true).build());
     }
 
     @Override
     @Transactional
-    public void desactivar(Long idSeccion) {
-        SeccionWeb s = findOrThrow(idSeccion);
-        seccionRepository.save(s.toBuilder().visible(false).build());
+    public void desactivar(String codigoSeccion) {
+        SeccionWeb s = findOrThrow(codigoSeccion);
+        seccionRepository.save(s.toBuilder().activo(false).build());
     }
 
     @Override
     @Transactional
-    public void eliminar(Long idSeccion) {
-        findOrThrow(idSeccion);
-        seccionRepository.deleteById(idSeccion);
+    public void eliminar(String codigoSeccion) {
+        findOrThrow(codigoSeccion);
+        seccionRepository.deleteById(codigoSeccion);
     }
 
-    private SeccionWeb findOrThrow(Long id) {
-        return seccionRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("SeccionWeb", id));
+    private SeccionWeb findOrThrow(String codigo) {
+        return seccionRepository.findById(codigo)
+                .orElseThrow(() -> new ResourceNotFoundException("SeccionWeb", "codigo", codigo));
     }
 }

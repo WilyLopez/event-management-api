@@ -6,5 +6,5 @@ import org.springframework.data.domain.Pageable;
 
 public interface ConsultarContenidoWebUseCase {
 
-    Page<ContenidoWebQuery> listar(Long idSeccion, String clave, Pageable pageable);
+    Page<ContenidoWebQuery> listar(String seccionCodigo, String clave, Pageable pageable);
 }

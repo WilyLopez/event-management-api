@@ -6,9 +6,9 @@ import java.util.List;
 
 public interface GestionarSeccionWebUseCase {
 
-    record CrearCommand(String codigo, String nombre, String descripcion, int ordenVisualizacion) {}
+    record CrearCommand(String codigo, String nombre, String descripcion, int orden) {}
 
-    record ActualizarCommand(Long idSeccion, String nombre, String descripcion, int ordenVisualizacion) {}
+    record ActualizarCommand(String codigoSeccion, String nombre, String descripcion, int orden) {}
 
     SeccionWebQuery crear(CrearCommand command);
 
@@ -16,11 +16,11 @@ public interface GestionarSeccionWebUseCase {
 
     List<SeccionWebQuery> listar();
 
-    List<SeccionWebQuery> listarVisibles();
+    List<SeccionWebQuery> listarActivas();
 
-    void activar(Long idSeccion);
+    void activar(String codigoSeccion);
 
-    void desactivar(Long idSeccion);
+    void desactivar(String codigoSeccion);
 
-    void eliminar(Long idSeccion);
+    void eliminar(String codigoSeccion);
 }

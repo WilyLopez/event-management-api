@@ -2,9 +2,13 @@ package com.playzone.pems.infrastructure.persistence.cms.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "tipocontenido")
+@Table(name = "tipo_contenido")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -13,13 +17,29 @@ import lombok.*;
 public class TipoContenidoEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idtipocontenido")
-    private Long id;
-
-    @Column(unique = true, nullable = false, length = 40)
+    @Column(name = "codigo", nullable = false, length = 40)
     private String codigo;
 
-    @Column(nullable = false, length = 120)
+    @Column(name = "nombre", nullable = false)
+    private String nombre;
+
+    @Column(name = "descripcion")
     private String descripcion;
+
+    @Column(name = "es_sistema", nullable = false)
+    private boolean esSistema;
+
+    @Column(name = "activo", nullable = false)
+    private boolean activo;
+
+    @Column(name = "orden", nullable = false)
+    private int orden;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt;
 }

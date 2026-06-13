@@ -1,13 +1,11 @@
 package com.playzone.pems.infrastructure.persistence.cms.entity;
 
-import com.playzone.pems.infrastructure.persistence.evento.entity.EventoPrivadoEntity;
-import com.playzone.pems.infrastructure.persistence.usuario.entity.ClienteEntity;
-import com.playzone.pems.infrastructure.persistence.usuario.entity.UsuarioAdminEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "resena")
@@ -20,18 +18,16 @@ public class ResenaEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idresena")
+    @Column(name = "id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "idcliente")
-    private ClienteEntity cliente;
+    @Column(name = "cliente_id")
+    private Long clienteId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ideventoprivado")
-    private EventoPrivadoEntity eventoPrivado;
+    @Column(name = "evento_id")
+    private Long eventoId;
 
-    @Column(name = "nombreautor", nullable = false, length = 120)
+    @Column(name = "nombre_autor", nullable = false, length = 120)
     private String nombreAutor;
 
     @Column(nullable = false, columnDefinition = "TEXT")
@@ -40,29 +36,28 @@ public class ResenaEntity {
     @Column(nullable = false)
     private int calificacion;
 
-    @Column(nullable = false)
+    @Column(name = "es_aprobada", nullable = false)
     private boolean aprobada = false;
 
-    @Column(name = "fotourl", length = 500)
+    @Column(name = "foto_path", length = 500)
     private String fotoUrl;
 
-    @Column(name = "respuestaadmin", columnDefinition = "TEXT")
+    @Column(name = "respuesta_admin", columnDefinition = "TEXT")
     private String respuestaAdmin;
 
-    @Column(name = "fecharespuesta")
-    private LocalDateTime fechaRespuesta;
+    @Column(name = "respondida_at")
+    private OffsetDateTime fechaRespuesta;
 
-    @Column(nullable = false)
+    @Column(name = "es_destacada", nullable = false)
     private boolean destacada = false;
 
-    @Column(name = "mostrarhome", nullable = false)
+    @Column(name = "mostrar_home", nullable = false)
     private boolean mostrarHome = true;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "idusuarioaprueba")
-    private UsuarioAdminEntity usuarioAprueba;
+    @Column(name = "aprobada_por", columnDefinition = "uuid")
+    private UUID aprobadaPor;
 
     @CreationTimestamp
-    @Column(name = "fechacreacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime fechaCreacion;
 }

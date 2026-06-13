@@ -1,10 +1,9 @@
 package com.playzone.pems.interfaces.rest.cms;
 
 import com.playzone.pems.application.cms.port.in.GestionarGaleriaUseCase;
-import com.playzone.pems.application.usuario.port.in.GestionarUsuarioAdminUseCase;
 import com.playzone.pems.domain.cms.model.ImagenGaleria;
 import com.playzone.pems.domain.cms.model.enums.CategoriaImagen;
-import com.playzone.pems.domain.usuario.model.UsuarioAdmin;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.shared.response.ApiResponse;
 import com.playzone.pems.shared.response.PagedResponse;
 import lombok.*;
@@ -19,29 +18,24 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @RestController
 @RequestMapping("/api/v1/galeria")
 @RequiredArgsConstructor
 public class GaleriaController {
 
-    private final GestionarGaleriaUseCase      galeriaUseCase;
-    private final GestionarUsuarioAdminUseCase usuarioUseCase;
+    private final GestionarGaleriaUseCase galeriaUseCase;
+    private final SupabaseAuthFacade      supabaseAuthFacade;
 
     @GetMapping
     public ResponseEntity<ApiResponse<PagedResponse<GaleriaResponse>>> listar(
             @RequestParam(required = false) Long idSede,
             @RequestParam(defaultValue = "false") boolean soloDestacadas,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestAttribute(required = false) Long idUsuarioAdmin) {
+            @RequestParam(defaultValue = "20") int size) {
 
         Long sedeId = idSede;
-        if (sedeId == null && idUsuarioAdmin != null) {
-            UsuarioAdmin admin = usuarioUseCase.obtener(idUsuarioAdmin);
-            sedeId = admin.getIdSede();
-        }
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("ordenVisualizacion").ascending());
         Page<GaleriaResponse> resultado = galeriaUseCase.listar(sedeId, soloDestacadas, pageable)
@@ -51,37 +45,13 @@ public class GaleriaController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.galeria')")
     public ResponseEntity<ApiResponse<GaleriaResponse>> subir(
             @RequestParam MultipartFile archivo,
             @RequestParam(defaultValue = "GENERAL") CategoriaImagen categoria,
             @RequestParam(required = false) String altTexto,
             @RequestParam(defaultValue = "0") int orden,
-            @RequestAttribute Long idUsuarioAdmin) throws IOException {
-
-        UsuarioAdmin admin = usuarioUseCase.obtener(idUsuarioAdmin);
-
-        ImagenGaleria imagen = galeriaUseCase.subir(
-                admin.getIdSede(),
-                archivo.getBytes(),
-                archivo.getOriginalFilename(),
-                archivo.getContentType(),
-                altTexto,
-                categoria,
-                orden,
-                idUsuarioAdmin);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(imagen)));
-    }
-
-    @PostMapping("/sedes/{idSede}")
-    public ResponseEntity<ApiResponse<GaleriaResponse>> subirConSede(
-            @PathVariable Long idSede,
-            @RequestParam MultipartFile archivo,
-            @RequestParam(defaultValue = "GENERAL") CategoriaImagen categoria,
-            @RequestParam(required = false) String altTexto,
-            @RequestParam(defaultValue = "0") int orden,
-            @RequestAttribute Long idUsuarioAdmin) throws IOException {
+            @RequestParam(required = false) Long idSede) throws IOException {
 
         ImagenGaleria imagen = galeriaUseCase.subir(
                 idSede,
@@ -91,12 +61,35 @@ public class GaleriaController {
                 altTexto,
                 categoria,
                 orden,
-                idUsuarioAdmin);
+                supabaseAuthFacade.usuarioActualId().orElseThrow());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(imagen)));
+    }
+
+    @PostMapping("/sedes/{idSede}")
+    @PreAuthorize("hasAuthority('sitio.galeria')")
+    public ResponseEntity<ApiResponse<GaleriaResponse>> subirConSede(
+            @PathVariable Long idSede,
+            @RequestParam MultipartFile archivo,
+            @RequestParam(defaultValue = "GENERAL") CategoriaImagen categoria,
+            @RequestParam(required = false) String altTexto,
+            @RequestParam(defaultValue = "0") int orden) throws IOException {
+
+        ImagenGaleria imagen = galeriaUseCase.subir(
+                idSede,
+                archivo.getBytes(),
+                archivo.getOriginalFilename(),
+                archivo.getContentType(),
+                altTexto,
+                categoria,
+                orden,
+                supabaseAuthFacade.usuarioActualId().orElseThrow());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(imagen)));
     }
 
     @PutMapping("/{idImagen}")
+    @PreAuthorize("hasAuthority('sitio.galeria')")
     public ResponseEntity<ApiResponse<GaleriaResponse>> actualizar(
             @PathVariable Long idImagen,
             @RequestBody ActualizarGaleriaRequest request) {
@@ -108,12 +101,14 @@ public class GaleriaController {
     }
 
     @DeleteMapping("/{idImagen}")
+    @PreAuthorize("hasAuthority('sitio.galeria')")
     public ResponseEntity<ApiResponse<Void>> eliminar(@PathVariable Long idImagen) {
         galeriaUseCase.eliminar(idImagen);
         return ResponseEntity.ok(ApiResponse.noContent());
     }
 
     @PatchMapping("/{idImagen}/orden")
+    @PreAuthorize("hasAuthority('sitio.galeria')")
     public ResponseEntity<ApiResponse<Void>> reordenar(
             @PathVariable Long idImagen,
             @RequestParam int nuevoOrden) {
@@ -122,12 +117,14 @@ public class GaleriaController {
     }
 
     @PatchMapping("/{idImagen}/destacar")
+    @PreAuthorize("hasAuthority('sitio.galeria')")
     public ResponseEntity<ApiResponse<Void>> destacar(@PathVariable Long idImagen) {
         galeriaUseCase.destacar(idImagen);
         return ResponseEntity.ok(ApiResponse.noContent());
     }
 
     @PatchMapping("/{idImagen}/quitar-destacado")
+    @PreAuthorize("hasAuthority('sitio.galeria')")
     public ResponseEntity<ApiResponse<Void>> quitarDestacado(@PathVariable Long idImagen) {
         galeriaUseCase.quitarDestacado(idImagen);
         return ResponseEntity.ok(ApiResponse.noContent());
@@ -165,6 +162,6 @@ public class GaleriaController {
         private CategoriaImagen categoria;
         private int             orden;
         private boolean         destacada;
-        private LocalDateTime   fechaCreacion;
+        private OffsetDateTime   fechaCreacion;
     }
 }

@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.UUID;
+
 @Getter
 @Builder
 public class EditarContenidoCommand {
@@ -25,6 +27,5 @@ public class EditarContenidoCommand {
     private final Boolean visible;
     private final Integer ordenVisualizacion;
 
-    @NotNull
-    private final Long idUsuarioEditor;
+    private final UUID idUsuarioEditor;
 }

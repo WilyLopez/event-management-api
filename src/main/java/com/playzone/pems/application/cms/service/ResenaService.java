@@ -11,7 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -54,7 +55,7 @@ public class ResenaService implements ModerarResenaUseCase {
 
     @Override
     @Transactional
-    public Resena aprobar(Long idResena, Long idUsuarioAdmin) {
+    public Resena aprobar(Long idResena, UUID idUsuarioAdmin) {
         Resena resena = findOrThrow(idResena);
         if (resena.isAprobada()) {
             throw new ValidationException("La reseña ya fue aprobada.");
@@ -72,7 +73,7 @@ public class ResenaService implements ModerarResenaUseCase {
         Resena resena = findOrThrow(command.idResena());
         return resenaRepository.save(resena.toBuilder()
                 .respuestaAdmin(command.respuesta())
-                .fechaRespuesta(LocalDateTime.now())
+                .fechaRespuesta(OffsetDateTime.now())
                 .build());
     }
 

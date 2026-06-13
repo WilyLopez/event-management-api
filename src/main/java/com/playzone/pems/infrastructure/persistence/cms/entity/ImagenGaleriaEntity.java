@@ -2,15 +2,15 @@ package com.playzone.pems.infrastructure.persistence.cms.entity;
 
 import com.playzone.pems.domain.cms.model.enums.CategoriaImagen;
 import com.playzone.pems.infrastructure.persistence.usuario.entity.SedeEntity;
-import com.playzone.pems.infrastructure.persistence.usuario.entity.UsuarioAdminEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "imagengaleria")
+@Table(name = "galeria_imagen")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,17 +20,17 @@ public class ImagenGaleriaEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idimagengaleria")
+    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "idsede", nullable = false)
+    @JoinColumn(name = "sede_id", nullable = false)
     private SedeEntity sede;
 
-    @Column(name = "urlimagen", nullable = false, length = 500)
+    @Column(name = "archivo_path", nullable = false, length = 500)
     private String urlImagen;
 
-    @Column(name = "alttexto", length = 200)
+    @Column(name = "alt_texto", length = 200)
     private String altTexto;
 
     @Column(length = 150)
@@ -40,32 +40,31 @@ public class ImagenGaleriaEntity {
     private String descripcion;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "categoriaimagen", nullable = false, length = 20)
+    @Column(name = "categoria", nullable = false, length = 20)
     private CategoriaImagen categoriaImagen;
 
-    @Column(name = "tipomime", length = 50)
+    @Column(name = "tipo_mime", length = 50)
     private String tipoMime;
 
-    @Column(name = "tamanobytes")
+    @Column(name = "tamano_bytes")
     private Long tamanioBytes;
 
-    @Column(name = "ordenvisualizacion", nullable = false)
+    @Column(name = "orden", nullable = false)
     private int ordenVisualizacion = 0;
 
-    @Column(nullable = false)
+    @Column(name = "es_activa", nullable = false)
     private boolean activo = true;
 
-    @Column(nullable = false)
+    @Column(name = "es_destacada", nullable = false)
     private boolean destacada = false;
 
-    @Column(nullable = false)
-    private boolean eliminada = false;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "idusuariosubio")
-    private UsuarioAdminEntity usuarioSubio;
+    @Column(name = "subida_por", columnDefinition = "uuid")
+    private UUID subidaPor;
 
     @CreationTimestamp
-    @Column(name = "fechasubida", nullable = false, updatable = false)
-    private LocalDateTime fechaSubida;
+    @Column(name = "subida_at", nullable = false, updatable = false)
+    private OffsetDateTime fechaSubida;
+
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
 }

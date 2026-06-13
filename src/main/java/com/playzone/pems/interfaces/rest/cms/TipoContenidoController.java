@@ -22,7 +22,7 @@ public class TipoContenidoController {
     private final TipoContenidoRepository tipoContenidoRepository;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.contenido')")
     public ResponseEntity<ApiResponse<List<TipoContenidoResponse>>> listar() {
         List<TipoContenidoResponse> result = tipoContenidoRepository.findAll()
                 .stream()
@@ -35,15 +35,21 @@ public class TipoContenidoController {
     @Getter
     @Builder
     public static class TipoContenidoResponse {
-        private Long   id;
-        private String codigo;
-        private String descripcion;
+        private String  codigo;
+        private String  nombre;
+        private String  descripcion;
+        private boolean esSistema;
+        private boolean activo;
+        private int     orden;
 
         public static TipoContenidoResponse from(TipoContenidoQuery q) {
             return TipoContenidoResponse.builder()
-                    .id(q.getId())
                     .codigo(q.getCodigo())
+                    .nombre(q.getNombre())
                     .descripcion(q.getDescripcion())
+                    .esSistema(q.isEsSistema())
+                    .activo(q.isActivo())
+                    .orden(q.getOrden())
                     .build();
         }
     }

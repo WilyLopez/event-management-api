@@ -4,17 +4,16 @@ import com.playzone.pems.domain.cms.model.ConfiguracionPublica;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder
 public class ConfiguracionPublicaQuery {
 
-    private Long          id;
     private String        nombreNegocio;
     private String        slogan;
-    private String        logoUrl;
-    private String        faviconUrl;
+    private String        logoPath;
+    private String        faviconPath;
     private String        telefono;
     private String        telefonoSecundario;
     private String        whatsapp;
@@ -27,29 +26,28 @@ public class ConfiguracionPublicaQuery {
     private String        youtubeUrl;
     private String        googleMapsUrl;
     private String        horarioSemana;
-    private String        horarioFinDeSemana;
+    private String        horarioFinSemana;
     private String        copyrightTexto;
     private String        metaTitle;
     private String        metaDescription;
     private String        metaKeywords;
     private String        openGraphTitle;
     private String        openGraphDescription;
-    private String        openGraphImageUrl;
+    private String        openGraphImagePath;
     private String        googleAnalyticsId;
     private String        metaPixelId;
     private String        colorTema;
     private String        colorSecundario;
-    private boolean       mantenimientoActivo;
+    private boolean       esMantenimientoActivo;
     private String        mensajeMantenimiento;
-    private LocalDateTime fechaActualizacion;
+    private OffsetDateTime updatedAt;
 
     public static ConfiguracionPublicaQuery from(ConfiguracionPublica c) {
         return ConfiguracionPublicaQuery.builder()
-                .id(c.getIdConfiguracionPublica())
                 .nombreNegocio(c.getNombreNegocio())
                 .slogan(c.getSlogan())
-                .logoUrl(c.getLogoUrl())
-                .faviconUrl(c.getFaviconUrl())
+                .logoPath(c.getLogoPath())
+                .faviconPath(c.getFaviconPath())
                 .telefono(c.getTelefono())
                 .telefonoSecundario(c.getTelefonoSecundario())
                 .whatsapp(c.getWhatsapp())
@@ -62,21 +60,21 @@ public class ConfiguracionPublicaQuery {
                 .youtubeUrl(c.getYoutubeUrl())
                 .googleMapsUrl(c.getGoogleMapsUrl())
                 .horarioSemana(c.getHorarioSemana())
-                .horarioFinDeSemana(c.getHorarioFinDeSemana())
+                .horarioFinSemana(c.getHorarioFinSemana())
                 .copyrightTexto(c.getCopyrightTexto())
                 .metaTitle(c.getMetaTitle())
                 .metaDescription(c.getMetaDescription())
                 .metaKeywords(c.getMetaKeywords())
                 .openGraphTitle(c.getOpenGraphTitle())
                 .openGraphDescription(c.getOpenGraphDescription())
-                .openGraphImageUrl(c.getOpenGraphImageUrl())
+                .openGraphImagePath(c.getOpenGraphImagePath())
                 .googleAnalyticsId(c.getGoogleAnalyticsId())
                 .metaPixelId(c.getMetaPixelId())
                 .colorTema(c.getColorTema())
                 .colorSecundario(c.getColorSecundario())
-                .mantenimientoActivo(c.isMantenimientoActivo())
+                .esMantenimientoActivo(c.isEsMantenimientoActivo())
                 .mensajeMantenimiento(c.getMensajeMantenimiento())
-                .fechaActualizacion(c.getFechaActualizacion())
+                .updatedAt(c.getUpdatedAt())
                 .build();
     }
 }

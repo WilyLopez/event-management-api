@@ -1,14 +1,14 @@
 package com.playzone.pems.infrastructure.persistence.cms.entity;
 
-import com.playzone.pems.infrastructure.persistence.usuario.entity.UsuarioAdminEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "contenidolegal")
+@Table(name = "contenido_legal")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -18,7 +18,7 @@ public class ContenidoLegalEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idcontenidolegal")
+    @Column(name = "id")
     private Long id;
 
     @Column(unique = true, nullable = false, length = 50)
@@ -33,14 +33,13 @@ public class ContenidoLegalEntity {
     @Column(nullable = false)
     private int version = 1;
 
-    @Column(nullable = false)
+    @Column(name = "es_activo", nullable = false)
     private boolean activo = true;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "idusuarioeditor")
-    private UsuarioAdminEntity usuarioEditor;
+    @Column(name = "updated_by", columnDefinition = "uuid")
+    private UUID updatedBy;
 
     @UpdateTimestamp
-    @Column(name = "fechaactualizacion", nullable = false)
-    private LocalDateTime fechaActualizacion;
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime fechaActualizacion;
 }

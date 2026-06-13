@@ -10,6 +10,6 @@ public interface ResenaJpaRepository extends JpaRepository<ResenaEntity, Long> {
 
     Page<ResenaEntity> findByAprobadaTrueOrderByFechaCreacionDesc(Pageable pageable);
 
-    @Query("SELECT r FROM ResenaEntity r WHERE r.aprobada = false AND r.usuarioAprueba IS NULL ORDER BY r.fechaCreacion ASC")
+    @Query("SELECT r FROM ResenaEntity r WHERE r.aprobada = false AND r.aprobadaPor IS NULL ORDER BY r.fechaCreacion ASC")
     Page<ResenaEntity> findPendientes(Pageable pageable);
 }

@@ -6,7 +6,6 @@ import com.playzone.pems.domain.cms.repository.ImagenGaleriaRepository;
 import com.playzone.pems.infrastructure.persistence.cms.jpa.ImagenGaleriaJpaRepository;
 import com.playzone.pems.infrastructure.persistence.cms.mapper.CmsEntityMapper;
 import com.playzone.pems.infrastructure.persistence.usuario.jpa.SedeJpaRepository;
-import com.playzone.pems.infrastructure.persistence.usuario.jpa.UsuarioAdminJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,7 +20,6 @@ public class ImagenGaleriaPersistenceAdapter implements ImagenGaleriaRepository 
 
     private final ImagenGaleriaJpaRepository jpaRepository;
     private final SedeJpaRepository          sedeRepository;
-    private final UsuarioAdminJpaRepository  usuarioRepository;
     private final CmsEntityMapper            mapper;
 
     @Override
@@ -54,12 +52,7 @@ public class ImagenGaleriaPersistenceAdapter implements ImagenGaleriaRepository 
     @Override
     public ImagenGaleria save(ImagenGaleria imagen) {
         var sedeEntity = sedeRepository.getReferenceById(imagen.getIdSede());
-        var usuarioEntity = imagen.getIdUsuarioSubio() != null 
-                ? usuarioRepository.getReferenceById(imagen.getIdUsuarioSubio()) 
-                : null;
-        
-        var entity = mapper.toEntity(imagen, sedeEntity, usuarioEntity);
-        return mapper.toDomain(jpaRepository.save(entity));
+        return mapper.toDomain(jpaRepository.save(mapper.toEntity(imagen, sedeEntity)));
     }
 
     @Override

@@ -7,5 +7,5 @@ import java.util.Optional;
 
 public interface ConfiguracionPublicaJpaRepository extends JpaRepository<ConfiguracionPublicaEntity, Long> {
 
-    Optional<ConfiguracionPublicaEntity> findTopByOrderByIdConfiguracionPublicaAsc();
+    Optional<ConfiguracionPublicaEntity> findTopByOrderByIdAsc();
 }

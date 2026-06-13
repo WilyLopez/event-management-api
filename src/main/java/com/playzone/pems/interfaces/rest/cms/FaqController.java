@@ -2,6 +2,7 @@ package com.playzone.pems.interfaces.rest.cms;
 
 import com.playzone.pems.application.cms.dto.query.FaqQuery;
 import com.playzone.pems.application.cms.port.in.GestionarFaqUseCase;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.shared.response.ApiResponse;
 import com.playzone.pems.shared.response.PagedResponse;
 import jakarta.validation.Valid;
@@ -18,7 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @RestController
@@ -27,6 +28,7 @@ import java.util.List;
 public class FaqController {
 
     private final GestionarFaqUseCase faqUseCase;
+    private final SupabaseAuthFacade  supabaseAuthFacade;
 
     // ── Público ──────────────────────────────────────────────────────────
 
@@ -40,7 +42,7 @@ public class FaqController {
     // ── Admin ─────────────────────────────────────────────────────────────
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.faq')")
     public ResponseEntity<ApiResponse<PagedResponse<FaqResponse>>> listar(
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -51,26 +53,24 @@ public class FaqController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.faq')")
     public ResponseEntity<ApiResponse<FaqResponse>> crear(
-            @Valid @RequestBody CrearFaqRequest request,
-            @RequestAttribute Long idUsuarioAdmin) {
+            @Valid @RequestBody CrearFaqRequest request) {
         FaqResponse response = FaqResponse.from(
                 faqUseCase.crear(new GestionarFaqUseCase.CrearCommand(
                         request.getPregunta(),
                         request.getRespuesta(),
                         request.getOrden() != null ? request.getOrden() : 0,
                         request.getVisible() != null ? request.getVisible() : true,
-                        idUsuarioAdmin)));
+                        supabaseAuthFacade.usuarioActualId().orElseThrow())));
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(response));
     }
 
     @PutMapping("/{idFaq}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.faq')")
     public ResponseEntity<ApiResponse<FaqResponse>> actualizar(
             @PathVariable Long idFaq,
-            @Valid @RequestBody ActualizarFaqRequest request,
-            @RequestAttribute Long idUsuarioAdmin) {
+            @Valid @RequestBody ActualizarFaqRequest request) {
         FaqResponse response = FaqResponse.from(
                 faqUseCase.actualizar(new GestionarFaqUseCase.ActualizarCommand(
                         idFaq,
@@ -78,33 +78,33 @@ public class FaqController {
                         request.getRespuesta(),
                         request.getOrden() != null ? request.getOrden() : 0,
                         request.getVisible() != null ? request.getVisible() : true,
-                        idUsuarioAdmin)));
+                        supabaseAuthFacade.usuarioActualId().orElseThrow())));
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     @PatchMapping("/{idFaq}/activar")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.faq')")
     public ResponseEntity<ApiResponse<Void>> activar(@PathVariable Long idFaq) {
         faqUseCase.activar(idFaq);
         return ResponseEntity.ok(ApiResponse.noContent());
     }
 
     @PatchMapping("/{idFaq}/desactivar")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.faq')")
     public ResponseEntity<ApiResponse<Void>> desactivar(@PathVariable Long idFaq) {
         faqUseCase.desactivar(idFaq);
         return ResponseEntity.ok(ApiResponse.noContent());
     }
 
     @PutMapping("/reordenar")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.faq')")
     public ResponseEntity<ApiResponse<Void>> reordenar(@RequestBody ReordenarFaqRequest request) {
         faqUseCase.reordenar(new GestionarFaqUseCase.ReordenarCommand(request.getIds()));
         return ResponseEntity.ok(ApiResponse.noContent());
     }
 
     @DeleteMapping("/{idFaq}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.faq')")
     public ResponseEntity<ApiResponse<Void>> eliminar(@PathVariable Long idFaq) {
         faqUseCase.eliminar(idFaq);
         return ResponseEntity.ok(ApiResponse.noContent());
@@ -144,7 +144,7 @@ public class FaqController {
         private String        respuesta;
         private int           ordenVisualizacion;
         private boolean       visible;
-        private LocalDateTime fechaActualizacion;
+        private OffsetDateTime fechaActualizacion;
 
         public static FaqResponse from(FaqQuery q) {
             return FaqResponse.builder()

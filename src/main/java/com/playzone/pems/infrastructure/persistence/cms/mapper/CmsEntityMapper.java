@@ -2,10 +2,7 @@ package com.playzone.pems.infrastructure.persistence.cms.mapper;
 
 import com.playzone.pems.domain.cms.model.*;
 import com.playzone.pems.infrastructure.persistence.cms.entity.*;
-import com.playzone.pems.infrastructure.persistence.evento.entity.EventoPrivadoEntity;
-import com.playzone.pems.infrastructure.persistence.usuario.entity.ClienteEntity;
 import com.playzone.pems.infrastructure.persistence.usuario.entity.SedeEntity;
-import com.playzone.pems.infrastructure.persistence.usuario.entity.UsuarioAdminEntity;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -17,8 +14,8 @@ public class CmsEntityMapper {
         if (e == null) return null;
         return ContenidoWeb.builder()
                 .id(e.getId())
-                .idSeccion(e.getIdSeccion())
-                .idTipoContenido(e.getIdTipoContenido())
+                .seccionCodigo(e.getSeccionCodigo())
+                .tipoContenidoCodigo(e.getTipoContenidoCodigo())
                 .clave(e.getClave())
                 .valorEs(e.getValorEs())
                 .valorEn(e.getValorEn())
@@ -28,18 +25,18 @@ public class CmsEntityMapper {
                 .visible(e.isVisible())
                 .version(e.getVersion())
                 .metadatos(e.getMetadatos())
-                .activo(e.isActivo())
-                .idUsuarioEditor(e.getUsuarioEditor() != null ? e.getUsuarioEditor().getId() : null)
+                .activo(e.getDeletedAt() == null)
+                .idUsuarioEditor(e.getUpdatedBy())
                 .fechaActualizacion(e.getFechaActualizacion())
                 .build();
     }
 
-    public ContenidoWebEntity toEntity(ContenidoWeb d, UsuarioAdminEntity editor) {
+    public ContenidoWebEntity toEntity(ContenidoWeb d) {
         if (d == null) return null;
         return ContenidoWebEntity.builder()
                 .id(d.getId())
-                .idSeccion(d.getIdSeccion())
-                .idTipoContenido(d.getIdTipoContenido())
+                .seccionCodigo(d.getSeccionCodigo())
+                .tipoContenidoCodigo(d.getTipoContenidoCodigo())
                 .clave(d.getClave())
                 .valorEs(d.getValorEs())
                 .valorEn(d.getValorEn())
@@ -49,8 +46,7 @@ public class CmsEntityMapper {
                 .visible(d.isVisible())
                 .version(d.getVersion())
                 .metadatos(d.getMetadatos())
-                .activo(d.isActivo())
-                .usuarioEditor(editor)
+                .updatedBy(d.getIdUsuarioEditor())
                 .build();
     }
 
@@ -71,13 +67,13 @@ public class CmsEntityMapper {
                 .ordenVisualizacion(e.getOrdenVisualizacion())
                 .activo(e.isActivo())
                 .destacada(e.isDestacada())
-                .eliminada(e.isEliminada())
-                .idUsuarioSubio(e.getUsuarioSubio() != null ? e.getUsuarioSubio().getId() : null)
+                .eliminada(e.getDeletedAt() != null)
+                .idUsuarioSubio(e.getSubidaPor())
                 .fechaSubida(e.getFechaSubida())
                 .build();
     }
 
-    public ImagenGaleriaEntity toEntity(ImagenGaleria d, SedeEntity sede, UsuarioAdminEntity usuario) {
+    public ImagenGaleriaEntity toEntity(ImagenGaleria d, SedeEntity sede) {
         if (d == null) return null;
         return ImagenGaleriaEntity.builder()
                 .id(d.getId())
@@ -92,8 +88,7 @@ public class CmsEntityMapper {
                 .ordenVisualizacion(d.getOrdenVisualizacion())
                 .activo(d.isActivo())
                 .destacada(d.isDestacada())
-                .eliminada(d.isEliminada())
-                .usuarioSubio(usuario)
+                .subidaPor(d.getIdUsuarioSubio())
                 .build();
     }
 
@@ -119,12 +114,12 @@ public class CmsEntityMapper {
                 .prioridad(e.getPrioridad())
                 .soloMovil(e.isSoloMovil())
                 .soloDesktop(e.isSoloDesktop())
-                .idUsuarioCreador(e.getUsuarioCreador() != null ? e.getUsuarioCreador().getId() : null)
+                .idUsuarioCreador(e.getCreatedBy())
                 .fechaCreacion(e.getFechaCreacion())
                 .build();
     }
 
-    public BannerEntity toEntity(Banner d, SedeEntity sede, UsuarioAdminEntity creador) {
+    public BannerEntity toEntity(Banner d, SedeEntity sede) {
         if (d == null) return null;
         return BannerEntity.builder()
                 .id(d.getId())
@@ -144,7 +139,7 @@ public class CmsEntityMapper {
                 .prioridad(d.getPrioridad())
                 .soloMovil(d.isSoloMovil())
                 .soloDesktop(d.isSoloDesktop())
-                .usuarioCreador(creador)
+                .createdBy(d.getIdUsuarioCreador())
                 .build();
     }
 
@@ -154,8 +149,8 @@ public class CmsEntityMapper {
         if (e == null) return null;
         return Resena.builder()
                 .id(e.getId())
-                .idCliente(e.getCliente() != null ? e.getCliente().getId() : null)
-                .idEventoPrivado(e.getEventoPrivado() != null ? e.getEventoPrivado().getId() : null)
+                .idCliente(e.getClienteId())
+                .idEventoPrivado(e.getEventoId())
                 .nombreAutor(e.getNombreAutor())
                 .contenido(e.getContenido())
                 .calificacion(e.getCalificacion())
@@ -165,18 +160,17 @@ public class CmsEntityMapper {
                 .fechaRespuesta(e.getFechaRespuesta())
                 .destacada(e.isDestacada())
                 .mostrarHome(e.isMostrarHome())
-                .idUsuarioAprueba(e.getUsuarioAprueba() != null ? e.getUsuarioAprueba().getId() : null)
+                .idUsuarioAprueba(e.getAprobadaPor())
                 .fechaCreacion(e.getFechaCreacion())
                 .build();
     }
 
-    public ResenaEntity toEntity(Resena d, ClienteEntity cliente, UsuarioAdminEntity aprueba,
-                                 EventoPrivadoEntity evento) {
+    public ResenaEntity toEntity(Resena d) {
         if (d == null) return null;
         return ResenaEntity.builder()
                 .id(d.getId())
-                .cliente(cliente)
-                .eventoPrivado(evento)
+                .clienteId(d.getIdCliente())
+                .eventoId(d.getIdEventoPrivado())
                 .nombreAutor(d.getNombreAutor())
                 .contenido(d.getContenido())
                 .calificacion(d.getCalificacion())
@@ -186,7 +180,7 @@ public class CmsEntityMapper {
                 .fechaRespuesta(d.getFechaRespuesta())
                 .destacada(d.isDestacada())
                 .mostrarHome(d.isMostrarHome())
-                .usuarioAprueba(aprueba)
+                .aprobadaPor(d.getIdUsuarioAprueba())
                 .build();
     }
 
@@ -195,24 +189,26 @@ public class CmsEntityMapper {
     public SeccionWeb toDomain(SeccionWebEntity e) {
         if (e == null) return null;
         return SeccionWeb.builder()
-                .id(e.getId())
                 .codigo(e.getCodigo())
                 .nombre(e.getNombre())
                 .descripcion(e.getDescripcion())
-                .ordenVisualizacion(e.getOrdenVisualizacion())
-                .visible(e.isVisible())
+                .esSistema(e.isEsSistema())
+                .activo(e.isActivo())
+                .orden(e.getOrden())
+                .createdAt(e.getCreatedAt() != null ? e.getCreatedAt() : null)
+                .updatedAt(e.getUpdatedAt() != null ? e.getUpdatedAt() : null)
                 .build();
     }
 
     public SeccionWebEntity toEntity(SeccionWeb d) {
         if (d == null) return null;
         return SeccionWebEntity.builder()
-                .id(d.getId())
                 .codigo(d.getCodigo())
                 .nombre(d.getNombre())
                 .descripcion(d.getDescripcion())
-                .ordenVisualizacion(d.getOrdenVisualizacion())
-                .visible(d.isVisible())
+                .esSistema(d.isEsSistema())
+                .activo(d.isActivo())
+                .orden(d.getOrden())
                 .build();
     }
 
@@ -221,9 +217,14 @@ public class CmsEntityMapper {
     public TipoContenido toDomain(TipoContenidoEntity e) {
         if (e == null) return null;
         return TipoContenido.builder()
-                .id(e.getId())
                 .codigo(e.getCodigo())
+                .nombre(e.getNombre())
                 .descripcion(e.getDescripcion())
+                .esSistema(e.isEsSistema())
+                .activo(e.isActivo())
+                .orden(e.getOrden())
+                .createdAt(e.getCreatedAt() != null ? e.getCreatedAt() : null)
+                .updatedAt(e.getUpdatedAt() != null ? e.getUpdatedAt() : null)
                 .build();
     }
 
@@ -232,11 +233,11 @@ public class CmsEntityMapper {
     public ConfiguracionPublica toDomain(ConfiguracionPublicaEntity e) {
         if (e == null) return null;
         return ConfiguracionPublica.builder()
-                .idConfiguracionPublica(e.getIdConfiguracionPublica())
+                .id(e.getId())
                 .nombreNegocio(e.getNombreNegocio())
                 .slogan(e.getSlogan())
-                .logoUrl(e.getLogoUrl())
-                .faviconUrl(e.getFaviconUrl())
+                .logoPath(e.getLogoPath())
+                .faviconPath(e.getFaviconPath())
                 .telefono(e.getTelefono())
                 .telefonoSecundario(e.getTelefonoSecundario())
                 .whatsapp(e.getWhatsapp())
@@ -249,32 +250,34 @@ public class CmsEntityMapper {
                 .youtubeUrl(e.getYoutubeUrl())
                 .googleMapsUrl(e.getGoogleMapsUrl())
                 .horarioSemana(e.getHorarioSemana())
-                .horarioFinDeSemana(e.getHorarioFinDeSemana())
+                .horarioFinSemana(e.getHorarioFinSemana())
                 .copyrightTexto(e.getCopyrightTexto())
                 .metaTitle(e.getMetaTitle())
                 .metaDescription(e.getMetaDescription())
                 .metaKeywords(e.getMetaKeywords())
                 .openGraphTitle(e.getOpenGraphTitle())
                 .openGraphDescription(e.getOpenGraphDescription())
-                .openGraphImageUrl(e.getOpenGraphImageUrl())
+                .openGraphImagePath(e.getOpenGraphImagePath())
                 .googleAnalyticsId(e.getGoogleAnalyticsId())
                 .metaPixelId(e.getMetaPixelId())
                 .colorTema(e.getColorTema())
                 .colorSecundario(e.getColorSecundario())
-                .mantenimientoActivo(e.isMantenimientoActivo())
+                .esMantenimientoActivo(e.isEsMantenimientoActivo())
                 .mensajeMantenimiento(e.getMensajeMantenimiento())
-                .fechaActualizacion(e.getFechaActualizacion())
+                .createdAt(e.getCreatedAt() != null ? e.getCreatedAt() : null)
+                .updatedAt(e.getUpdatedAt() != null ? e.getUpdatedAt() : null)
+                .updatedBy(e.getUpdatedBy())
                 .build();
     }
 
     public ConfiguracionPublicaEntity toEntity(ConfiguracionPublica d) {
         if (d == null) return null;
         return ConfiguracionPublicaEntity.builder()
-                .idConfiguracionPublica(d.getIdConfiguracionPublica())
+                .id(d.getId())
                 .nombreNegocio(d.getNombreNegocio())
                 .slogan(d.getSlogan())
-                .logoUrl(d.getLogoUrl())
-                .faviconUrl(d.getFaviconUrl())
+                .logoPath(d.getLogoPath())
+                .faviconPath(d.getFaviconPath())
                 .telefono(d.getTelefono())
                 .telefonoSecundario(d.getTelefonoSecundario())
                 .whatsapp(d.getWhatsapp())
@@ -287,20 +290,21 @@ public class CmsEntityMapper {
                 .youtubeUrl(d.getYoutubeUrl())
                 .googleMapsUrl(d.getGoogleMapsUrl())
                 .horarioSemana(d.getHorarioSemana())
-                .horarioFinDeSemana(d.getHorarioFinDeSemana())
+                .horarioFinSemana(d.getHorarioFinSemana())
                 .copyrightTexto(d.getCopyrightTexto())
                 .metaTitle(d.getMetaTitle())
                 .metaDescription(d.getMetaDescription())
                 .metaKeywords(d.getMetaKeywords())
                 .openGraphTitle(d.getOpenGraphTitle())
                 .openGraphDescription(d.getOpenGraphDescription())
-                .openGraphImageUrl(d.getOpenGraphImageUrl())
+                .openGraphImagePath(d.getOpenGraphImagePath())
                 .googleAnalyticsId(d.getGoogleAnalyticsId())
                 .metaPixelId(d.getMetaPixelId())
                 .colorTema(d.getColorTema())
                 .colorSecundario(d.getColorSecundario())
-                .mantenimientoActivo(d.isMantenimientoActivo())
+                .esMantenimientoActivo(d.isEsMantenimientoActivo())
                 .mensajeMantenimiento(d.getMensajeMantenimiento())
+                .updatedBy(d.getUpdatedBy())
                 .build();
     }
 
@@ -314,12 +318,12 @@ public class CmsEntityMapper {
                 .respuesta(e.getRespuesta())
                 .ordenVisualizacion(e.getOrdenVisualizacion())
                 .visible(e.isVisible())
-                .idUsuarioEditor(e.getUsuarioEditor() != null ? e.getUsuarioEditor().getId() : null)
+                .idUsuarioEditor(e.getUpdatedBy())
                 .fechaActualizacion(e.getFechaActualizacion())
                 .build();
     }
 
-    public FaqEntity toEntity(Faq d, UsuarioAdminEntity editor) {
+    public FaqEntity toEntity(Faq d) {
         if (d == null) return null;
         return FaqEntity.builder()
                 .id(d.getId())
@@ -327,7 +331,7 @@ public class CmsEntityMapper {
                 .respuesta(d.getRespuesta())
                 .ordenVisualizacion(d.getOrdenVisualizacion())
                 .visible(d.isVisible())
-                .usuarioEditor(editor)
+                .updatedBy(d.getIdUsuarioEditor())
                 .build();
     }
 
@@ -342,12 +346,12 @@ public class CmsEntityMapper {
                 .contenido(e.getContenido())
                 .version(e.getVersion())
                 .activo(e.isActivo())
-                .idUsuarioEditor(e.getUsuarioEditor() != null ? e.getUsuarioEditor().getId() : null)
+                .idUsuarioEditor(e.getUpdatedBy())
                 .fechaActualizacion(e.getFechaActualizacion())
                 .build();
     }
 
-    public ContenidoLegalEntity toEntity(ContenidoLegal d, UsuarioAdminEntity editor) {
+    public ContenidoLegalEntity toEntity(ContenidoLegal d) {
         if (d == null) return null;
         return ContenidoLegalEntity.builder()
                 .id(d.getId())
@@ -356,7 +360,7 @@ public class CmsEntityMapper {
                 .contenido(d.getContenido())
                 .version(d.getVersion())
                 .activo(d.isActivo())
-                .usuarioEditor(editor)
+                .updatedBy(d.getIdUsuarioEditor())
                 .build();
     }
 }

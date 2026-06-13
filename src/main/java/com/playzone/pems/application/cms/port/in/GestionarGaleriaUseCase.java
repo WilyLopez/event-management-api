@@ -5,6 +5,7 @@ import com.playzone.pems.domain.cms.model.enums.CategoriaImagen;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import java.util.UUID;
 
 public interface GestionarGaleriaUseCase {
 
@@ -18,7 +19,7 @@ public interface GestionarGaleriaUseCase {
             String altTexto,
             CategoriaImagen categoria,
             int orden,
-            Long idUsuario);
+            UUID idUsuario);
 
     void eliminar(Long idImagen);
 

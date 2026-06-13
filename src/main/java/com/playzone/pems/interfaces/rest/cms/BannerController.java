@@ -2,6 +2,7 @@ package com.playzone.pems.interfaces.rest.cms;
 
 import com.playzone.pems.application.cms.dto.query.BannerQuery;
 import com.playzone.pems.application.cms.port.in.GestionarBannerUseCase;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.shared.response.ApiResponse;
 import com.playzone.pems.shared.response.PagedResponse;
 import jakarta.validation.Valid;
@@ -20,7 +21,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @RestController
@@ -29,6 +30,7 @@ import java.util.List;
 public class BannerController {
 
     private final GestionarBannerUseCase bannerUseCase;
+    private final SupabaseAuthFacade     supabaseAuthFacade;
 
     // ── Público ──────────────────────────────────────────────────────────
 
@@ -43,7 +45,7 @@ public class BannerController {
     // ── Admin ─────────────────────────────────────────────────────────────
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.banner')")
     public ResponseEntity<ApiResponse<PagedResponse<BannerResponse>>> listar(
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -54,10 +56,9 @@ public class BannerController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.banner')")
     public ResponseEntity<ApiResponse<BannerResponse>> crear(
-            @Valid @RequestBody CrearBannerRequest request,
-            @RequestAttribute Long idUsuarioAdmin) {
+            @Valid @RequestBody CrearBannerRequest request) {
         BannerResponse response = BannerResponse.from(
                 bannerUseCase.crear(new GestionarBannerUseCase.CrearCommand(
                         request.getIdSede(),
@@ -75,12 +76,12 @@ public class BannerController {
                         request.getPrioridad() != null ? request.getPrioridad() : 0,
                         Boolean.TRUE.equals(request.getSoloMovil()),
                         Boolean.TRUE.equals(request.getSoloDesktop()),
-                        idUsuarioAdmin)));
+                        supabaseAuthFacade.usuarioActualId().orElseThrow())));
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(response));
     }
 
     @PutMapping("/{idBanner}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.banner')")
     public ResponseEntity<ApiResponse<BannerResponse>> actualizar(
             @PathVariable Long idBanner,
             @Valid @RequestBody ActualizarBannerRequest request) {
@@ -106,31 +107,30 @@ public class BannerController {
     }
 
     @PatchMapping("/{idBanner}/activar")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.banner')")
     public ResponseEntity<ApiResponse<Void>> activar(@PathVariable Long idBanner) {
         bannerUseCase.activar(idBanner);
         return ResponseEntity.ok(ApiResponse.noContent());
     }
 
     @PatchMapping("/{idBanner}/desactivar")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.banner')")
     public ResponseEntity<ApiResponse<Void>> desactivar(@PathVariable Long idBanner) {
         bannerUseCase.desactivar(idBanner);
         return ResponseEntity.ok(ApiResponse.noContent());
     }
 
     @PostMapping("/{idBanner}/duplicar")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.banner')")
     public ResponseEntity<ApiResponse<BannerResponse>> duplicar(
-            @PathVariable Long idBanner,
-            @RequestAttribute Long idUsuarioAdmin) {
+            @PathVariable Long idBanner) {
         BannerResponse response = BannerResponse.from(
-                bannerUseCase.duplicar(idBanner, idUsuarioAdmin));
+                bannerUseCase.duplicar(idBanner, supabaseAuthFacade.usuarioActualId().orElseThrow()));
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(response));
     }
 
     @PutMapping("/reordenar")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.banner')")
     public ResponseEntity<ApiResponse<Void>> reordenar(
             @RequestBody ReordenarRequest request) {
         bannerUseCase.reordenar(new GestionarBannerUseCase.ReordenarCommand(request.getIds()));
@@ -138,7 +138,7 @@ public class BannerController {
     }
 
     @DeleteMapping("/{idBanner}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.banner')")
     public ResponseEntity<ApiResponse<Void>> eliminar(@PathVariable Long idBanner) {
         bannerUseCase.eliminar(idBanner);
         return ResponseEntity.ok(ApiResponse.noContent());
@@ -216,7 +216,7 @@ public class BannerController {
         private int           prioridad;
         private boolean       soloMovil;
         private boolean       soloDesktop;
-        private LocalDateTime fechaCreacion;
+        private OffsetDateTime fechaCreacion;
 
         public static BannerResponse from(BannerQuery q) {
             return BannerResponse.builder()

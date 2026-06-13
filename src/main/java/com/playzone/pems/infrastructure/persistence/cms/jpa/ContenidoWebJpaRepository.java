@@ -12,19 +12,19 @@ import java.util.Optional;
 
 public interface ContenidoWebJpaRepository extends JpaRepository<ContenidoWebEntity, Long> {
 
-    Optional<ContenidoWebEntity> findByIdSeccionAndClave(Long idSeccion, String clave);
+    Optional<ContenidoWebEntity> findBySeccionCodigoAndClave(String seccionCodigo, String clave);
 
-    List<ContenidoWebEntity> findByIdSeccionAndActivoTrue(Long idSeccion);
+    List<ContenidoWebEntity> findBySeccionCodigoAndDeletedAtIsNull(String seccionCodigo);
 
-    List<ContenidoWebEntity> findByActivoTrue();
+    List<ContenidoWebEntity> findByDeletedAtIsNull();
 
     @Query("SELECT c FROM ContenidoWebEntity c " +
-           "WHERE (:idSeccion IS NULL OR c.idSeccion = :idSeccion) " +
+           "WHERE (:seccionCodigo IS NULL OR c.seccionCodigo = :seccionCodigo) " +
            "AND (:clavePattern IS NULL OR LOWER(c.clave) LIKE :clavePattern)")
     Page<ContenidoWebEntity> findByFilters(
-            @Param("idSeccion") Long idSeccion,
+            @Param("seccionCodigo") String seccionCodigo,
             @Param("clavePattern") String clavePattern,
             Pageable pageable);
 
-    boolean existsByIdSeccionAndClave(Long idSeccion, String clave);
+    boolean existsBySeccionCodigoAndClave(String seccionCodigo, String clave);
 }

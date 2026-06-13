@@ -3,6 +3,7 @@ package com.playzone.pems.application.cms.port.in;
 import com.playzone.pems.application.cms.dto.query.ContenidoLegalQuery;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface GestionarContenidoLegalUseCase {
 
@@ -10,14 +11,14 @@ public interface GestionarContenidoLegalUseCase {
             String tipo,
             String titulo,
             String contenido,
-            Long   idUsuario
+            UUID   idUsuario
     ) {}
 
     record ActualizarCommand(
             String tipo,
             String titulo,
             String contenido,
-            Long   idUsuario
+            UUID   idUsuario
     ) {}
 
     ContenidoLegalQuery obtenerPorTipo(String tipo);

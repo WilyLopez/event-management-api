@@ -21,8 +21,8 @@ public class ContenidoWebService implements EditarContenidoWebUseCase, Consultar
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ContenidoWebQuery> listar(Long idSeccion, String clave, Pageable pageable) {
-        return contenidoRepository.findAll(idSeccion, clave, pageable).map(this::toQuery);
+    public Page<ContenidoWebQuery> listar(String seccionCodigo, String clave, Pageable pageable) {
+        return contenidoRepository.findAll(seccionCodigo, clave, pageable).map(this::toQuery);
     }
 
     @Override
@@ -53,8 +53,8 @@ public class ContenidoWebService implements EditarContenidoWebUseCase, Consultar
     private ContenidoWebQuery toQuery(ContenidoWeb c) {
         return ContenidoWebQuery.builder()
                 .id(c.getId())
-                .idSeccion(c.getIdSeccion())
-                .idTipoContenido(c.getIdTipoContenido())
+                .seccion(c.getSeccionCodigo())
+                .tipoContenido(c.getTipoContenidoCodigo())
                 .clave(c.getClave())
                 .valorEs(c.getValorEs())
                 .valorEn(c.getValorEn())

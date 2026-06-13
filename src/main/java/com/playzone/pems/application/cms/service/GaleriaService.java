@@ -1,10 +1,10 @@
 package com.playzone.pems.application.cms.service;
 
 import com.playzone.pems.application.cms.port.in.GestionarGaleriaUseCase;
-import com.playzone.pems.application.cms.port.out.SubirImagenStoragePort;
 import com.playzone.pems.domain.cms.model.ImagenGaleria;
 import com.playzone.pems.domain.cms.model.enums.CategoriaImagen;
 import com.playzone.pems.domain.cms.repository.ImagenGaleriaRepository;
+import com.playzone.pems.domain.storage.StoragePort;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -12,12 +12,18 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class GaleriaService implements GestionarGaleriaUseCase {
 
+    private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+
     private final ImagenGaleriaRepository galeriaRepository;
-    private final SubirImagenStoragePort  storagePort;
+    private final StoragePort             storagePort;
 
     @Override
     @Transactional(readOnly = true)
@@ -32,9 +38,10 @@ public class GaleriaService implements GestionarGaleriaUseCase {
     @Transactional
     public ImagenGaleria subir(Long idSede, byte[] contenido, String nombreArchivo,
                                String contentType, String altTexto, CategoriaImagen categoria,
-                               int orden, Long idUsuario) {
+                               int orden, UUID idUsuario) {
 
-        String url = storagePort.subir(contenido, nombreArchivo, contentType);
+        String key = "galeria/" + LocalDateTime.now().format(FMT) + "_" + nombreArchivo;
+        String url = storagePort.upload("publico", key, contenido, contentType);
 
         ImagenGaleria imagen = ImagenGaleria.builder()
                 .idSede(idSede)
@@ -59,7 +66,7 @@ public class GaleriaService implements GestionarGaleriaUseCase {
         ImagenGaleria imagen = galeriaRepository.findById(idImagen)
                 .orElseThrow(() -> new ResourceNotFoundException("ImagenGaleria", idImagen));
 
-        storagePort.eliminar(imagen.getUrlImagen());
+        storagePort.deleteByUrl(imagen.getUrlImagen());
         galeriaRepository.deleteById(idImagen);
     }
 
@@ -93,12 +100,12 @@ public class GaleriaService implements GestionarGaleriaUseCase {
     public ImagenGaleria actualizar(Long idImagen, String altTexto, CategoriaImagen categoria, Integer orden) {
         ImagenGaleria imagen = galeriaRepository.findById(idImagen)
                 .orElseThrow(() -> new ResourceNotFoundException("ImagenGaleria", idImagen));
-        
+
         ImagenGaleria.ImagenGaleriaBuilder builder = imagen.toBuilder();
         if (altTexto != null) builder.altTexto(altTexto);
         if (categoria != null) builder.categoriaImagen(categoria);
         if (orden != null) builder.ordenVisualizacion(orden);
-        
+
         return galeriaRepository.save(builder.build());
     }
 }

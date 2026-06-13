@@ -3,16 +3,14 @@ package com.playzone.pems.application.cms.dto.query;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder
 public class ContenidoWebQuery {
 
     private final Long          id;
-    private final Long          idSeccion;
     private final String        seccion;
-    private final Long          idTipoContenido;
     private final String        tipoContenido;
     private final String        clave;
     private final String        valorEs;
@@ -24,5 +22,5 @@ public class ContenidoWebQuery {
     private final int           version;
     private final String        metadatos;
     private final boolean       activo;
-    private final LocalDateTime fechaActualizacion;
+    private final OffsetDateTime fechaActualizacion;
 }

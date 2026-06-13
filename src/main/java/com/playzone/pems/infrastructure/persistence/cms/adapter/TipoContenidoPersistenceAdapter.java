@@ -24,6 +24,6 @@ public class TipoContenidoPersistenceAdapter implements TipoContenidoRepository 
 
     @Override
     public Optional<TipoContenido> findByCodigo(String codigo) {
-        return tipoContenidoJpa.findByCodigo(codigo).map(mapper::toDomain);
+        return tipoContenidoJpa.findById(codigo).map(mapper::toDomain);
     }
 }

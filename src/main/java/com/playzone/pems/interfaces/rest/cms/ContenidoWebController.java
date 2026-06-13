@@ -4,6 +4,7 @@ import com.playzone.pems.application.cms.dto.command.EditarContenidoCommand;
 import com.playzone.pems.application.cms.dto.query.ContenidoWebQuery;
 import com.playzone.pems.application.cms.port.in.ConsultarContenidoWebUseCase;
 import com.playzone.pems.application.cms.port.in.EditarContenidoWebUseCase;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.interfaces.rest.cms.request.EditarContenidoRequest;
 import com.playzone.pems.interfaces.rest.cms.response.ContenidoWebResponse;
 import com.playzone.pems.shared.response.ApiResponse;
@@ -21,25 +22,25 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class ContenidoWebController {
 
-    private final EditarContenidoWebUseCase editarUseCase;
+    private final EditarContenidoWebUseCase    editarUseCase;
     private final ConsultarContenidoWebUseCase consultarUseCase;
+    private final SupabaseAuthFacade           supabaseAuthFacade;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.contenido')")
     public ResponseEntity<ApiResponse<PagedResponse<ContenidoWebResponse>>> listar(
-            @RequestParam(required = false) Long idSeccion,
+            @RequestParam(required = false) String seccionCodigo,
             @RequestParam(required = false) String clave,
             @PageableDefault(size = 50) Pageable pageable) {
-        var page = consultarUseCase.listar(idSeccion, clave, pageable);
+        var page = consultarUseCase.listar(seccionCodigo, clave, pageable);
         return ResponseEntity.ok(ApiResponse.ok(PagedResponse.of(page.map(this::toResponse))));
     }
 
     @PutMapping("/{idContenido}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.contenido')")
     public ResponseEntity<ApiResponse<ContenidoWebResponse>> editar(
             @PathVariable Long idContenido,
-            @Valid @RequestBody EditarContenidoRequest request,
-            @RequestAttribute Long idUsuarioAdmin) {
+            @Valid @RequestBody EditarContenidoRequest request) {
 
         ContenidoWebQuery query = editarUseCase.ejecutar(EditarContenidoCommand.builder()
                 .idContenido(idContenido)
@@ -50,7 +51,7 @@ public class ContenidoWebController {
                 .metadatos(request.getMetadatos())
                 .visible(request.getVisible())
                 .ordenVisualizacion(request.getOrdenVisualizacion())
-                .idUsuarioEditor(idUsuarioAdmin)
+                .idUsuarioEditor(supabaseAuthFacade.usuarioActualId().orElseThrow())
                 .build());
 
         return ResponseEntity.ok(ApiResponse.ok(toResponse(query)));
@@ -59,8 +60,8 @@ public class ContenidoWebController {
     private ContenidoWebResponse toResponse(ContenidoWebQuery q) {
         return ContenidoWebResponse.builder()
                 .id(q.getId())
-                .idSeccion(q.getIdSeccion())
-                .idTipoContenido(q.getIdTipoContenido())
+                .seccionCodigo(q.getSeccion())
+                .tipoContenidoCodigo(q.getTipoContenido())
                 .clave(q.getClave())
                 .valorEs(q.getValorEs())
                 .valorEn(q.getValorEn())

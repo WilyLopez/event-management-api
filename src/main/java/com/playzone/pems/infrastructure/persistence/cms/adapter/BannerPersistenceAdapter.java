@@ -5,7 +5,6 @@ import com.playzone.pems.domain.cms.repository.BannerRepository;
 import com.playzone.pems.infrastructure.persistence.cms.jpa.BannerJpaRepository;
 import com.playzone.pems.infrastructure.persistence.cms.mapper.CmsEntityMapper;
 import com.playzone.pems.infrastructure.persistence.usuario.jpa.SedeJpaRepository;
-import com.playzone.pems.infrastructure.persistence.usuario.jpa.UsuarioAdminJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,10 +19,9 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class BannerPersistenceAdapter implements BannerRepository {
 
-    private final BannerJpaRepository       bannerJpa;
-    private final SedeJpaRepository         sedeJpa;
-    private final UsuarioAdminJpaRepository adminJpa;
-    private final CmsEntityMapper           mapper;
+    private final BannerJpaRepository bannerJpa;
+    private final SedeJpaRepository   sedeJpa;
+    private final CmsEntityMapper     mapper;
 
     @Override
     public Optional<Banner> findById(Long id) {
@@ -44,11 +42,9 @@ public class BannerPersistenceAdapter implements BannerRepository {
     @Override
     @Transactional
     public Banner save(Banner b) {
-        var sede    = b.getIdSede() != null
+        var sede = b.getIdSede() != null
                 ? sedeJpa.findById(b.getIdSede()).orElse(null) : null;
-        var creador = b.getIdUsuarioCreador() != null
-                ? adminJpa.findById(b.getIdUsuarioCreador()).orElse(null) : null;
-        return mapper.toDomain(bannerJpa.save(mapper.toEntity(b, sede, creador)));
+        return mapper.toDomain(bannerJpa.save(mapper.toEntity(b, sede)));
     }
 
     @Override

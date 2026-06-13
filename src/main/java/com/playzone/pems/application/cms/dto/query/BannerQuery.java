@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder
@@ -28,7 +28,7 @@ public class BannerQuery {
     private int           prioridad;
     private boolean       soloMovil;
     private boolean       soloDesktop;
-    private LocalDateTime fechaCreacion;
+    private OffsetDateTime fechaCreacion;
 
     public static BannerQuery from(Banner b) {
         return BannerQuery.builder()

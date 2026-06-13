@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 public interface GestionarBannerUseCase {
 
@@ -25,7 +26,7 @@ public interface GestionarBannerUseCase {
             int       prioridad,
             boolean   soloMovil,
             boolean   soloDesktop,
-            Long      idUsuario
+            UUID      idUsuario
     ) {}
 
     record ActualizarCommand(
@@ -55,7 +56,7 @@ public interface GestionarBannerUseCase {
     List<BannerQuery> listarPublicos(Long idSede);
     void              activar(Long idBanner);
     void              desactivar(Long idBanner);
-    BannerQuery       duplicar(Long idBanner, Long idUsuario);
+    BannerQuery       duplicar(Long idBanner, UUID idUsuario);
     void              reordenar(ReordenarCommand command);
     void              eliminar(Long idBanner);
 }
