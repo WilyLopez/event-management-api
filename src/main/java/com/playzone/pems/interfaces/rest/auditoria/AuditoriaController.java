@@ -15,20 +15,21 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/auditoria")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class AuditoriaController {
 
     private final LogAuditoriaRepository logRepository;
 
     @GetMapping
+    @PreAuthorize("hasAuthority('auditoria.ver')")
     public ResponseEntity<ApiResponse<PagedResponse<LogAuditoriaResponse>>> listar(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime desde,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime hasta,
-            @RequestParam(required = false) Long   idUsuario,
+            @RequestParam(required = false) UUID   idUsuario,
             @RequestParam(required = false) String modulo,
             @RequestParam(required = false) String accion,
             @RequestParam(required = false) String entidad,
@@ -53,6 +54,7 @@ public class AuditoriaController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('auditoria.ver')")
     public ResponseEntity<ApiResponse<LogAuditoriaResponse>> obtener(@PathVariable Long id) {
         LogAuditoria log = logRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("LogAuditoria", id));
@@ -60,8 +62,9 @@ public class AuditoriaController {
     }
 
     @GetMapping("/usuarios/{idAdmin}")
+    @PreAuthorize("hasAuthority('auditoria.ver')")
     public ResponseEntity<ApiResponse<PagedResponse<LogAuditoriaResponse>>> listarPorUsuario(
-            @PathVariable Long idAdmin,
+            @PathVariable UUID idAdmin,
             @RequestParam(defaultValue = "0")  int pagina,
             @RequestParam(defaultValue = "20") int tamano) {
 

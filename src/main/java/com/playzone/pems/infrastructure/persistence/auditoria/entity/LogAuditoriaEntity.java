@@ -1,16 +1,16 @@
 package com.playzone.pems.infrastructure.persistence.auditoria.entity;
 
-import com.playzone.pems.infrastructure.persistence.usuario.entity.UsuarioAdminEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "logauditoria")
+@Table(name = "auditoria_log")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,12 +20,11 @@ public class LogAuditoriaEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idlog")
+    @Column(name = "id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "idusuarioadmin")
-    private UsuarioAdminEntity usuarioAdmin;
+    @Column(name = "usuario_id", columnDefinition = "uuid")
+    private UUID usuarioId;
 
     @Column(nullable = false, length = 40)
     private String accion;
@@ -33,27 +32,27 @@ public class LogAuditoriaEntity {
     @Column(nullable = false, length = 80)
     private String modulo;
 
-    @Column(name = "entidadafectada", nullable = false, length = 80)
+    @Column(name = "entidad", nullable = false, length = 80)
     private String entidadAfectada;
 
-    @Column(name = "identidad")
+    @Column(name = "entidad_id")
     private Long idEntidad;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "valoranterior", columnDefinition = "jsonb")
+    @Column(name = "valor_anterior", columnDefinition = "jsonb")
     private String valorAnterior;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "valornuevo", columnDefinition = "jsonb")
+    @Column(name = "valor_nuevo", columnDefinition = "jsonb")
     private String valorNuevo;
 
     @Column(length = 500)
     private String descripcion;
 
-    @Column(name = "iporigen", columnDefinition = "inet")
+    @Column(name = "ip_origen", columnDefinition = "inet")
     private String ipOrigen;
 
-    @Column(name = "useragent", length = 300)
+    @Column(name = "user_agent", length = 300)
     private String userAgent;
 
     @Column(nullable = false, length = 20)
@@ -65,6 +64,6 @@ public class LogAuditoriaEntity {
     private String resultado = "EXITOSO";
 
     @CreationTimestamp
-    @Column(name = "fechalog", nullable = false, updatable = false)
-    private LocalDateTime fechaLog;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime fechaLog;
 }

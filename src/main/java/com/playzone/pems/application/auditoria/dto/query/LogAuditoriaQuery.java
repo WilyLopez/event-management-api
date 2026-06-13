@@ -3,14 +3,15 @@ package com.playzone.pems.application.auditoria.dto.query;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder
 public class LogAuditoriaQuery {
 
     private final Long          id;
-    private final Long          idUsuarioAdmin;
+    private final UUID          idUsuarioAdmin;
     private final String        nombreUsuario;
     private final String        accion;
     private final String        modulo;
@@ -20,5 +21,5 @@ public class LogAuditoriaQuery {
     private final String        valorNuevo;
     private final String        descripcion;
     private final String        ipOrigen;
-    private final LocalDateTime timestamp;
+    private final OffsetDateTime timestamp;
 }

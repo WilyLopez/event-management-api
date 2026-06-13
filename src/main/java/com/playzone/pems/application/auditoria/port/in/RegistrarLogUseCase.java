@@ -1,9 +1,11 @@
 package com.playzone.pems.application.auditoria.port.in;
 
+import java.util.UUID;
+
 public interface RegistrarLogUseCase {
 
     record Command(
-            Long   idUsuarioAdmin,
+            UUID   idUsuarioAdmin,
             String accion,
             String modulo,
             String entidadAfectada,

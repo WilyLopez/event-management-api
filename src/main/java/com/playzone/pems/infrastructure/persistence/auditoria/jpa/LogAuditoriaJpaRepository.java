@@ -8,10 +8,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public interface LogAuditoriaJpaRepository extends JpaRepository<LogAuditoriaEntity, Long> {
 
-    Page<LogAuditoriaEntity> findByUsuarioAdmin_IdOrderByFechaLogDesc(Long idUsuarioAdmin, Pageable pageable);
+    Page<LogAuditoriaEntity> findByUsuarioIdOrderByFechaLogDesc(UUID usuarioId, Pageable pageable);
 
     Page<LogAuditoriaEntity> findByModuloAndEntidadAfectadaOrderByFechaLogDesc(
             String modulo, String entidad, Pageable pageable);
@@ -21,9 +22,8 @@ public interface LogAuditoriaJpaRepository extends JpaRepository<LogAuditoriaEnt
 
     @Query(value = """
             SELECT l FROM LogAuditoriaEntity l
-            LEFT JOIN FETCH l.usuarioAdmin u
             WHERE l.fechaLog BETWEEN :desde AND :hasta
-              AND (:idUsuario IS NULL OR u.id = :idUsuario)
+              AND (:idUsuario IS NULL OR l.usuarioId = :idUsuario)
               AND (:modulo   IS NULL OR LOWER(l.modulo) LIKE LOWER(CONCAT('%', :modulo, '%')))
               AND (:accion   IS NULL OR l.accion = :accion)
               AND (:entidad  IS NULL OR LOWER(l.entidadAfectada) LIKE LOWER(CONCAT('%', :entidad, '%')))
@@ -31,9 +31,8 @@ public interface LogAuditoriaJpaRepository extends JpaRepository<LogAuditoriaEnt
             """,
            countQuery = """
             SELECT COUNT(l) FROM LogAuditoriaEntity l
-            LEFT JOIN l.usuarioAdmin u
             WHERE l.fechaLog BETWEEN :desde AND :hasta
-              AND (:idUsuario IS NULL OR u.id = :idUsuario)
+              AND (:idUsuario IS NULL OR l.usuarioId = :idUsuario)
               AND (:modulo   IS NULL OR LOWER(l.modulo) LIKE LOWER(CONCAT('%', :modulo, '%')))
               AND (:accion   IS NULL OR l.accion = :accion)
               AND (:entidad  IS NULL OR LOWER(l.entidadAfectada) LIKE LOWER(CONCAT('%', :entidad, '%')))
@@ -41,7 +40,7 @@ public interface LogAuditoriaJpaRepository extends JpaRepository<LogAuditoriaEnt
     Page<LogAuditoriaEntity> findByFiltros(
             @Param("desde")     LocalDateTime desde,
             @Param("hasta")     LocalDateTime hasta,
-            @Param("idUsuario") Long idUsuario,
+            @Param("idUsuario") UUID idUsuario,
             @Param("modulo")    String modulo,
             @Param("accion")    String accion,
             @Param("entidad")   String entidad,
