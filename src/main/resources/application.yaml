@@ -32,6 +32,7 @@ spring:
       hibernate:
         format_sql: true
         default_schema: public
+        hbm2ddl.auto: none
         jdbc:
           time_zone: America/Lima
 
@@ -120,14 +121,26 @@ springdoc:
     try-it-out-enabled: true
   show-actuator: false
 
+supabase:
+  jwt:
+    issuer: ${SUPABASE_JWT_ISSUER:https://divljjsnorvkrgcznwlh.supabase.co/auth/v1}
+    jwks-url: ${SUPABASE_JWKS_URL:https://divljjsnorvkrgcznwlh.supabase.co/auth/v1/.well-known/jwks.json}
+  storage:
+    endpoint: ${SUPABASE_STORAGE_S3_ENDPOINT:https://divljjsnorvkrgcznwlh.supabase.co/storage/v1/s3}
+    access-key: ${SUPABASE_STORAGE_ACCESS_KEY:}
+    secret-key: ${SUPABASE_STORAGE_SECRET_KEY:}
+    region: ${SUPABASE_STORAGE_REGION:us-east-2}
+    bucket-publico: publico
+    bucket-privado: privado
+    bucket-comprobantes: comprobantes
+    url-publica: ${SUPABASE_STORAGE_URL_PUBLICA:https://divljjsnorvkrgcznwlh.supabase.co/storage/v1/object/public}
+    max-tamanio-mb: 10
+
 playzone:
 
   url-base: ${APP_URL:http://localhost:8080}
 
   seguridad:
-    jwt-secret: ${JWT_SECRET:W7kP9mN2xQzL4rT8uV1sB6cY3eH0jA5fG}
-    jwt-expiracion-ms: ${JWT_EXP_MS:1800000}
-    jwt-verificacion-expiracion-ms: ${JWT_VER_EXP_MS:86400000}
     max-intentos-login: 5
     duracion-bloqueo-min: 15
 
@@ -145,14 +158,6 @@ playzone:
   correo:
     nombre-remitente: ${MAIL_SENDER_NAME:Kiki y Lala}
 
-  storage:
-    access-key: ${STORAGE_ACCESS_KEY:minioadmin}
-    secret-key: ${STORAGE_SECRET_KEY:minioadmin}
-    region: ${STORAGE_REGION:us-east-1}
-    endpoint: ${STORAGE_ENDPOINT:http://localhost:9000}
-    bucket: ${STORAGE_BUCKET:playzone-media}
-    url-publica: ${STORAGE_URL_PUBLICA:http://localhost:9000/playzone-media}
-
   # SUNAT / Nubefact
   sunat:
     nubefact:
@@ -165,13 +170,6 @@ playzone:
     connect-timeout-ms: 5000
     read-timeout-ms: 10000
 
-storage:
-  tipo: ${STORAGE_TIPO:LOCAL}
-  local:
-    ruta-base: ${STORAGE_RUTA_BASE:uploads}
-    url-base: ${STORAGE_URL_BASE:/files}
-  max-tamanio-mb: 10
-
 logging:
   level:
     root: INFO
@@ -183,5 +181,4 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-  file:
-    name: logs/playzone-pems.log
+
