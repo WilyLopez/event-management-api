@@ -27,7 +27,6 @@ public class CalendarioEntityMapper {
                 .descripcion(e.getDescripcion())
                 .anio(e.getAnio())
                 .fechaCreacion(e.getFechaCreacion())
-                .idUsuarioCreador(e.getCreadoPor() != null ? e.getCreadoPor().getId() : null)
                 .build();
     }
 
@@ -40,22 +39,8 @@ public class CalendarioEntityMapper {
                 .fechaFin(e.getFechaFin())
                 .motivo(e.getMotivo())
                 .activo(e.isActivo())
-                .idUsuarioCreador(e.getUsuarioCreador().getId())
-                .fechaCreacion(e.getFechaCreacion())
-                .build();
-    }
-
-    public DisponibilidadDiaria toDomain(DisponibilidadDiariaEntity e) {
-        if (e == null) return null;
-        return DisponibilidadDiaria.builder()
-                .id(e.getId())
-                .idSede(e.getSede().getId())
-                .fecha(e.getFecha())
-                .accesoPublicoActivo(e.isAccesoPublicoActivo())
-                .turnoT1Disponible(e.isTurnoT1Disponible())
-                .turnoT2Disponible(e.isTurnoT2Disponible())
-                .aforoPublicoActual(e.getAforoPublicoActual())
-                .fechaActualizacion(e.getFechaActualizacion())
+                .idUsuarioCreador(e.getCreatedBy())
+                .fechaCreacion(e.getFechaCreacion() != null ? e.getFechaCreacion() : null)
                 .build();
     }
 
@@ -69,7 +54,6 @@ public class CalendarioEntityMapper {
                 .vigenciaDesde(e.getVigenciaDesde())
                 .vigenciaHasta(e.getVigenciaHasta())
                 .activo(e.isActivo())
-                .idUsuarioCreador(e.getUsuarioCreador().getId())
                 .fechaCreacion(e.getFechaCreacion())
                 .build();
     }

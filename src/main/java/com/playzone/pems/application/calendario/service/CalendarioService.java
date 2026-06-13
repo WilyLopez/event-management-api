@@ -5,20 +5,15 @@ import com.playzone.pems.application.calendario.dto.query.DisponibilidadQuery;
 import com.playzone.pems.application.calendario.port.in.BloquearFechasUseCase;
 import com.playzone.pems.application.calendario.port.in.ConsultarDisponibilidadUseCase;
 import com.playzone.pems.domain.calendario.exception.ConflictoActividadException;
-import com.playzone.pems.domain.calendario.exception.DisponibilidadNotFoundException;
 import com.playzone.pems.domain.calendario.model.BloqueCalendario;
 import com.playzone.pems.domain.calendario.model.ConfiguracionCalendario;
-import com.playzone.pems.domain.calendario.model.DisponibilidadDiaria;
 import com.playzone.pems.domain.calendario.model.Feriado;
 import com.playzone.pems.domain.calendario.model.OcupacionDia;
-import com.playzone.pems.domain.calendario.model.enums.TipoDia;
 import com.playzone.pems.domain.calendario.model.enums.TipoOcupacionDia;
 import com.playzone.pems.domain.calendario.repository.BloqueCalendarioRepository;
 import com.playzone.pems.domain.calendario.repository.ConfiguracionCalendarioRepository;
-import com.playzone.pems.domain.calendario.repository.DisponibilidadDiariaRepository;
 import com.playzone.pems.domain.calendario.repository.FeriadoRepository;
 import com.playzone.pems.domain.evento.model.EventoPrivado;
-import com.playzone.pems.domain.evento.model.ReservaPublica;
 import com.playzone.pems.domain.evento.repository.EventoPrivadoRepository;
 import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
 import com.playzone.pems.shared.exception.ValidationException;
@@ -27,13 +22,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -41,7 +35,6 @@ public class CalendarioService
         implements ConsultarDisponibilidadUseCase,
         BloquearFechasUseCase {
 
-    private final DisponibilidadDiariaRepository       disponibilidadRepository;
     private final BloqueCalendarioRepository           bloqueRepository;
     private final FeriadoRepository                    feriadoRepository;
     private final ReservaPublicaRepository             reservaRepository;
@@ -127,48 +120,94 @@ public class CalendarioService
     @Override
     @Transactional(readOnly = true)
     public DisponibilidadQuery consultarPorFecha(Long idSede, LocalDate fecha) {
-        DisponibilidadDiaria disp = disponibilidadRepository
-                .findBySedeAndFecha(idSede, fecha)
-                .orElseGet(() -> buildDefaultDisponibilidad(idSede, fecha));
-
         ConfiguracionCalendario cfg = configRepository.obtener(idSede);
+
+        var feriadoOpt = feriadoRepository.findByFecha(fecha);
+        boolean esFeriado = feriadoOpt.isPresent();
+        String descripcionFeriado = feriadoOpt.map(Feriado::getDescripcion).orElse(null);
+
+        boolean bloqueado = bloqueRepository.existsBloqueActivoEnFecha(idSede, fecha);
+        String motivoBloqueo = null;
+        if (bloqueado) {
+            motivoBloqueo = bloqueRepository.findActivosBySede(idSede).stream()
+                    .filter(b -> b.comprendeFecha(fecha))
+                    .findFirst()
+                    .map(BloqueCalendario::getMotivo)
+                    .orElse(null);
+        }
+
         OcupacionDia oc = ocupacionDia(idSede, fecha);
+        boolean diaOperacion = esDiaOperacion(cfg, fecha);
 
-        Feriado feriado     = feriadoRepository.findByFecha(fecha).orElse(null);
-        boolean esFeriado   = feriado != null;
-        String  descFeriado = esFeriado ? feriado.getDescripcion() : null;
+        int aforoActual = reservaRepository.countActivasBySedeAndFecha(idSede, fecha);
+        int aforoMax = cfg.getAforoMaximo();
+        int plazas = Math.max(0, aforoMax - aforoActual);
 
-        return buildQuery(disp, cfg, oc, esFeriado, descFeriado, fecha);
+        List<EventoPrivado> eventos = eventoRepository.findActivosBySedeAndFecha(idSede, fecha);
+
+        BigDecimal ingresoEstimado = reservaRepository.sumIngresosBySedeAndFecha(idSede, fecha);
+
+        int pct = aforoMax > 0 ? Math.min(100, aforoActual * 100 / aforoMax) : 0;
+
+        String tipoDia;
+        if (esFeriado) tipoDia = "FERIADO";
+        else if (bloqueado) tipoDia = "BLOQUEADO";
+        else if (!diaOperacion) tipoDia = "NO_LABORABLE";
+        else tipoDia = "LABORABLE";
+
+        boolean disponiblePublico = diaOperacion && !esFeriado && !bloqueado
+                && oc.getTipo() != TipoOcupacionDia.PRIVADO_PARCIAL
+                && oc.getTipo() != TipoOcupacionDia.PRIVADO_LLENO
+                && aforoActual < aforoMax;
+
+        boolean disponiblePrivado = diaOperacion && !esFeriado && !bloqueado
+                && oc.getTipo() != TipoOcupacionDia.PUBLICO;
+
+        return DisponibilidadQuery.builder()
+                .idSede(idSede)
+                .fecha(fecha)
+                .tipoDia(tipoDia)
+                .esFeriado(esFeriado)
+                .descripcionFeriado(descripcionFeriado)
+                .accesoPublicoActivo(diaOperacion && !esFeriado && !bloqueado)
+                .turnoT1Disponible(!oc.isTurnoT1Ocupado() && diaOperacion && !esFeriado && !bloqueado)
+                .turnoT2Disponible(!oc.isTurnoT2Ocupado() && diaOperacion && !esFeriado && !bloqueado)
+                .aforoPublicoActual(aforoActual)
+                .aforoMaximo(aforoMax)
+                .plazasDisponibles(plazas)
+                .aforoCompleto(aforoActual >= aforoMax)
+                .bloqueadoManualmente(bloqueado)
+                .tipoBloqueo(bloqueado ? "MANUAL" : null)
+                .motivoBloqueo(motivoBloqueo)
+                .totalReservas(aforoActual)
+                .totalEventos(eventos.size())
+                .ingresoEstimado(ingresoEstimado)
+                .tieneNotas(false)
+                .ocupacionPorcentaje(pct)
+                .tipoOcupacion(oc.getTipo().name())
+                .disponiblePublico(disponiblePublico)
+                .disponiblePrivado(disponiblePrivado)
+                .turnoT1Ocupado(oc.isTurnoT1Ocupado())
+                .turnoT2Ocupado(oc.isTurnoT2Ocupado())
+                .tituloEventoT1(oc.getTituloEventoT1())
+                .idEventoT1(oc.getIdEventoT1())
+                .tituloEventoT2(oc.getTituloEventoT2())
+                .idEventoT2(oc.getIdEventoT2())
+                .tituloEvento(eventos.size() == 1 ? eventos.get(0).getTipoEvento() : null)
+                .idEvento(eventos.size() == 1 ? eventos.get(0).getId() : null)
+                .build();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<DisponibilidadQuery> consultarRango(Long idSede, LocalDate inicio, LocalDate fin) {
-        ConfiguracionCalendario cfg = configRepository.obtener(idSede);
-
-        List<DisponibilidadDiaria> existentes = disponibilidadRepository
-                .findBySedeAndFechasBetween(idSede, inicio, fin);
-        Map<LocalDate, DisponibilidadDiaria> dispMap = existentes.stream()
-                .collect(Collectors.toMap(DisponibilidadDiaria::getFecha, d -> d));
-
-        Map<LocalDate, String> feriadosMap = feriadoRepository.findByFechaBetween(inicio, fin).stream()
-                .collect(Collectors.toMap(
-                        Feriado::getFecha,
-                        f -> f.getDescripcion() != null ? f.getDescripcion() : "Feriado",
-                        (a, b) -> a));
-
-        List<DisponibilidadQuery> result = new ArrayList<>();
+        List<DisponibilidadQuery> resultado = new ArrayList<>();
         LocalDate current = inicio;
         while (!current.isAfter(fin)) {
-            DisponibilidadDiaria d = dispMap.getOrDefault(current, buildDefaultDisponibilidad(idSede, current));
-            OcupacionDia oc       = ocupacionDia(idSede, current);
-            boolean esFeriado     = feriadosMap.containsKey(current);
-            String  descFeriado   = feriadosMap.get(current);
-
-            result.add(buildQuery(d, cfg, oc, esFeriado, descFeriado, current));
+            resultado.add(consultarPorFecha(idSede, current));
             current = current.plusDays(1);
         }
-        return result;
+        return resultado;
     }
 
     @Override
@@ -235,74 +274,5 @@ public class CalendarioService
     private String obtenerCodigoTurno(EventoPrivado e) {
         if (e.getCodigoTurno() != null) return e.getCodigoTurno();
         return null;
-    }
-
-    private DisponibilidadDiaria buildDefaultDisponibilidad(Long idSede, LocalDate fecha) {
-        return DisponibilidadDiaria.builder()
-                .idSede(idSede)
-                .fecha(fecha)
-                .accesoPublicoActivo(true)
-                .turnoT1Disponible(true)
-                .turnoT2Disponible(true)
-                .aforoPublicoActual(0)
-                .build();
-    }
-
-    private TipoDia resolverTipoDia(LocalDate fecha, boolean esFeriado) {
-        return (FechaUtil.esFindeSemana(fecha) || esFeriado)
-                ? TipoDia.FIN_SEMANA_FERIADO
-                : TipoDia.SEMANA;
-    }
-
-    private DisponibilidadQuery buildQuery(
-            DisponibilidadDiaria d,
-            ConfiguracionCalendario cfg,
-            OcupacionDia oc,
-            boolean esFeriado,
-            String descripcionFeriado,
-            LocalDate fecha) {
-
-        LocalDate hoy = FechaUtil.hoy();
-
-        LocalDate limite = hoy.plusDays(cfg.getDiasMaxReservaPublica());
-        boolean disponiblePublico = disponibleParaReservaPublica(d.getIdSede(), fecha);
-        boolean turnoT1Disponible = disponibleParaEventoPrivado(d.getIdSede(), fecha, "T1");
-        boolean turnoT2Disponible = disponibleParaEventoPrivado(d.getIdSede(), fecha, "T2");
-
-        int totalReservas = oc.getCantidadReservas();
-        int totalEventos  = (oc.getTipo() == TipoOcupacionDia.PRIVADO_PARCIAL ? 1 :
-                             oc.getTipo() == TipoOcupacionDia.PRIVADO_LLENO   ? 2 : 0);
-
-        int pct = cfg.getAforoMaximo() > 0
-                ? Math.min(100, (int) Math.round(totalReservas * 100.0 / cfg.getAforoMaximo()))
-                : 0;
-
-        return DisponibilidadQuery.builder()
-                .idSede(d.getIdSede())
-                .fecha(fecha)
-                .tipoDia(resolverTipoDia(fecha, esFeriado).getCodigo())
-                .esFeriado(esFeriado)
-                .descripcionFeriado(descripcionFeriado)
-                .accesoPublicoActivo(d.isAccesoPublicoActivo())
-                .turnoT1Disponible(turnoT1Disponible)
-                .turnoT2Disponible(turnoT2Disponible)
-                .aforoPublicoActual(totalReservas)
-                .aforoMaximo(cfg.getAforoMaximo())
-                .plazasDisponibles(Math.max(0, cfg.getAforoMaximo() - totalReservas))
-                .aforoCompleto(totalReservas >= cfg.getAforoMaximo())
-                .bloqueadoManualmente(oc.getTipo() == TipoOcupacionDia.BLOQUEADO)
-                .totalReservas(totalReservas)
-                .totalEventos(totalEventos)
-                .ocupacionPorcentaje(pct)
-                .tipoOcupacion(oc.getTipo().name())
-                .disponiblePublico(disponiblePublico)
-                .disponiblePrivado(turnoT1Disponible || turnoT2Disponible)
-                .turnoT1Ocupado(oc.isTurnoT1Ocupado())
-                .turnoT2Ocupado(oc.isTurnoT2Ocupado())
-                .tituloEventoT1(oc.getTituloEventoT1())
-                .idEventoT1(oc.getIdEventoT1())
-                .tituloEventoT2(oc.getTituloEventoT2())
-                .idEventoT2(oc.getIdEventoT2())
-                .build();
     }
 }

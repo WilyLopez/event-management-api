@@ -7,6 +7,7 @@ import com.playzone.pems.application.calendario.port.in.BloquearFechasUseCase;
 import com.playzone.pems.application.calendario.port.in.ConsultarDisponibilidadUseCase;
 import com.playzone.pems.application.calendario.port.in.ConsultarResumenDiaUseCase;
 import com.playzone.pems.domain.calendario.repository.TurnoRepository;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.interfaces.rest.calendario.request.BloquearFechasRequest;
 import com.playzone.pems.interfaces.rest.calendario.response.DisponibilidadResponse;
 import com.playzone.pems.interfaces.rest.calendario.response.ResumenDiaResponse;
@@ -31,6 +32,7 @@ public class CalendarioController {
     private final ConsultarResumenDiaUseCase     resumenDiaUseCase;
     private final BloquearFechasUseCase          bloquearUseCase;
     private final TurnoRepository                turnoRepository;
+    private final SupabaseAuthFacade             supabaseAuthFacade;
 
     @GetMapping("/sedes/{idSede}/turnos")
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> listarTurnos(
@@ -73,7 +75,7 @@ public class CalendarioController {
     }
 
     @GetMapping("/sedes/{idSede}/resumen-dia")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('calendario.ver')")
     public ResponseEntity<ApiResponse<ResumenDiaResponse>> resumenDia(
             @PathVariable Long idSede,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
@@ -84,16 +86,15 @@ public class CalendarioController {
     }
 
     @PostMapping("/sedes/{idSede}/bloqueos")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('calendario.bloquear')")
     public ResponseEntity<ApiResponse<Void>> bloquearFechas(
             @PathVariable Long idSede,
             @Valid @RequestBody BloquearFechasRequest request,
-            @RequestParam(defaultValue = "false") boolean confirmado,
-            @RequestAttribute Long idUsuarioAdmin) {
+            @RequestParam(defaultValue = "false") boolean confirmado) {
 
         bloquearUseCase.ejecutar(BloquearFechasCommand.builder()
                 .idSede(idSede)
-                .idUsuarioAdmin(idUsuarioAdmin)
+                .idUsuarioAdmin(supabaseAuthFacade.usuarioActualId().orElseThrow())
                 .fechaInicio(request.getFechaInicio())
                 .fechaFin(request.getFechaFin())
                 .tipoBloqueo(request.getTipoBloqueo())
@@ -105,7 +106,7 @@ public class CalendarioController {
     }
 
     @DeleteMapping("/bloqueos/{idBloque}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('calendario.bloquear')")
     public ResponseEntity<ApiResponse<Void>> desactivarBloqueo(
             @PathVariable Long idBloque) {
 

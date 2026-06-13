@@ -6,7 +6,6 @@ import com.playzone.pems.infrastructure.persistence.calendario.entity.BloqueCale
 import com.playzone.pems.infrastructure.persistence.calendario.jpa.BloqueCalendarioJpaRepository;
 import com.playzone.pems.infrastructure.persistence.calendario.mapper.CalendarioEntityMapper;
 import com.playzone.pems.infrastructure.persistence.usuario.jpa.SedeJpaRepository;
-import com.playzone.pems.infrastructure.persistence.usuario.jpa.UsuarioAdminJpaRepository;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -22,7 +21,6 @@ public class BloqueCalendarioPersistenceAdapter implements BloqueCalendarioRepos
 
     private final BloqueCalendarioJpaRepository bloqueJpa;
     private final SedeJpaRepository             sedeJpa;
-    private final UsuarioAdminJpaRepository     adminJpa;
     private final CalendarioEntityMapper        mapper;
 
     @Override
@@ -50,8 +48,6 @@ public class BloqueCalendarioPersistenceAdapter implements BloqueCalendarioRepos
     public BloqueCalendario save(BloqueCalendario bloque) {
         var sede = sedeJpa.findById(bloque.getIdSede())
                 .orElseThrow(() -> new ResourceNotFoundException("Sede", bloque.getIdSede()));
-        var creador = adminJpa.findById(bloque.getIdUsuarioCreador())
-                .orElseThrow(() -> new ResourceNotFoundException("UsuarioAdmin", bloque.getIdUsuarioCreador()));
 
         BloqueCalendarioEntity entity = BloqueCalendarioEntity.builder()
                 .id(bloque.getId())
@@ -60,7 +56,7 @@ public class BloqueCalendarioPersistenceAdapter implements BloqueCalendarioRepos
                 .fechaFin(bloque.getFechaFin())
                 .motivo(bloque.getMotivo())
                 .activo(bloque.isActivo())
-                .usuarioCreador(creador)
+                .createdBy(bloque.getIdUsuarioCreador())
                 .build();
 
         return mapper.toDomain(bloqueJpa.save(entity));

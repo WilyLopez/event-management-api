@@ -22,7 +22,7 @@ public class ConfiguracionCalendarioController {
     private final ConfiguracionCalendarioUseCase configuracionUseCase;
 
     @GetMapping("/configuracion/sedes/{idSede}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('calendario.configurar')")
     public ResponseEntity<ApiResponse<ConfiguracionResponse>> obtener(@PathVariable Long idSede) {
         ConfiguracionCalendario cfg = configuracionUseCase.obtener(idSede);
         return ResponseEntity.ok(ApiResponse.ok(toResponse(cfg)));
@@ -35,7 +35,7 @@ public class ConfiguracionCalendarioController {
     }
 
     @PutMapping("/configuracion/sedes/{idSede}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('calendario.configurar')")
     public ResponseEntity<ApiResponse<ConfiguracionResponse>> actualizar(
             @PathVariable Long idSede,
             @Valid @RequestBody ActualizarConfiguracionRequest request) {

@@ -34,7 +34,6 @@ public class FeriadoService implements GestionarFeriadoUseCase {
                 .fecha(command.fecha())
                 .descripcion(command.descripcion())
                 .anio(command.fecha().getYear())
-                .idUsuarioCreador(command.idUsuario())
                 .build();
 
         return feriadoRepository.save(feriado);

@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Getter
 @Builder
@@ -17,7 +18,7 @@ public class BloquearFechasCommand {
     private final Long idSede;
 
     @NotNull
-    private final Long idUsuarioAdmin;
+    private final UUID idUsuarioAdmin;
 
     @NotNull
     @FutureOrPresent

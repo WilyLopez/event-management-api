@@ -2,18 +2,17 @@ package com.playzone.pems.infrastructure.persistence.calendario.entity;
 
 import com.playzone.pems.domain.calendario.model.enums.TipoDia;
 import com.playzone.pems.infrastructure.persistence.usuario.entity.SedeEntity;
-import com.playzone.pems.infrastructure.persistence.usuario.entity.UsuarioAdminEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "tarifa",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"idsede", "idtipodiacod", "vigenciadesde"}))
+        uniqueConstraints = @UniqueConstraint(columnNames = {"sede_id", "tipo_dia_codigo", "vigencia_desde"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -23,34 +22,29 @@ public class TarifaEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idtarifa")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "idsede", nullable = false)
+    @JoinColumn(name = "sede_id", nullable = false)
     private SedeEntity sede;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "idtipodiacod", nullable = false, length = 30)
+    @Column(name = "tipo_dia_codigo", nullable = false, length = 30)
     private TipoDia tipoDia;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal precio;
 
-    @Column(name = "vigenciadesde", nullable = false)
+    @Column(name = "vigencia_desde", nullable = false)
     private LocalDate vigenciaDesde;
 
-    @Column(name = "vigenciahasta")
+    @Column(name = "vigencia_hasta")
     private LocalDate vigenciaHasta;
 
-    @Column(nullable = false)
-    private boolean activo = true;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "idusuariocreador", nullable = false)
-    private UsuarioAdminEntity usuarioCreador;
+    @Column(name = "es_activo", nullable = false)
+    private boolean activo;
 
     @CreationTimestamp
-    @Column(name = "fechacreacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime fechaCreacion;
 }

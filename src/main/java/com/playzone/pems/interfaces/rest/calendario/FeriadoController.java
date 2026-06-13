@@ -19,23 +19,23 @@ import java.time.LocalDate;
 @RestController
 @RequestMapping("/api/v1/feriados")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class FeriadoController {
 
     private final GestionarFeriadoUseCase gestionarUseCase;
 
     @PostMapping
+    @PreAuthorize("hasAuthority('calendario.feriado')")
     public ResponseEntity<ApiResponse<Void>> crear(
-            @RequestBody CrearFeriadoRequest request,
-            @RequestAttribute Long idUsuarioAdmin) {
+            @RequestBody CrearFeriadoRequest request) {
 
         gestionarUseCase.crear(new GestionarFeriadoUseCase.CrearCommand(
-                request.getTipoFeriado(), request.getFecha(), request.getDescripcion(), idUsuarioAdmin));
+                request.getTipoFeriado(), request.getFecha(), request.getDescripcion()));
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.noContent());
     }
 
     @DeleteMapping("/{idFeriado}")
+    @PreAuthorize("hasAuthority('calendario.feriado')")
     public ResponseEntity<ApiResponse<Void>> eliminar(@PathVariable Long idFeriado) {
         gestionarUseCase.eliminar(idFeriado);
         return ResponseEntity.ok(ApiResponse.noContent());

@@ -5,7 +5,6 @@ import com.playzone.pems.domain.calendario.repository.FeriadoRepository;
 import com.playzone.pems.infrastructure.persistence.calendario.entity.FeriadoEntity;
 import com.playzone.pems.infrastructure.persistence.calendario.jpa.FeriadoJpaRepository;
 import com.playzone.pems.infrastructure.persistence.calendario.mapper.CalendarioEntityMapper;
-import com.playzone.pems.infrastructure.persistence.usuario.jpa.UsuarioAdminJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +18,6 @@ import java.util.Optional;
 public class FeriadoPersistenceAdapter implements FeriadoRepository {
 
     private final FeriadoJpaRepository   feriadoJpa;
-    private final UsuarioAdminJpaRepository adminJpa;
     private final CalendarioEntityMapper mapper;
 
     @Override
@@ -45,16 +43,12 @@ public class FeriadoPersistenceAdapter implements FeriadoRepository {
     @Override
     @Transactional
     public Feriado save(Feriado feriado) {
-        var creador = feriado.getIdUsuarioCreador() != null
-                ? adminJpa.findById(feriado.getIdUsuarioCreador()).orElse(null) : null;
-
         FeriadoEntity entity = FeriadoEntity.builder()
                 .id(feriado.getId())
                 .tipoFeriado(feriado.getTipoFeriado())
                 .fecha(feriado.getFecha())
                 .descripcion(feriado.getDescripcion())
                 .anio(feriado.getFecha().getYear())
-                .creadoPor(creador)
                 .build();
 
         return mapper.toDomain(feriadoJpa.save(entity));

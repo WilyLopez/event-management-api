@@ -26,7 +26,6 @@ import java.time.LocalDate;
 @RestController
 @RequestMapping("/api/v1/tarifas")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class TarifaController {
 
     private final ConfigurarTarifaUseCase configurarUseCase;
@@ -55,10 +54,10 @@ public class TarifaController {
     }
 
     @PostMapping("/sedes/{idSede}")
+    @PreAuthorize("hasAuthority('tarifa.gestionar')")
     public ResponseEntity<ApiResponse<Void>> configurar(
             @PathVariable Long idSede,
-            @Valid @RequestBody ConfigurarTarifaRequest request,
-            @RequestAttribute Long idUsuarioAdmin) {
+            @Valid @RequestBody ConfigurarTarifaRequest request) {
 
         configurarUseCase.ejecutar(ConfigurarTarifaCommand.builder()
                 .idSede(idSede)
