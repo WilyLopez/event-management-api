@@ -1,26 +1,14 @@
 package com.playzone.pems.infrastructure.persistence.contrato.entity;
 
-import com.playzone.pems.infrastructure.persistence.usuario.entity.UsuarioAdminEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.persistence.*;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "actividadcontrato")
+@Table(name = "contrato_actividad")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -30,24 +18,23 @@ public class ActividadContratoEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idactividad")
+    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "idcontrato", nullable = false)
+    @JoinColumn(name = "contrato_id", nullable = false)
     private ContratoEntity contrato;
 
-    @Column(nullable = false, length = 80)
+    @Column(name = "accion", nullable = false)
     private String accion;
 
-    @Column(length = 400)
+    @Column(name = "descripcion")
     private String descripcion;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "idusuario")
-    private UsuarioAdminEntity usuario;
+    @Column(name = "usuario_id", columnDefinition = "uuid")
+    private UUID usuarioId;
 
     @CreationTimestamp
-    @Column(name = "fechaaccion", nullable = false, updatable = false)
-    private LocalDateTime fechaAccion;
+    @Column(name = "accion_at", nullable = false, updatable = false)
+    private OffsetDateTime fechaAccion;
 }

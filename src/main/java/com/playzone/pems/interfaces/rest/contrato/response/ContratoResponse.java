@@ -6,7 +6,7 @@ import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Getter
@@ -24,8 +24,8 @@ public class ContratoResponse {
     private String      plantilla;
     private String      observaciones;
     private int         version;
-    private LocalDateTime fechaCreacion;
-    private LocalDateTime fechaActualizacion;
+    private OffsetDateTime fechaCreacion;
+    private OffsetDateTime fechaActualizacion;
 
     private String      nombreCliente;
     private String      correoCliente;
@@ -49,7 +49,7 @@ public class ContratoResponse {
         private String        tipoArchivo;
         private Long          tamanobytes;
         private String        usuarioCarga;
-        private LocalDateTime fechaCarga;
+        private OffsetDateTime fechaCarga;
     }
 
     @Getter
@@ -59,6 +59,6 @@ public class ContratoResponse {
         private String        accion;
         private String        descripcion;
         private String        usuario;
-        private LocalDateTime fechaAccion;
+        private OffsetDateTime fechaAccion;
     }
 }

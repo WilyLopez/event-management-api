@@ -15,7 +15,6 @@ import com.playzone.pems.application.contrato.port.in.GenerarContratoUseCase;
 import com.playzone.pems.application.contrato.port.in.ListarContratosUseCase;
 import com.playzone.pems.application.contrato.port.in.ObtenerContratoUseCase;
 import com.playzone.pems.application.contrato.port.in.SubirDocumentoContratoUseCase;
-import com.playzone.pems.application.contrato.port.out.GenerarPdfContratoPort;
 import com.playzone.pems.domain.contrato.exception.ContratoNotFoundException;
 import com.playzone.pems.domain.contrato.model.ActividadContrato;
 import com.playzone.pems.domain.contrato.model.Contrato;
@@ -24,6 +23,7 @@ import com.playzone.pems.domain.contrato.model.enums.EstadoContrato;
 import com.playzone.pems.domain.contrato.repository.ActividadContratoRepository;
 import com.playzone.pems.domain.contrato.repository.ContratoRepository;
 import com.playzone.pems.domain.contrato.repository.DocumentoContratoRepository;
+import com.playzone.pems.domain.storage.StoragePort;
 import com.playzone.pems.shared.exception.ValidationException;
 import com.playzone.pems.shared.util.FechaUtil;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +32,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -45,10 +49,12 @@ public class ContratoService
                    CambiarEstadoContratoUseCase,
                    SubirDocumentoContratoUseCase {
 
-    private final ContratoRepository           contratoRepository;
-    private final DocumentoContratoRepository  documentoRepository;
-    private final ActividadContratoRepository  actividadRepository;
-    private final GenerarPdfContratoPort       pdfPort;
+    private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+
+    private final ContratoRepository          contratoRepository;
+    private final DocumentoContratoRepository documentoRepository;
+    private final ActividadContratoRepository actividadRepository;
+    private final StoragePort                 storagePort;
 
     @Override
     @Transactional
@@ -85,7 +91,9 @@ public class ContratoService
             throw new ValidationException("El contrato ya fue firmado y no puede modificarse.");
         }
 
-        String pdfUrl = pdfPort.generarYAlmacenar(idContrato, contrato.getContenidoTexto());
+        byte[] pdf = contrato.getContenidoTexto().getBytes(StandardCharsets.UTF_8);
+        String key = "contratos/contrato_" + idContrato + "_" + LocalDateTime.now().format(FMT) + ".pdf";
+        String pdfUrl = storagePort.upload("privado", key, pdf, "application/pdf");
 
         Contrato firmado = contratoRepository.save(contrato.toBuilder()
                 .estado(EstadoContrato.FIRMADO)
@@ -212,7 +220,7 @@ public class ContratoService
     }
 
     private void registrarActividad(
-            Long idContrato, String accion, String descripcion, Long idUsuario) {
+            Long idContrato, String accion, String descripcion, UUID idUsuario) {
         actividadRepository.save(ActividadContrato.builder()
                 .idContrato(idContrato)
                 .accion(accion)

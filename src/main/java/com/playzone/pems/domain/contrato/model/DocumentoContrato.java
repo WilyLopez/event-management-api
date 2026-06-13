@@ -5,7 +5,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder(toBuilder = true)
@@ -19,7 +20,7 @@ public class DocumentoContrato {
     private String        archivoUrl;
     private String        tipoArchivo;
     private Long          tamanobytes;
-    private Long          idUsuarioCarga;
+    private UUID          idUsuarioCarga;
     private String        nombreUsuarioCarga;
-    private LocalDateTime fechaCarga;
+    private OffsetDateTime fechaCarga;
 }

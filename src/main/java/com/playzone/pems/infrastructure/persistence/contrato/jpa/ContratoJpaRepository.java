@@ -18,9 +18,7 @@ public interface ContratoJpaRepository extends JpaRepository<ContratoEntity, Lon
 
     @Query("SELECT c FROM ContratoEntity c " +
            "JOIN c.eventoPrivado e " +
-           "JOIN e.cliente cl " +
-           "WHERE (CAST(:search AS string) IS NULL OR LOWER(cl.nombre) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) OR LOWER(cl.correo) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))) " +
-           "AND (:estado IS NULL OR c.estado = :estado) " +
+           "WHERE (:estado IS NULL OR c.estado = :estado) " +
            "AND (:idSede IS NULL OR e.sede.id = :idSede)")
     Page<ContratoEntity> buscarConFiltros(
             @Param("search") String search,

@@ -5,7 +5,6 @@ import com.playzone.pems.domain.contrato.repository.DocumentoContratoRepository;
 import com.playzone.pems.infrastructure.persistence.contrato.jpa.ContratoJpaRepository;
 import com.playzone.pems.infrastructure.persistence.contrato.jpa.DocumentoContratoJpaRepository;
 import com.playzone.pems.infrastructure.persistence.contrato.mapper.DocumentoContratoMapper;
-import com.playzone.pems.infrastructure.persistence.usuario.jpa.UsuarioAdminJpaRepository;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -20,7 +19,6 @@ public class DocumentoContratoPersistenceAdapter implements DocumentoContratoRep
 
     private final DocumentoContratoJpaRepository jpa;
     private final ContratoJpaRepository          contratoJpa;
-    private final UsuarioAdminJpaRepository      adminJpa;
     private final DocumentoContratoMapper        mapper;
 
     @Override
@@ -42,10 +40,7 @@ public class DocumentoContratoPersistenceAdapter implements DocumentoContratoRep
         var contrato = contratoJpa.findById(documento.getIdContrato())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Contrato", documento.getIdContrato()));
-        var usuario = adminJpa.findById(documento.getIdUsuarioCarga())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "UsuarioAdmin", documento.getIdUsuarioCarga()));
-        return mapper.toDomain(jpa.save(mapper.toEntity(documento, contrato, usuario)));
+        return mapper.toDomain(jpa.save(mapper.toEntity(documento, contrato)));
     }
 
     @Override

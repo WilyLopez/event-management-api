@@ -1,26 +1,31 @@
 package com.playzone.pems.infrastructure.persistence.contrato.mapper;
 
 import com.playzone.pems.domain.contrato.model.Contrato;
-import com.playzone.pems.domain.contrato.model.ContratoProveedor;
+import com.playzone.pems.domain.usuario.model.ClientePerfil;
+import com.playzone.pems.domain.usuario.repository.ClientePerfilRepository;
+import com.playzone.pems.domain.usuario.repository.PerfilUsuarioRepository;
 import com.playzone.pems.infrastructure.persistence.contrato.entity.ContratoEntity;
-import com.playzone.pems.infrastructure.persistence.contrato.entity.ContratoProveedorEntity;
 import com.playzone.pems.infrastructure.persistence.evento.entity.EventoPrivadoEntity;
-import com.playzone.pems.infrastructure.persistence.proveedor.entity.ProveedorEntity;
-import com.playzone.pems.infrastructure.persistence.usuario.entity.UsuarioAdminEntity;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+
 @Component
+@RequiredArgsConstructor
 public class ContratoEntityMapper {
+
+    private final ClientePerfilRepository  clientePerfilRepository;
+    private final PerfilUsuarioRepository  perfilUsuarioRepository;
 
     public Contrato toDomain(ContratoEntity e) {
         if (e == null) return null;
         var ev = e.getEventoPrivado();
-        var cl = ev.getCliente();
-        
-        java.math.BigDecimal saldo = java.math.BigDecimal.ZERO;
+
+        BigDecimal saldo = BigDecimal.ZERO;
         if (ev.getPrecioTotalContrato() != null) {
             saldo = ev.getPrecioTotalContrato().subtract(
-                ev.getMontoAdelanto() != null ? ev.getMontoAdelanto() : java.math.BigDecimal.ZERO);
+                ev.getMontoAdelanto() != null ? ev.getMontoAdelanto() : BigDecimal.ZERO);
         }
 
         return Contrato.builder()
@@ -30,13 +35,18 @@ public class ContratoEntityMapper {
                 .contenidoTexto(e.getContenidoTexto())
                 .archivoPdfUrl(e.getArchivoPdfUrl())
                 .fechaFirma(e.getFechaFirma())
-                .idUsuarioRedactor(e.getUsuarioRedactor().getId())
-                .usuarioRedactor(e.getUsuarioRedactor().getNombre())
+                .idUsuarioRedactor(e.getRedactorId())
+                .usuarioRedactor(e.getRedactorId() != null
+                        ? perfilUsuarioRepository.buscarPorId(e.getRedactorId())
+                                .map(u -> u.getNombreCompleto()).orElse(null)
+                        : null)
                 .plantilla(e.getPlantilla())
                 .observaciones(e.getObservaciones())
                 .version(e.getVersion())
-                .nombreCliente(cl.getNombre())
-                .correoCliente(cl.getCorreo())
+                .nombreCliente(clientePerfilRepository.buscarPorId(ev.getClienteId())
+                        .map(ClientePerfil::nombreCompleto).orElse(null))
+                .correoCliente(clientePerfilRepository.buscarPorId(ev.getClienteId())
+                        .map(ClientePerfil::getCorreo).orElse(null))
                 .tipoEvento(ev.getTipoEvento())
                 .fechaEvento(ev.getFechaEvento())
                 .turno(ev.getTurno().getNombre())
@@ -49,9 +59,7 @@ public class ContratoEntityMapper {
                 .build();
     }
 
-    public ContratoEntity toEntity(Contrato d,
-                                   EventoPrivadoEntity evento,
-                                   UsuarioAdminEntity redactor) {
+    public ContratoEntity toEntity(Contrato d, EventoPrivadoEntity evento) {
         if (d == null) return null;
         return ContratoEntity.builder()
                 .id(d.getId())
@@ -60,36 +68,10 @@ public class ContratoEntityMapper {
                 .contenidoTexto(d.getContenidoTexto())
                 .archivoPdfUrl(d.getArchivoPdfUrl())
                 .fechaFirma(d.getFechaFirma())
-                .usuarioRedactor(redactor)
+                .redactorId(d.getIdUsuarioRedactor())
                 .plantilla(d.getPlantilla())
                 .observaciones(d.getObservaciones())
                 .version(d.getVersion())
-                .build();
-    }
-
-    public ContratoProveedor toDomain(ContratoProveedorEntity e) {
-        if (e == null) return null;
-        return ContratoProveedor.builder()
-                .id(e.getId())
-                .idContrato(e.getContrato().getId())
-                .idProveedor(e.getProveedor().getId())
-                .servicioDescripcion(e.getServicioDescripcion())
-                .montoAcordado(e.getMontoAcordado())
-                .contratadoPor(e.getContratadoPor())
-                .build();
-    }
-
-    public ContratoProveedorEntity toEntity(ContratoProveedor d,
-                                            ContratoEntity contrato,
-                                            ProveedorEntity proveedor) {
-        if (d == null) return null;
-        return ContratoProveedorEntity.builder()
-                .id(d.getId())
-                .contrato(contrato)
-                .proveedor(proveedor)
-                .servicioDescripcion(d.getServicioDescripcion())
-                .montoAcordado(d.getMontoAcordado())
-                .contratadoPor(d.getContratadoPor())
                 .build();
     }
 }

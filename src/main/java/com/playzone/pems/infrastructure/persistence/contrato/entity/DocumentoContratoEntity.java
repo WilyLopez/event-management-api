@@ -1,26 +1,14 @@
 package com.playzone.pems.infrastructure.persistence.contrato.entity;
 
-import com.playzone.pems.infrastructure.persistence.usuario.entity.UsuarioAdminEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.persistence.*;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "documentocontrato")
+@Table(name = "contrato_documento")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -30,30 +18,29 @@ public class DocumentoContratoEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "iddocumento")
+    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "idcontrato", nullable = false)
+    @JoinColumn(name = "contrato_id", nullable = false)
     private ContratoEntity contrato;
 
-    @Column(nullable = false, length = 300)
+    @Column(nullable = false)
     private String nombre;
 
-    @Column(name = "archivourl", nullable = false, length = 500)
+    @Column(name = "archivo_path", nullable = false)
     private String archivoUrl;
 
-    @Column(name = "tipoarchivo", nullable = false, length = 50)
+    @Column(name = "tipo_archivo", nullable = false, length = 50)
     private String tipoArchivo;
 
-    @Column(name = "tamanobytes")
+    @Column(name = "tamano_bytes")
     private Long tamanobytes;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "idusuariocarga", nullable = false)
-    private UsuarioAdminEntity usuarioCarga;
+    @Column(name = "subido_por", nullable = false, columnDefinition = "uuid")
+    private UUID subidoPor;
 
     @CreationTimestamp
-    @Column(name = "fechacarga", nullable = false, updatable = false)
-    private LocalDateTime fechaCarga;
+    @Column(name = "subido_at", nullable = false, updatable = false)
+    private OffsetDateTime fechaCarga;
 }

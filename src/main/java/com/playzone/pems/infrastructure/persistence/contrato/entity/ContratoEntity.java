@@ -2,14 +2,14 @@ package com.playzone.pems.infrastructure.persistence.contrato.entity;
 
 import com.playzone.pems.domain.contrato.model.enums.EstadoContrato;
 import com.playzone.pems.infrastructure.persistence.evento.entity.EventoPrivadoEntity;
-import com.playzone.pems.infrastructure.persistence.usuario.entity.UsuarioAdminEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "contrato")
@@ -22,29 +22,28 @@ public class ContratoEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idcontrato")
+    @Column(name = "id")
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "ideventoprivado", nullable = false, unique = true)
+    @JoinColumn(name = "evento_id", nullable = false, unique = true)
     private EventoPrivadoEntity eventoPrivado;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "idestado", nullable = false, length = 40)
+    @Column(name = "estado_codigo", nullable = false, length = 40)
     private EstadoContrato estado;
 
-    @Column(name = "contenidotexto", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "contenido_texto", columnDefinition = "TEXT")
     private String contenidoTexto;
 
-    @Column(name = "archivopdfurl", length = 500)
+    @Column(name = "archivo_pdf_path", length = 500)
     private String archivoPdfUrl;
 
-    @Column(name = "fechafirma")
+    @Column(name = "fecha_firma")
     private LocalDate fechaFirma;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "idusuarioredactor", nullable = false)
-    private UsuarioAdminEntity usuarioRedactor;
+    @Column(name = "redactor_id", columnDefinition = "uuid")
+    private UUID redactorId;
 
     @Column(name = "plantilla", length = 100)
     private String plantilla;
@@ -56,10 +55,10 @@ public class ContratoEntity {
     private int version;
 
     @CreationTimestamp
-    @Column(name = "fechacreacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime fechaCreacion;
 
     @UpdateTimestamp
-    @Column(name = "fechaactualizacion", nullable = false)
-    private LocalDateTime fechaActualizacion;
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime fechaActualizacion;
 }
