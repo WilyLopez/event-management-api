@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "sede")
@@ -17,7 +17,7 @@ public class SedeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idsede")
+    @Column(name = "id")
     private Long id;
 
     @Column(nullable = false, length = 120)
@@ -41,10 +41,10 @@ public class SedeEntity {
     @Column(length = 11)
     private String ruc;
 
-    @Column(nullable = false)
-    private boolean activo = true;
-
     @CreationTimestamp
-    @Column(name = "fechacreacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
+
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
 }

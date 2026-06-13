@@ -1,9 +1,7 @@
 package com.playzone.pems.infrastructure.persistence.usuario.mapper;
 
 import com.playzone.pems.domain.usuario.model.Sede;
-import com.playzone.pems.domain.usuario.model.UsuarioAdmin;
 import com.playzone.pems.infrastructure.persistence.usuario.entity.SedeEntity;
-import com.playzone.pems.infrastructure.persistence.usuario.entity.UsuarioAdminEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -22,8 +20,8 @@ public class SedeEntityMapper {
                 .telefono(e.getTelefono())
                 .correo(e.getCorreo())
                 .ruc(e.getRuc())
-                .activo(e.isActivo())
-                .fechaCreacion(e.getFechaCreacion())
+                .fechaCreacion(e.getCreatedAt() != null ? e.getCreatedAt() : null)
+                .deletedAt(e.getDeletedAt() != null ? e.getDeletedAt() : null)
                 .build();
     }
 
@@ -38,30 +36,7 @@ public class SedeEntityMapper {
                 .telefono(d.getTelefono())
                 .correo(d.getCorreo())
                 .ruc(d.getRuc())
-                .activo(d.isActivo())
                 .build();
     }
 
-    public UsuarioAdmin toDomain(UsuarioAdminEntity e) {
-        if (e == null) return null;
-        return UsuarioAdmin.builder()
-                .id(e.getId())
-                .idSede(e.getSede() != null ? e.getSede().getId() : null)
-                .nombre(e.getNombre())
-                .correo(e.getCorreo())
-                .contrasenaHash(e.getContrasenaHash())
-                .rol(e.getRol())
-                .fotoPerfilUrl(e.getFotoPerfilUrl())
-                .telefono(e.getTelefono())
-                .activo(e.isActivo())
-                .debeCambiarContrasena(e.isDebeCambiarContrasena())
-                .intentosFallidos(e.getIntentosFallidos())
-                .bloqueadoHasta(e.getBloqueadoHasta())
-                .ultimoAcceso(e.getUltimoAcceso())
-                .ultimoCambioContrasena(e.getUltimoCambioContrasena())
-                .creadoPor(e.getCreadoPor())
-                .fechaCreacion(e.getFechaCreacion())
-                .fechaActualizacion(e.getFechaActualizacion())
-                .build();
-    }
 }

@@ -24,7 +24,7 @@ public class SedePersistenceAdapter implements SedeRepository {
 
     @Override
     public List<Sede> findAllActivas() {
-        return sedeJpaRepository.findByActivoTrue().stream()
+        return sedeJpaRepository.findByDeletedAtIsNull().stream()
                 .map(sedeEntityMapper::toDomain)
                 .toList();
     }

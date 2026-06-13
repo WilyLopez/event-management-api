@@ -1,35 +1,28 @@
 package com.playzone.pems.interfaces.rest.usuario;
 
-import com.playzone.pems.application.usuario.dto.command.ActualizarClienteCommand;
-import com.playzone.pems.application.usuario.dto.command.MigrarClienteWebCommand;
-import com.playzone.pems.application.usuario.dto.command.RegistrarClienteAdminCommand;
-import com.playzone.pems.application.usuario.dto.command.RegistrarClienteCommand;
-import com.playzone.pems.application.usuario.dto.query.ClientePageQuery;
-import com.playzone.pems.application.usuario.dto.query.ClienteQuery;
-import com.playzone.pems.application.usuario.port.in.ActualizarClienteUseCase;
-import com.playzone.pems.application.usuario.port.in.ActualizarSegmentoClienteUseCase;
-import com.playzone.pems.application.usuario.port.in.ActivarClienteUseCase;
-import com.playzone.pems.application.usuario.port.in.DesactivarClienteUseCase;
-import com.playzone.pems.application.usuario.port.in.EliminarFotoClienteUseCase;
-import com.playzone.pems.application.usuario.port.in.HacerVipUseCase;
-import com.playzone.pems.application.usuario.port.in.ListarClientesUseCase;
-import com.playzone.pems.application.usuario.port.in.MigrarClienteWebUseCase;
-import com.playzone.pems.application.usuario.port.in.ObtenerClienteUseCase;
-import com.playzone.pems.application.usuario.port.in.QuitarVipUseCase;
-import com.playzone.pems.application.usuario.port.in.RegistrarClienteAdminUseCase;
-import com.playzone.pems.application.usuario.port.in.RegistrarClienteUseCase;
-import com.playzone.pems.application.usuario.port.in.RegistrarVisitaManualUseCase;
-import com.playzone.pems.application.usuario.port.in.SubirFotoClienteUseCase;
-import com.playzone.pems.interfaces.rest.usuario.request.ActualizarClienteRequest;
+import com.playzone.pems.application.usuario.dto.command.ActualizarClientePerfilCommand;
+import com.playzone.pems.application.usuario.dto.command.RegistrarClientePerfilCommand;
+import com.playzone.pems.application.usuario.dto.query.ClientePerfilQuery;
+import com.playzone.pems.application.usuario.port.in.ActualizarClientePerfilUseCase;
+import com.playzone.pems.application.usuario.port.in.ActualizarSegmentoPerfilUseCase;
+import com.playzone.pems.application.usuario.port.in.ActivarClientePerfilUseCase;
+import com.playzone.pems.application.usuario.port.in.DesactivarClientePerfilUseCase;
+import com.playzone.pems.application.usuario.port.in.HacerVipPerfilUseCase;
+import com.playzone.pems.application.usuario.port.in.ListarClientesPerfilUseCase;
+import com.playzone.pems.application.usuario.port.in.ObtenerClientePerfilUseCase;
+import com.playzone.pems.application.usuario.port.in.QuitarVipPerfilUseCase;
+import com.playzone.pems.application.usuario.port.in.RegistrarClientePerfilUseCase;
+import com.playzone.pems.application.usuario.port.in.RegistrarVisitaPerfilUseCase;
+import com.playzone.pems.domain.usuario.model.ClientePerfil;
+import com.playzone.pems.interfaces.rest.usuario.request.ActualizarClientePerfilRequest;
 import com.playzone.pems.interfaces.rest.usuario.request.HacerVipRequest;
-import com.playzone.pems.interfaces.rest.usuario.request.MigrarClienteWebRequest;
-import com.playzone.pems.interfaces.rest.usuario.request.RegistrarClienteAdminRequest;
-import com.playzone.pems.interfaces.rest.usuario.request.RegistrarClienteRequest;
-import com.playzone.pems.interfaces.rest.usuario.response.ClienteResponse;
+import com.playzone.pems.interfaces.rest.usuario.request.RegistrarClientePerfilRequest;
+import com.playzone.pems.interfaces.rest.usuario.response.ClientePerfilResponse;
 import com.playzone.pems.shared.response.ApiResponse;
 import com.playzone.pems.shared.response.PagedResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -44,191 +37,154 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Set;
+import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/v1/clientes")
 @RequiredArgsConstructor
 public class ClienteController {
 
-    private static final long        FOTO_MAX_BYTES    = 5L * 1024 * 1024;
-    private static final Set<String> FOTO_TIPOS        = Set.of("image/jpeg", "image/jpg", "image/png", "image/webp");
-
-    private final RegistrarClienteUseCase          registrarUseCase;
-    private final RegistrarClienteAdminUseCase     registrarAdminUseCase;
-    private final MigrarClienteWebUseCase          migrarWebUseCase;
-    private final ActualizarClienteUseCase         actualizarUseCase;
-    private final ListarClientesUseCase            listarUseCase;
-    private final ObtenerClienteUseCase            obtenerUseCase;
-    private final ActivarClienteUseCase            activarUseCase;
-    private final DesactivarClienteUseCase         desactivarUseCase;
-    private final HacerVipUseCase                  hacerVipUseCase;
-    private final QuitarVipUseCase                 quitarVipUseCase;
-    private final RegistrarVisitaManualUseCase     visitaManualUseCase;
-    private final ActualizarSegmentoClienteUseCase segmentoUseCase;
-    private final SubirFotoClienteUseCase          subirFotoUseCase;
-    private final EliminarFotoClienteUseCase       eliminarFotoUseCase;
-
-    @PostMapping("/registro")
-    public ResponseEntity<ApiResponse<ClienteResponse>> registrar(
-            @Valid @RequestBody RegistrarClienteRequest request) {
-
-        ClienteQuery query = registrarUseCase.ejecutar(
-                RegistrarClienteCommand.builder()
-                        .nombre(request.getNombre())
-                        .correo(request.getCorreo())
-                        .contrasena(request.getContrasena())
-                        .telefono(request.getTelefono())
-                        .dni(request.getDni())
-                        .ruc(request.getRuc())
-                        .razonSocial(request.getRazonSocial())
-                        .direccionFiscal(request.getDireccionFiscal())
-                        .build());
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(ApiResponse.created(toResponse(query)));
-    }
+    private final RegistrarClientePerfilUseCase  registrarUseCase;
+    private final ActualizarClientePerfilUseCase actualizarUseCase;
+    private final ListarClientesPerfilUseCase    listarUseCase;
+    private final ObtenerClientePerfilUseCase    obtenerUseCase;
+    private final ActivarClientePerfilUseCase    activarUseCase;
+    private final DesactivarClientePerfilUseCase desactivarUseCase;
+    private final HacerVipPerfilUseCase          hacerVipUseCase;
+    private final QuitarVipPerfilUseCase         quitarVipUseCase;
+    private final RegistrarVisitaPerfilUseCase   visitaUseCase;
+    private final ActualizarSegmentoPerfilUseCase segmentoUseCase;
 
     @PostMapping("/admin")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<ClienteResponse>> registrarAdmin(
-            @Valid @RequestBody RegistrarClienteAdminRequest request) {
+    @PreAuthorize("hasAuthority('cliente.crear')")
+    public ResponseEntity<ApiResponse<ClientePerfilResponse>> registrarAdmin(
+            @Valid @RequestBody RegistrarClientePerfilRequest request) {
 
-        ClienteQuery query = registrarAdminUseCase.ejecutar(
-                RegistrarClienteAdminCommand.builder()
-                        .nombre(request.getNombre())
+        ClientePerfil perfil = registrarUseCase.ejecutar(
+                RegistrarClientePerfilCommand.builder()
+                        .tipoDocumentoCodigo(request.getTipoDocumentoCodigo())
+                        .numeroDocumento(request.getNumeroDocumento())
+                        .nombres(request.getNombres())
+                        .apellidoPaterno(request.getApellidoPaterno())
+                        .apellidoMaterno(request.getApellidoMaterno())
                         .correo(request.getCorreo())
                         .telefono(request.getTelefono())
-                        .dni(request.getDni())
-                        .fechaNacimiento(request.getFechaNacimiento())
-                        .observaciones(request.getObservaciones())
-                        .tipoCliente(request.getTipoCliente())
+                        .origen(request.getOrigen() != null ? request.getOrigen() : "ADMIN")
                         .aceptaComunicaciones(request.isAceptaComunicaciones())
                         .build());
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(query)));
-    }
-
-    @PostMapping("/migrar-web")
-    public ResponseEntity<ApiResponse<ClienteResponse>> migrarWeb(
-            @Valid @RequestBody MigrarClienteWebRequest request) {
-
-        ClienteQuery query = migrarWebUseCase.ejecutar(
-                MigrarClienteWebCommand.builder()
-                        .correo(request.getCorreo())
-                        .contrasena(request.getContrasena())
-                        .nombre(request.getNombre())
-                        .telefono(request.getTelefono())
-                        .build());
-
-        return ResponseEntity.ok(ApiResponse.ok(toResponse(query)));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(perfil)));
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<PagedResponse<ClienteResponse>>> listar(
-            @RequestParam(defaultValue = "0")                  int     page,
-            @RequestParam(defaultValue = "15")                 int     size,
-            @RequestParam(defaultValue = "fechaCreacion,desc") String  sort,
-            @RequestParam(required = false)                    String  search,
-            @RequestParam(required = false)                    Boolean esVip,
-            @RequestParam(required = false)                    Boolean activo,
-            @RequestParam(required = false)                    Boolean verificado,
-            @RequestParam(required = false)                    Boolean frecuente,
-            @RequestParam(required = false)                    Boolean tieneAccesoWeb,
-            @RequestParam(required = false)                    Boolean aceptaComunicaciones,
-            @RequestParam(required = false)                    String  origenRegistro,
-            @RequestParam(required = false)                    String  segmentoCliente) {
+    @PreAuthorize("hasAuthority('cliente.ver')")
+    public ResponseEntity<ApiResponse<PagedResponse<ClientePerfilResponse>>> listar(
+            @RequestParam(defaultValue = "0")              int     page,
+            @RequestParam(defaultValue = "15")             int     size,
+            @RequestParam(defaultValue = "creadoEn,desc")  String  sort,
+            @RequestParam(required = false)                String  search,
+            @RequestParam(required = false)                Boolean esVip,
+            @RequestParam(required = false)                Boolean activo,
+            @RequestParam(required = false)                Boolean frecuente,
+            @RequestParam(required = false)                Boolean aceptaComunicaciones,
+            @RequestParam(required = false)                String  origen,
+            @RequestParam(required = false)                String  segmentoCodigo) {
 
         String[]       parts = sort.split(",");
         Sort.Direction dir   = parts.length > 1 && "asc".equalsIgnoreCase(parts[1])
                 ? Sort.Direction.ASC : Sort.Direction.DESC;
 
-        ClientePageQuery resultado = listarUseCase.ejecutar(
-                search, esVip, activo, verificado, frecuente,
-                tieneAccesoWeb, aceptaComunicaciones, origenRegistro, segmentoCliente,
-                PageRequest.of(page, size, Sort.by(dir, parts[0])));
+        ClientePerfilQuery query = ClientePerfilQuery.builder()
+                .search(search)
+                .esVip(esVip)
+                .activo(activo)
+                .frecuente(frecuente)
+                .aceptaComunicaciones(aceptaComunicaciones)
+                .origen(origen)
+                .segmentoCodigo(segmentoCodigo)
+                .build();
 
-        PagedResponse<ClienteResponse> paginado = PagedResponse.<ClienteResponse>builder()
-                .content(resultado.getContent().stream().map(this::toResponse).toList())
-                .page(resultado.getPage())
-                .size(resultado.getSize())
-                .totalElements(resultado.getTotalElements())
-                .totalPages(resultado.getTotalPages())
+        Page<ClientePerfil> pagina = listarUseCase.ejecutar(
+                query, PageRequest.of(page, size, Sort.by(dir, parts[0])));
+
+        PagedResponse<ClientePerfilResponse> paginado = PagedResponse.<ClientePerfilResponse>builder()
+                .content(pagina.getContent().stream().map(this::toResponse).toList())
+                .page(pagina.getNumber())
+                .size(pagina.getSize())
+                .totalElements(pagina.getTotalElements())
+                .totalPages(pagina.getTotalPages())
                 .build();
 
         return ResponseEntity.ok(ApiResponse.ok(paginado));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('CLIENTE') and #id == authentication.principal.id)")
-    public ResponseEntity<ApiResponse<ClienteResponse>> obtener(@PathVariable Long id) {
+    @PreAuthorize("hasAuthority('cliente.ver') and (#id == @supabaseAuthFacade.clientePerfilId().orElse(-1L) or hasAuthority('usuario.gestionar'))")
+    public ResponseEntity<ApiResponse<ClientePerfilResponse>> obtener(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(toResponse(obtenerUseCase.ejecutar(id))));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('CLIENTE') or hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<ClienteResponse>> actualizar(
+    @PreAuthorize("hasAuthority('cliente.editar') and (#id == @supabaseAuthFacade.clientePerfilId().orElse(-1L) or hasAuthority('usuario.gestionar'))")
+    public ResponseEntity<ApiResponse<ClientePerfilResponse>> actualizar(
             @PathVariable Long id,
-            @Valid @RequestBody ActualizarClienteRequest request) {
+            @Valid @RequestBody ActualizarClientePerfilRequest request) {
 
-        ClienteQuery query = actualizarUseCase.ejecutar(id,
-                ActualizarClienteCommand.builder()
-                        .nombre(request.getNombre())
+        ClientePerfil perfil = actualizarUseCase.ejecutar(id,
+                ActualizarClientePerfilCommand.builder()
+                        .nombres(request.getNombres())
+                        .apellidoPaterno(request.getApellidoPaterno())
+                        .apellidoMaterno(request.getApellidoMaterno())
                         .telefono(request.getTelefono())
-                        .ruc(request.getRuc())
-                        .razonSocial(request.getRazonSocial())
-                        .direccionFiscal(request.getDireccionFiscal())
+                        .correo(request.getCorreo())
                         .aceptaComunicaciones(request.getAceptaComunicaciones())
                         .build());
 
-        return ResponseEntity.ok(ApiResponse.ok(toResponse(query)));
+        return ResponseEntity.ok(ApiResponse.ok(toResponse(perfil)));
     }
 
     @PostMapping("/{id}/activar")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('cliente.editar')")
     public ResponseEntity<ApiResponse<Void>> activar(@PathVariable Long id) {
         activarUseCase.activar(id);
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
     @PostMapping("/{id}/desactivar")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('cliente.editar')")
     public ResponseEntity<ApiResponse<Void>> desactivar(@PathVariable Long id) {
         desactivarUseCase.desactivar(id);
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
     @PostMapping("/{id}/vip")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<ClienteResponse>> hacerVip(
+    @PreAuthorize("hasAuthority('cliente.editar')")
+    public ResponseEntity<ApiResponse<ClientePerfilResponse>> hacerVip(
             @PathVariable Long id,
             @Valid @RequestBody(required = false) HacerVipRequest request) {
 
         int descuento = (request != null) ? request.getDescuento() : 10;
         return ResponseEntity.ok(
-                ApiResponse.ok(toResponse(hacerVipUseCase.ejecutar(id, descuento))));
+                ApiResponse.ok(toResponse(hacerVipUseCase.ejecutar(id, BigDecimal.valueOf(descuento)))));
     }
 
     @DeleteMapping("/{id}/vip")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<ClienteResponse>> quitarVip(@PathVariable Long id) {
+    @PreAuthorize("hasAuthority('cliente.editar')")
+    public ResponseEntity<ApiResponse<ClientePerfilResponse>> quitarVip(@PathVariable Long id) {
         return ResponseEntity.ok(
                 ApiResponse.ok(toResponse(quitarVipUseCase.quitarVip(id))));
     }
 
     @PostMapping("/{id}/visitas")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('cliente.editar')")
     public ResponseEntity<ApiResponse<Void>> registrarVisita(@PathVariable Long id) {
-        visitaManualUseCase.ejecutarVisita(id);
+        visitaUseCase.ejecutarVisita(id);
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
     @PutMapping("/{id}/segmento")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('cliente.editar')")
     public ResponseEntity<ApiResponse<Void>> actualizarSegmento(
             @PathVariable Long id,
             @RequestParam String segmento) {
@@ -236,60 +192,26 @@ public class ClienteController {
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
-    @PutMapping("/{id}/foto")
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('CLIENTE') and #id == authentication.principal.id)")
-    public ResponseEntity<ApiResponse<ClienteResponse>> subirFoto(
-            @PathVariable Long id,
-            @RequestParam("foto") MultipartFile foto) {
-
-        if (foto.isEmpty()) {
-            throw new IllegalArgumentException("El archivo no puede estar vacío.");
-        }
-        String tipo = foto.getContentType();
-        if (tipo == null || !FOTO_TIPOS.contains(tipo)) {
-            throw new IllegalArgumentException("Formato no válido. Solo se aceptan JPG, PNG o WebP.");
-        }
-        if (foto.getSize() > FOTO_MAX_BYTES) {
-            throw new IllegalArgumentException("El archivo no puede superar 5 MB.");
-        }
-
-        return ResponseEntity.ok(ApiResponse.ok(toResponse(subirFotoUseCase.ejecutar(id, foto))));
-    }
-
-    @DeleteMapping("/{id}/foto")
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('CLIENTE') and #id == authentication.principal.id)")
-    public ResponseEntity<ApiResponse<ClienteResponse>> eliminarFoto(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.ok(toResponse(eliminarFotoUseCase.eliminarFoto(id))));
-    }
-
-    private ClienteResponse toResponse(ClienteQuery q) {
-        return ClienteResponse.builder()
-                .id(q.getId())
-                .nombre(q.getNombre())
-                .correo(q.getCorreo())
-                .telefono(q.getTelefono())
-                .dni(q.getDni())
-                .ruc(q.getRuc())
-                .razonSocial(q.getRazonSocial())
-                .direccionFiscal(q.getDireccionFiscal())
-                .fotoPerfil(q.getFotoPerfil())
-                .ultimoLogin(q.getUltimoLogin())
-                .fechaNacimiento(q.getFechaNacimiento())
-                .tipoCliente(q.getTipoCliente())
-                .esVip(q.isEsVip())
-                .descuentoVip(q.getDescuentoVip())
-                .contadorVisitas(q.getContadorVisitas())
-                .correoVerificado(q.isCorreoVerificado())
-                .activo(q.isActivo())
-                .origenRegistro(q.getOrigenRegistro())
-                .tieneAccesoWeb(q.isTieneAccesoWeb())
-                .aceptaComunicaciones(q.isAceptaComunicaciones())
-                .observaciones(q.getObservaciones())
-                .fechaMigracionWeb(q.getFechaMigracionWeb())
-                .ultimaVisita(q.getUltimaVisita())
-                .totalGastado(q.getTotalGastado())
-                .segmentoCliente(q.getSegmentoCliente())
-                .fechaCreacion(q.getFechaCreacion())
+    private ClientePerfilResponse toResponse(ClientePerfil p) {
+        return ClientePerfilResponse.builder()
+                .id(p.getId())
+                .tipoDocumentoCodigo(p.getTipoDocumentoCodigo())
+                .numeroDocumento(p.getNumeroDocumento())
+                .nombres(p.getNombres())
+                .apellidoPaterno(p.getApellidoPaterno())
+                .apellidoMaterno(p.getApellidoMaterno())
+                .nombreCompleto(p.nombreCompleto())
+                .correo(p.getCorreo())
+                .telefono(p.getTelefono())
+                .esVip(p.isEsVip())
+                .descuentoVip(p.getDescuentoVip())
+                .contadorVisitas(p.getContadorVisitas())
+                .ultimaVisitaAt(p.getUltimaVisitaAt())
+                .totalGastado(p.getTotalGastado())
+                .segmentoCodigo(p.getSegmentoCodigo())
+                .origen(p.getOrigen())
+                .aceptaComunicaciones(p.isAceptaComunicaciones())
+                .creadoEn(p.getCreadoEn())
                 .build();
     }
 }
