@@ -3,9 +3,7 @@ package com.playzone.pems.infrastructure.persistence.marketing.adapter;
 import com.playzone.pems.domain.marketing.model.CampanaEmail;
 import com.playzone.pems.domain.marketing.repository.CampanaEmailRepository;
 import com.playzone.pems.infrastructure.persistence.marketing.entity.CampanaEmailEntity;
-import com.playzone.pems.infrastructure.persistence.marketing.entity.PlantillaEmailEntity;
 import com.playzone.pems.infrastructure.persistence.marketing.jpa.CampanaEmailJpaRepository;
-import com.playzone.pems.infrastructure.persistence.marketing.jpa.PlantillaEmailJpaRepository;
 import com.playzone.pems.infrastructure.persistence.marketing.mapper.MarketingEntityMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -13,7 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,9 +20,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class CampanaPersistenceAdapter implements CampanaEmailRepository {
 
-    private final CampanaEmailJpaRepository  jpa;
-    private final PlantillaEmailJpaRepository plantillaJpa;
-    private final MarketingEntityMapper        mapper;
+    private final CampanaEmailJpaRepository jpa;
+    private final MarketingEntityMapper     mapper;
 
     @Override
     public Optional<CampanaEmail> findById(Long id) {
@@ -37,25 +35,26 @@ public class CampanaPersistenceAdapter implements CampanaEmailRepository {
 
     @Override
     public List<CampanaEmail> findProgramadasParaEnviar() {
-        return jpa.findProgramadasParaEnviar(Instant.now())
+        return jpa.findProgramadasParaEnviar(OffsetDateTime.now(ZoneOffset.UTC))
                 .stream().map(mapper::toDomain).toList();
     }
 
     @Override
     @Transactional
     public CampanaEmail save(CampanaEmail campana) {
-        PlantillaEmailEntity plantilla = plantillaJpa.getReferenceById(campana.getIdPlantillaEmail());
         CampanaEmailEntity entity = CampanaEmailEntity.builder()
                 .id(campana.getId())
                 .nombre(campana.getNombre())
                 .descripcion(campana.getDescripcion())
-                .plantillaEmail(plantilla)
+                .plantillaId(campana.getIdPlantillaEmail())
                 .estado(campana.getEstado())
-                .fechaProgramada(campana.getFechaProgramada())
+                .fechaProgramada(campana.getFechaProgramada() != null
+                        ? campana.getFechaProgramada().atOffset(ZoneOffset.UTC) : null)
                 .totalDestinatarios(campana.getTotalDestinatarios())
                 .totalEnviados(campana.getTotalEnviados())
                 .totalFallidos(campana.getTotalFallidos())
-                .idUsuarioCreador(campana.getIdUsuarioCreador())
+                .createdBy(campana.getCreatedBy())
+                .enviadaPor(campana.getEnviadaPor())
                 .build();
         return mapper.toDomain(jpa.save(entity));
     }

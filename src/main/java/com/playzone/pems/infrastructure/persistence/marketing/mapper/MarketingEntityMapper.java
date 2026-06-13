@@ -10,15 +10,18 @@ import com.playzone.pems.infrastructure.persistence.marketing.entity.PlantillaEm
 import com.playzone.pems.infrastructure.persistence.marketing.entity.TipoEmailEntity;
 import org.springframework.stereotype.Component;
 
+import java.time.ZoneOffset;
+
 @Component
 public class MarketingEntityMapper {
 
     public TipoEmail toDomain(TipoEmailEntity e) {
         return TipoEmail.builder()
-                .id(e.getId())
                 .codigo(e.getCodigo())
                 .nombre(e.getNombre())
                 .descripcion(e.getDescripcion())
+                .esSistema(e.isEsSistema())
+                .orden(e.getOrden())
                 .activo(e.isActivo())
                 .build();
     }
@@ -26,17 +29,17 @@ public class MarketingEntityMapper {
     public PlantillaEmail toDomain(PlantillaEmailEntity e) {
         return PlantillaEmail.builder()
                 .id(e.getId())
-                .idTipoEmail(e.getTipoEmail().getId())
-                .tipoEmailCodigo(e.getTipoEmail().getCodigo())
-                .tipoEmailNombre(e.getTipoEmail().getNombre())
+                .tipoEmailCodigo(e.getTipoEmailCodigo())
+                .tipoEmailNombre(null)
                 .nombre(e.getNombre())
                 .asunto(e.getAsunto())
                 .contenidoHtml(e.getContenidoHtml())
                 .contenidoFallback(e.getContenidoFallback())
                 .variablesPermitidas(e.getVariablesPermitidas())
-                .activa(e.isActiva())
-                .idUsuarioEditor(e.getIdUsuarioEditor())
-                .fechaActualizacion(e.getFechaActualizacion())
+                .activa(e.isEsActiva())
+                .createdBy(e.getCreatedBy())
+                .updatedBy(e.getUpdatedBy())
+                .fechaActualizacion(e.getUpdatedAt() != null ? e.getUpdatedAt().toInstant() : null)
                 .build();
     }
 
@@ -45,44 +48,45 @@ public class MarketingEntityMapper {
                 .id(e.getId())
                 .nombre(e.getNombre())
                 .descripcion(e.getDescripcion())
-                .idPlantillaEmail(e.getPlantillaEmail().getId())
-                .plantillaNombre(e.getPlantillaEmail().getNombre())
+                .idPlantillaEmail(e.getPlantillaId())
+                .plantillaNombre(null)
                 .estado(e.getEstado())
-                .fechaProgramada(e.getFechaProgramada())
+                .fechaProgramada(e.getFechaProgramada() != null ? e.getFechaProgramada().toInstant() : null)
                 .totalDestinatarios(e.getTotalDestinatarios())
                 .totalEnviados(e.getTotalEnviados())
                 .totalFallidos(e.getTotalFallidos())
-                .idUsuarioCreador(e.getIdUsuarioCreador())
-                .fechaCreacion(e.getFechaCreacion())
+                .createdBy(e.getCreatedBy())
+                .enviadaPor(e.getEnviadaPor())
+                .fechaCreacion(e.getCreatedAt() != null ? e.getCreatedAt().toInstant() : null)
                 .build();
     }
 
     public EnvioEmail toDomain(EnvioEmailEntity e) {
         return EnvioEmail.builder()
                 .id(e.getId())
-                .idCampanaEmail(e.getIdCampanaEmail())
-                .idCliente(e.getIdCliente())
+                .idCampanaEmail(e.getCampanaId())
+                .idCliente(e.getClienteId())
                 .destinatario(e.getDestinatario())
                 .asunto(e.getAsunto())
                 .estado(e.getEstado())
                 .intentos(e.getIntentos())
-                .fechaEnvio(e.getFechaEnvio())
+                .fechaEnvio(e.getEnviadoAt() != null ? e.getEnviadoAt().toInstant() : null)
                 .mensajeError(e.getMensajeError())
                 .proveedorMensajeId(e.getProveedorMensajeId())
-                .fechaCreacion(e.getFechaCreacion())
+                .fechaCreacion(e.getCreatedAt() != null ? e.getCreatedAt().toInstant() : null)
                 .build();
     }
 
     public EnvioEmailEntity toEntity(EnvioEmail d) {
         return EnvioEmailEntity.builder()
                 .id(d.getId())
-                .idCampanaEmail(d.getIdCampanaEmail())
-                .idCliente(d.getIdCliente())
+                .campanaId(d.getIdCampanaEmail())
+                .clienteId(d.getIdCliente())
                 .destinatario(d.getDestinatario())
                 .asunto(d.getAsunto())
                 .estado(d.getEstado())
                 .intentos(d.getIntentos())
-                .fechaEnvio(d.getFechaEnvio())
+                .enviadoAt(d.getFechaEnvio() != null ? d.getFechaEnvio().atOffset(ZoneOffset.UTC) : null)
                 .mensajeError(d.getMensajeError())
                 .proveedorMensajeId(d.getProveedorMensajeId())
                 .build();

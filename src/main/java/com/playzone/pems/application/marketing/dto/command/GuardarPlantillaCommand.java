@@ -8,8 +8,8 @@ import lombok.Getter;
 @Builder
 public class GuardarPlantillaCommand {
 
-    @NotNull
-    private final Long idTipoEmail;
+    @NotBlank
+    private final String tipoEmailCodigo;
 
     @NotBlank
     @Size(max = 120)

@@ -20,8 +20,9 @@ import com.playzone.pems.domain.marketing.repository.CampanaEmailRepository;
 import com.playzone.pems.domain.marketing.repository.EnvioEmailRepository;
 import com.playzone.pems.domain.marketing.repository.PlantillaEmailRepository;
 import com.playzone.pems.domain.marketing.repository.TipoEmailRepository;
-import com.playzone.pems.domain.usuario.model.Cliente;
-import com.playzone.pems.domain.usuario.repository.ClienteRepository;
+import com.playzone.pems.application.usuario.dto.query.CampanaDestinatariosQuery;
+import com.playzone.pems.domain.usuario.model.ClientePerfil;
+import com.playzone.pems.domain.usuario.repository.ClientePerfilRepository;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import com.playzone.pems.shared.exception.ValidationException;
 import com.playzone.pems.shared.response.PagedResponse;
@@ -35,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -51,23 +53,24 @@ public class MarketingService
     private final CampanaEmailRepository   campanaRepo;
     private final EnvioEmailRepository     envioRepo;
     private final TipoEmailRepository      tipoEmailRepo;
-    private final ClienteRepository        clienteRepository;
+    private final ClientePerfilRepository   clientePerfilRepository;
 
     @Override
     @Transactional
-    public PlantillaEmailQuery ejecutar(GuardarPlantillaCommand command, Long idUsuarioEditor) {
-        tipoEmailRepo.findById(command.getIdTipoEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("TipoEmail", command.getIdTipoEmail()));
+    public PlantillaEmailQuery ejecutar(GuardarPlantillaCommand command, UUID idUsuarioEditor) {
+        tipoEmailRepo.findById(command.getTipoEmailCodigo())
+                .orElseThrow(() -> new ResourceNotFoundException("TipoEmail", "codigo", command.getTipoEmailCodigo()));
 
         PlantillaEmail plantilla = PlantillaEmail.builder()
-                .idTipoEmail(command.getIdTipoEmail())
+                .tipoEmailCodigo(command.getTipoEmailCodigo())
                 .nombre(command.getNombre())
                 .asunto(command.getAsunto())
                 .contenidoHtml(command.getContenidoHtml())
                 .contenidoFallback(command.getContenidoFallback())
                 .variablesPermitidas(command.getVariablesPermitidas())
                 .activa(true)
-                .idUsuarioEditor(idUsuarioEditor)
+                .createdBy(idUsuarioEditor)
+                .updatedBy(idUsuarioEditor)
                 .fechaActualizacion(Instant.now())
                 .build();
 
@@ -86,7 +89,7 @@ public class MarketingService
 
     @Override
     @Transactional
-    public CampanaEmailQuery ejecutar(CrearCampanaCommand command, Long idUsuarioCreador) {
+    public CampanaEmailQuery ejecutar(CrearCampanaCommand command, UUID idUsuarioCreador) {
         plantillaRepo.findById(command.getIdPlantillaEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("PlantillaEmail", command.getIdPlantillaEmail()));
 
@@ -101,7 +104,7 @@ public class MarketingService
                 .totalDestinatarios(0)
                 .totalEnviados(0)
                 .totalFallidos(0)
-                .idUsuarioCreador(idUsuarioCreador)
+                .createdBy(idUsuarioCreador)
                 .fechaCreacion(Instant.now())
                 .build();
 
@@ -134,15 +137,16 @@ public class MarketingService
         PlantillaEmail plantilla = plantillaRepo.findById(campana.getIdPlantillaEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("PlantillaEmail", campana.getIdPlantillaEmail()));
 
-        List<Cliente> destinatarios = clienteRepository.findDestinatariosCampana(
-                filtro.getSoloVip(),
-                filtro.getSoloFrecuentes(),
-                filtro.getSoloNuevos(),
-                filtro.getSoloInactivos(),
-                filtro.getSoloCorporativos(),
-                filtro.getSoloConAccesoWeb(),
-                filtro.getSoloPresenciales(),
-                5);
+        CampanaDestinatariosQuery filtroQuery = CampanaDestinatariosQuery.builder()
+                .soloVip(filtro.getSoloVip())
+                .soloFrecuentes(filtro.getSoloFrecuentes())
+                .soloNuevos(filtro.getSoloNuevos())
+                .soloInactivos(filtro.getSoloInactivos())
+                .soloCorporativos(filtro.getSoloCorporativos())
+                .soloPresenciales(filtro.getSoloPresenciales())
+                .build();
+
+        List<ClientePerfil> destinatarios = clientePerfilRepository.buscarDestinatariosCampana(filtroQuery);
 
         List<EnvioEmail> envios = destinatarios.stream()
                 .filter(c -> c.getCorreo() != null)
@@ -179,10 +183,11 @@ public class MarketingService
     public List<TipoEmailQuery> listarTipos() {
         return tipoEmailRepo.findAllActivos().stream()
                 .map(t -> TipoEmailQuery.builder()
-                        .id(t.getId())
                         .codigo(t.getCodigo())
                         .nombre(t.getNombre())
                         .descripcion(t.getDescripcion())
+                        .esSistema(t.isEsSistema())
+                        .orden(t.getOrden())
                         .activo(t.isActivo())
                         .build())
                 .toList();
@@ -191,16 +196,18 @@ public class MarketingService
     private PlantillaEmailQuery toPlantillaQuery(PlantillaEmail p) {
         return PlantillaEmailQuery.builder()
                 .id(p.getId())
-                .idTipoEmail(p.getIdTipoEmail())
                 .tipoEmailCodigo(p.getTipoEmailCodigo())
-                .tipoEmailNombre(p.getTipoEmailNombre())
+                .tipoEmailNombre(tipoEmailRepo.findById(p.getTipoEmailCodigo())
+                        .map(t -> t.getNombre())
+                        .orElse(null))
                 .nombre(p.getNombre())
                 .asunto(p.getAsunto())
                 .contenidoHtml(p.getContenidoHtml())
                 .contenidoFallback(p.getContenidoFallback())
                 .variablesPermitidas(p.getVariablesPermitidas())
                 .activa(p.isActiva())
-                .idUsuarioEditor(p.getIdUsuarioEditor())
+                .createdBy(p.getCreatedBy())
+                .updatedBy(p.getUpdatedBy())
                 .fechaActualizacion(p.getFechaActualizacion())
                 .build();
     }
@@ -211,13 +218,15 @@ public class MarketingService
                 .nombre(c.getNombre())
                 .descripcion(c.getDescripcion())
                 .idPlantillaEmail(c.getIdPlantillaEmail())
-                .plantillaNombre(c.getPlantillaNombre())
+                .plantillaNombre(plantillaRepo.findById(c.getIdPlantillaEmail())
+                        .map(p -> p.getNombre())
+                        .orElse(null))
                 .estado(c.getEstado())
                 .fechaProgramada(c.getFechaProgramada())
                 .totalDestinatarios(c.getTotalDestinatarios())
                 .totalEnviados(c.getTotalEnviados())
                 .totalFallidos(c.getTotalFallidos())
-                .idUsuarioCreador(c.getIdUsuarioCreador())
+                .createdBy(c.getCreatedBy())
                 .fechaCreacion(c.getFechaCreacion())
                 .build();
     }

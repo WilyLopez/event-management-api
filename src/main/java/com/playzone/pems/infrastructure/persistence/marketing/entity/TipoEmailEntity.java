@@ -2,9 +2,13 @@ package com.playzone.pems.infrastructure.persistence.marketing.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "tipoemail")
+@Table(name = "tipo_email")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -13,11 +17,7 @@ import lombok.*;
 public class TipoEmailEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idtipoemail")
-    private Long id;
-
-    @Column(unique = true, nullable = false, length = 50)
+    @Column(name = "codigo", nullable = false, length = 50)
     private String codigo;
 
     @Column(nullable = false, length = 100)
@@ -26,7 +26,22 @@ public class TipoEmailEntity {
     @Column(length = 300)
     private String descripcion;
 
+    @Column(name = "es_sistema", nullable = false)
+    @Builder.Default
+    private boolean esSistema = false;
+
+    @Column(name = "orden", nullable = false)
+    private int orden;
+
     @Column(nullable = false)
     @Builder.Default
     private boolean activo = true;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private OffsetDateTime updatedAt;
 }

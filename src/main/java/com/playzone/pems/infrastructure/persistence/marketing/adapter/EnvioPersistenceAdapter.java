@@ -28,7 +28,7 @@ public class EnvioPersistenceAdapter implements EnvioEmailRepository {
 
     @Override
     public Page<EnvioEmail> findByCampana(Long idCampana, Pageable pageable) {
-        return jpa.findByIdCampanaEmail(idCampana, pageable).map(mapper::toDomain);
+        return jpa.findByCampanaId(idCampana, pageable).map(mapper::toDomain);
     }
 
     @Override
@@ -57,6 +57,6 @@ public class EnvioPersistenceAdapter implements EnvioEmailRepository {
 
     @Override
     public long countByCampanaAndEstado(Long idCampana, String estado) {
-        return jpa.countByIdCampanaEmailAndEstado(idCampana, estado);
+        return jpa.countByCampanaIdAndEstado(idCampana, estado);
     }
 }

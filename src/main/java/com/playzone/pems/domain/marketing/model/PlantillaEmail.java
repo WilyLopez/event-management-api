@@ -3,6 +3,7 @@ package com.playzone.pems.domain.marketing.model;
 import lombok.*;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -12,7 +13,6 @@ import java.time.Instant;
 public class PlantillaEmail {
 
     private Long    id;
-    private Long    idTipoEmail;
     private String  tipoEmailCodigo;
     private String  tipoEmailNombre;
     private String  nombre;
@@ -21,6 +21,7 @@ public class PlantillaEmail {
     private String  contenidoFallback;
     private String  variablesPermitidas;
     private boolean activa;
-    private Long    idUsuarioEditor;
+    private UUID    createdBy;
+    private UUID    updatedBy;
     private Instant fechaActualizacion;
 }

@@ -4,13 +4,13 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Getter
 @Builder
 public class PlantillaEmailQuery {
 
     private Long    id;
-    private Long    idTipoEmail;
     private String  tipoEmailCodigo;
     private String  tipoEmailNombre;
     private String  nombre;
@@ -19,6 +19,7 @@ public class PlantillaEmailQuery {
     private String  contenidoFallback;
     private String  variablesPermitidas;
     private boolean activa;
-    private Long    idUsuarioEditor;
+    private UUID    createdBy;
+    private UUID    updatedBy;
     private Instant fechaActualizacion;
 }

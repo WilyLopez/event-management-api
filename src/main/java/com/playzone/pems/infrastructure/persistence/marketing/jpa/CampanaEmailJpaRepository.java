@@ -6,13 +6,13 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 public interface CampanaEmailJpaRepository extends JpaRepository<CampanaEmailEntity, Long> {
 
     @Query("SELECT c FROM CampanaEmailEntity c WHERE c.estado = 'PROGRAMADA' AND c.fechaProgramada <= :ahora")
-    List<CampanaEmailEntity> findProgramadasParaEnviar(@Param("ahora") Instant ahora);
+    List<CampanaEmailEntity> findProgramadasParaEnviar(@Param("ahora") OffsetDateTime ahora);
 
     @Modifying
     @Query("UPDATE CampanaEmailEntity c SET c.estado = :estado WHERE c.id = :id")

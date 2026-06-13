@@ -6,8 +6,8 @@ import lombok.Getter;
 @Getter
 public class GuardarPlantillaRequest {
 
-    @NotNull
-    private Long idTipoEmail;
+    @NotBlank
+    private String tipoEmailCodigo;
 
     @NotBlank
     @Size(max = 120)

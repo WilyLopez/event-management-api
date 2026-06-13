@@ -13,7 +13,7 @@ public interface PlantillaEmailRepository {
 
     Page<PlantillaEmail> findAll(Pageable pageable);
 
-    List<PlantillaEmail> findAllActivasByTipo(Long idTipoEmail);
+    List<PlantillaEmail> findAllActivasByTipo(String tipoEmailCodigo);
 
     PlantillaEmail save(PlantillaEmail plantilla);
 

@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface PlantillaEmailJpaRepository extends JpaRepository<PlantillaEmailEntity, Long> {
 
-    List<PlantillaEmailEntity> findByTipoEmail_IdAndActivaTrue(Long idTipoEmail);
+    List<PlantillaEmailEntity> findByTipoEmailCodigoAndEsActivaTrue(String tipoEmailCodigo);
 }

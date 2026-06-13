@@ -3,6 +3,7 @@ package com.playzone.pems.domain.marketing.model;
 import lombok.*;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -21,7 +22,8 @@ public class CampanaEmail {
     private int     totalDestinatarios;
     private int     totalEnviados;
     private int     totalFallidos;
-    private Long    idUsuarioCreador;
+    private UUID    createdBy;
+    private UUID    enviadaPor;
     private Instant fechaCreacion;
 
     public boolean puedeEnviarse() {

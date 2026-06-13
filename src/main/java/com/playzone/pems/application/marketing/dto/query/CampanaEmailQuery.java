@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Getter
 @Builder
@@ -19,6 +20,6 @@ public class CampanaEmailQuery {
     private int     totalDestinatarios;
     private int     totalEnviados;
     private int     totalFallidos;
-    private Long    idUsuarioCreador;
+    private UUID    createdBy;
     private Instant fechaCreacion;
 }

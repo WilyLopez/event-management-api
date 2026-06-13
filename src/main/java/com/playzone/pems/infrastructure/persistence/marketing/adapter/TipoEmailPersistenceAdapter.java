@@ -23,12 +23,7 @@ public class TipoEmailPersistenceAdapter implements TipoEmailRepository {
     }
 
     @Override
-    public Optional<TipoEmail> findById(Long id) {
-        return jpa.findById(id).map(mapper::toDomain);
-    }
-
-    @Override
-    public Optional<TipoEmail> findByCodigo(String codigo) {
-        return jpa.findByCodigo(codigo).map(mapper::toDomain);
+    public Optional<TipoEmail> findById(String codigo) {
+        return jpa.findById(codigo).map(mapper::toDomain);
     }
 }

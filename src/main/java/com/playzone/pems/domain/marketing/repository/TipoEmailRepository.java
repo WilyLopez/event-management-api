@@ -9,7 +9,5 @@ public interface TipoEmailRepository {
 
     List<TipoEmail> findAllActivos();
 
-    Optional<TipoEmail> findById(Long id);
-
-    Optional<TipoEmail> findByCodigo(String codigo);
+    Optional<TipoEmail> findById(String codigo);
 }

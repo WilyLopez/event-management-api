@@ -14,6 +14,7 @@ import com.playzone.pems.application.marketing.port.in.ListarCampanasUseCase;
 import com.playzone.pems.application.marketing.port.in.ListarEnviosUseCase;
 import com.playzone.pems.application.marketing.port.in.ListarPlantillasUseCase;
 import com.playzone.pems.application.marketing.service.MarketingService;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.interfaces.rest.marketing.request.CrearCampanaRequest;
 import com.playzone.pems.interfaces.rest.marketing.request.EnviarCampanaRequest;
 import com.playzone.pems.interfaces.rest.marketing.request.GuardarPlantillaRequest;
@@ -26,14 +27,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/marketing")
-@PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 public class MarketingController {
 
@@ -44,33 +43,35 @@ public class MarketingController {
     private final EnviarCampanaUseCase       enviarCampanaUseCase;
     private final ListarEnviosUseCase        listarEnviosUseCase;
     private final MarketingService           marketingService;
+    private final SupabaseAuthFacade         supabaseAuthFacade;
 
     @GetMapping("/tipos-email")
+    @PreAuthorize("hasAuthority('marketing.plantilla')")
     public ResponseEntity<ApiResponse<List<TipoEmailQuery>>> listarTipos() {
         return ResponseEntity.ok(ApiResponse.ok(marketingService.listarTipos()));
     }
 
     @PostMapping("/plantillas")
+    @PreAuthorize("hasAuthority('marketing.plantilla')")
     public ResponseEntity<ApiResponse<PlantillaEmailQuery>> crearPlantilla(
-            @Valid @RequestBody GuardarPlantillaRequest request,
-            @AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails principal) {
+            @Valid @RequestBody GuardarPlantillaRequest request) {
 
-        Long idUsuario = extraerIdUsuario(principal);
         PlantillaEmailQuery query = crearPlantillaUseCase.ejecutar(
                 GuardarPlantillaCommand.builder()
-                        .idTipoEmail(request.getIdTipoEmail())
+                        .tipoEmailCodigo(request.getTipoEmailCodigo())
                         .nombre(request.getNombre())
                         .asunto(request.getAsunto())
                         .contenidoHtml(request.getContenidoHtml())
                         .contenidoFallback(request.getContenidoFallback())
                         .variablesPermitidas(request.getVariablesPermitidas())
                         .build(),
-                idUsuario);
+                supabaseAuthFacade.usuarioActualId().orElseThrow(() -> new IllegalStateException("Sin usuario autenticado en contexto")));
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(query));
     }
 
     @GetMapping("/plantillas")
+    @PreAuthorize("hasAuthority('marketing.plantilla')")
     public ResponseEntity<ApiResponse<List<PlantillaEmailQuery>>> listarPlantillas(
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -82,11 +83,10 @@ public class MarketingController {
     }
 
     @PostMapping("/campanas")
+    @PreAuthorize("hasAuthority('marketing.campana')")
     public ResponseEntity<ApiResponse<CampanaEmailQuery>> crearCampana(
-            @Valid @RequestBody CrearCampanaRequest request,
-            @AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails principal) {
+            @Valid @RequestBody CrearCampanaRequest request) {
 
-        Long idUsuario = extraerIdUsuario(principal);
         CampanaEmailQuery query = crearCampanaUseCase.ejecutar(
                 CrearCampanaCommand.builder()
                         .nombre(request.getNombre())
@@ -94,12 +94,13 @@ public class MarketingController {
                         .idPlantillaEmail(request.getIdPlantillaEmail())
                         .fechaProgramada(request.getFechaProgramada())
                         .build(),
-                idUsuario);
+                supabaseAuthFacade.usuarioActualId().orElseThrow(() -> new IllegalStateException("Sin usuario autenticado en contexto")));
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(query));
     }
 
     @GetMapping("/campanas")
+    @PreAuthorize("hasAuthority('marketing.campana')")
     public ResponseEntity<ApiResponse<PagedResponse<CampanaEmailQuery>>> listarCampanas(
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "15") int size) {
@@ -111,6 +112,7 @@ public class MarketingController {
     }
 
     @PostMapping("/campanas/{id}/enviar")
+    @PreAuthorize("hasAuthority('marketing.enviar')")
     public ResponseEntity<ApiResponse<Void>> enviarCampana(
             @PathVariable Long id,
             @RequestBody(required = false) EnviarCampanaRequest request) {
@@ -132,6 +134,7 @@ public class MarketingController {
     }
 
     @GetMapping("/campanas/{id}/envios")
+    @PreAuthorize("hasAuthority('marketing.campana')")
     public ResponseEntity<ApiResponse<PagedResponse<EnvioEmailQuery>>> listarEnvios(
             @PathVariable Long id,
             @RequestParam(defaultValue = "0")  int page,
@@ -143,11 +146,4 @@ public class MarketingController {
         return ResponseEntity.ok(ApiResponse.ok(resultado));
     }
 
-    private Long extraerIdUsuario(org.springframework.security.core.userdetails.UserDetails principal) {
-        try {
-            return Long.parseLong(principal.getUsername());
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
 }

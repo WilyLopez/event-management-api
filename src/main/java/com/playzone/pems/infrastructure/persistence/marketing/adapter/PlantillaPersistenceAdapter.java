@@ -3,9 +3,7 @@ package com.playzone.pems.infrastructure.persistence.marketing.adapter;
 import com.playzone.pems.domain.marketing.model.PlantillaEmail;
 import com.playzone.pems.domain.marketing.repository.PlantillaEmailRepository;
 import com.playzone.pems.infrastructure.persistence.marketing.entity.PlantillaEmailEntity;
-import com.playzone.pems.infrastructure.persistence.marketing.entity.TipoEmailEntity;
 import com.playzone.pems.infrastructure.persistence.marketing.jpa.PlantillaEmailJpaRepository;
-import com.playzone.pems.infrastructure.persistence.marketing.jpa.TipoEmailJpaRepository;
 import com.playzone.pems.infrastructure.persistence.marketing.mapper.MarketingEntityMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,7 +19,6 @@ import java.util.Optional;
 public class PlantillaPersistenceAdapter implements PlantillaEmailRepository {
 
     private final PlantillaEmailJpaRepository jpa;
-    private final TipoEmailJpaRepository      tipoJpa;
     private final MarketingEntityMapper        mapper;
 
     @Override
@@ -35,25 +32,25 @@ public class PlantillaPersistenceAdapter implements PlantillaEmailRepository {
     }
 
     @Override
-    public List<PlantillaEmail> findAllActivasByTipo(Long idTipoEmail) {
-        return jpa.findByTipoEmail_IdAndActivaTrue(idTipoEmail)
+    public List<PlantillaEmail> findAllActivasByTipo(String tipoEmailCodigo) {
+        return jpa.findByTipoEmailCodigoAndEsActivaTrue(tipoEmailCodigo)
                 .stream().map(mapper::toDomain).toList();
     }
 
     @Override
     @Transactional
     public PlantillaEmail save(PlantillaEmail plantilla) {
-        TipoEmailEntity tipo = tipoJpa.getReferenceById(plantilla.getIdTipoEmail());
         PlantillaEmailEntity entity = PlantillaEmailEntity.builder()
                 .id(plantilla.getId())
-                .tipoEmail(tipo)
+                .tipoEmailCodigo(plantilla.getTipoEmailCodigo())
                 .nombre(plantilla.getNombre())
                 .asunto(plantilla.getAsunto())
                 .contenidoHtml(plantilla.getContenidoHtml())
                 .contenidoFallback(plantilla.getContenidoFallback())
                 .variablesPermitidas(plantilla.getVariablesPermitidas())
-                .activa(plantilla.isActiva())
-                .idUsuarioEditor(plantilla.getIdUsuarioEditor())
+                .esActiva(plantilla.isActiva())
+                .createdBy(plantilla.getCreatedBy())
+                .updatedBy(plantilla.getUpdatedBy())
                 .build();
         return mapper.toDomain(jpa.save(entity));
     }

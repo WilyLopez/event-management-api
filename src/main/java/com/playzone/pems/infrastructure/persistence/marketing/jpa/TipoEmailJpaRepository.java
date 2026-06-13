@@ -4,11 +4,8 @@ import com.playzone.pems.infrastructure.persistence.marketing.entity.TipoEmailEn
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
-import java.util.Optional;
 
-public interface TipoEmailJpaRepository extends JpaRepository<TipoEmailEntity, Long> {
+public interface TipoEmailJpaRepository extends JpaRepository<TipoEmailEntity, String> {
 
     List<TipoEmailEntity> findByActivoTrue();
-
-    Optional<TipoEmailEntity> findByCodigo(String codigo);
 }

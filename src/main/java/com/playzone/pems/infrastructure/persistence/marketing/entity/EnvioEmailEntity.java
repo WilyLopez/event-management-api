@@ -4,10 +4,11 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "envioemail")
+@Table(name = "envio_email")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -17,14 +18,20 @@ public class EnvioEmailEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idenvioemail")
+    @Column(name = "id")
     private Long id;
 
-    @Column(name = "idcampanaemail")
-    private Long idCampanaEmail;
+    @Column(name = "campana_id")
+    private Long campanaId;
 
-    @Column(name = "idcliente")
-    private Long idCliente;
+    @Column(name = "cliente_id")
+    private Long clienteId;
+
+    @Column(name = "plantilla_id")
+    private Long plantillaId;
+
+    @Column(name = "usuario_id", columnDefinition = "uuid")
+    private UUID usuarioId;
 
     @Column(nullable = false, length = 120)
     private String destinatario;
@@ -40,16 +47,19 @@ public class EnvioEmailEntity {
     @Builder.Default
     private int intentos = 0;
 
-    @Column(name = "fechaenvio")
-    private Instant fechaEnvio;
+    @Column(name = "enviado_at")
+    private OffsetDateTime enviadoAt;
 
-    @Column(name = "mensajeerror", length = 500)
+    @Column(name = "mensaje_error", length = 500)
     private String mensajeError;
 
-    @Column(name = "proveedormensajeid", length = 200)
+    @Column(name = "proveedor_mensaje_id", length = 200)
     private String proveedorMensajeId;
 
+    @Column(name = "metadata", columnDefinition = "jsonb")
+    private String metadata;
+
     @CreationTimestamp
-    @Column(name = "fechacreacion", updatable = false)
-    private Instant fechaCreacion;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
 }

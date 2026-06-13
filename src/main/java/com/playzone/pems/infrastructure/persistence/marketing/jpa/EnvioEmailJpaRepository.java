@@ -11,15 +11,15 @@ import java.util.List;
 
 public interface EnvioEmailJpaRepository extends JpaRepository<EnvioEmailEntity, Long> {
 
-    Page<EnvioEmailEntity> findByIdCampanaEmail(Long idCampanaEmail, Pageable pageable);
+    Page<EnvioEmailEntity> findByCampanaId(Long campanaId, Pageable pageable);
 
-    @Query("SELECT e FROM EnvioEmailEntity e WHERE e.idCampanaEmail = :idCampana AND e.estado = 'PENDIENTE' ORDER BY e.id")
+    @Query("SELECT e FROM EnvioEmailEntity e WHERE e.campanaId = :idCampana AND e.estado = 'PENDIENTE' ORDER BY e.id")
     List<EnvioEmailEntity> findPendientesByCampana(
             @Param("idCampana") Long idCampana,
             Pageable pageable);
 
-    @Query("SELECT e FROM EnvioEmailEntity e WHERE e.estado = 'ERROR' AND e.intentos < :maxIntentos ORDER BY e.fechaCreacion")
+    @Query("SELECT e FROM EnvioEmailEntity e WHERE e.estado = 'ERROR' AND e.intentos < :maxIntentos ORDER BY e.createdAt")
     List<EnvioEmailEntity> findParaReintentar(@Param("maxIntentos") int maxIntentos, Pageable pageable);
 
-    long countByIdCampanaEmailAndEstado(Long idCampanaEmail, String estado);
+    long countByCampanaIdAndEstado(Long campanaId, String estado);
 }

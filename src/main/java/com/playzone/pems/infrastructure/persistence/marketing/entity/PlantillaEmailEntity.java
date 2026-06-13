@@ -2,12 +2,14 @@ package com.playzone.pems.infrastructure.persistence.marketing.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "plantillaemail")
+@Table(name = "plantilla_email")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -17,12 +19,11 @@ public class PlantillaEmailEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idplantillaemail")
+    @Column(name = "id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "idtipoemail", nullable = false)
-    private TipoEmailEntity tipoEmail;
+    @Column(name = "tipo_email_codigo", nullable = false, length = 50)
+    private String tipoEmailCodigo;
 
     @Column(nullable = false, length = 120)
     private String nombre;
@@ -30,23 +31,33 @@ public class PlantillaEmailEntity {
     @Column(nullable = false, length = 200)
     private String asunto;
 
-    @Column(name = "contenidohtml", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "contenido_html", nullable = false, columnDefinition = "TEXT")
     private String contenidoHtml;
 
-    @Column(name = "contenidofallback", columnDefinition = "TEXT")
+    @Column(name = "contenido_fallback", columnDefinition = "TEXT")
     private String contenidoFallback;
 
-    @Column(name = "variablespermitidas", columnDefinition = "JSONB")
+    @Column(name = "variables_permitidas", columnDefinition = "jsonb")
     private String variablesPermitidas;
 
-    @Column(nullable = false)
+    @Column(name = "es_activa", nullable = false)
     @Builder.Default
-    private boolean activa = true;
+    private boolean esActiva = true;
 
-    @Column(name = "idusuarioeditor")
-    private Long idUsuarioEditor;
+    @Column(name = "created_by", columnDefinition = "uuid")
+    private UUID createdBy;
+
+    @Column(name = "updated_by", columnDefinition = "uuid")
+    private UUID updatedBy;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "fechaactualizacion")
-    private Instant fechaActualizacion;
+    @Column(name = "updated_at")
+    private OffsetDateTime updatedAt;
+
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
 }
