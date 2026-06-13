@@ -27,9 +27,6 @@ public class CrearPromocionRequest {
     @NotNull @DecimalMin("0.00") @Digits(integer = 10, fraction = 2)
     private BigDecimal valorDescuento;
 
-    @Size(max = 300)
-    private String condicion;
-
     @Min(1)
     private Integer minimoPersonas;
 
@@ -43,44 +40,22 @@ public class CrearPromocionRequest {
     @NotNull
     private Boolean esAutomatica;
 
-    // CMS / display
-    @Size(max = 500)
-    private String imagenUrl;
-
-    @Size(max = 500)
-    private String bannerUrl;
-
-    @Size(max = 20)
-    private String colorDestacado;
-
     private Integer prioridad;
 
-    @Size(max = 300)
-    private String textoPublicitario;
+    private Integer    limiteUsos;
+    @Min(1) private Integer limitePorCliente;
+    @DecimalMin("0.00") @Digits(integer = 10, fraction = 2) private BigDecimal montoMinimo;
 
-    @Size(max = 100)
-    private String textoBoton;
-
-    @Size(max = 500)
-    private String urlBoton;
-
+    // CMS / display
+    @Size(max = 500) private String imagenUrl;
+    @Size(max = 500) private String bannerUrl;
+    @Size(max = 20)  private String colorDestacado;
+    @Size(max = 300) private String textoPublicitario;
+    @Size(max = 100) private String textoBoton;
+    @Size(max = 500) private String urlBoton;
     private Boolean mostrarEnInicio;
     private Boolean mostrarEnCarrusel;
     private Boolean mostrarEnPaginaPromociones;
     private Boolean mostrarEnCheckout;
-    private Boolean mostrarDestacado;
     private Boolean soloMovil;
-
-    // Reglas de negocio
-    @Min(1)
-    private Integer limiteUsos;
-
-    @Min(1)
-    private Integer limitePorCliente;
-
-    @Min(1)
-    private Integer minimoAsistentes;
-
-    @DecimalMin("0.00") @Digits(integer = 10, fraction = 2)
-    private BigDecimal montoMinimo;
 }

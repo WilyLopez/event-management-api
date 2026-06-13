@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder
@@ -20,5 +20,5 @@ public class ComprobanteResponse {
     private final BigDecimal    montoTotal;
     private final String        pdfUrl;
     private final String        cdrEstado;
-    private final LocalDateTime fechaEmision;
+    private final OffsetDateTime fechaEmision;
 }

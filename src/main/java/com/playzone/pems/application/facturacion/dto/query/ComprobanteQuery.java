@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder
@@ -25,5 +25,5 @@ public class ComprobanteQuery {
     private final String        pdfUrl;
     private final String        cdrEstado;
     private final String        cdrDescripcion;
-    private final LocalDateTime fechaEmision;
+    private final OffsetDateTime fechaEmision;
 }

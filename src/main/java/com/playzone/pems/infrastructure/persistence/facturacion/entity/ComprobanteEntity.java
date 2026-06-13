@@ -3,14 +3,13 @@ package com.playzone.pems.infrastructure.persistence.facturacion.entity;
 import com.playzone.pems.domain.facturacion.model.enums.EstadoComprobante;
 import com.playzone.pems.domain.facturacion.model.enums.TipoComprobante;
 import com.playzone.pems.domain.facturacion.model.enums.TipoDocReceptor;
-import com.playzone.pems.infrastructure.persistence.pago.entity.PagoEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "comprobante")
@@ -26,9 +25,8 @@ public class ComprobanteEntity {
     @Column(name = "idcomprobante")
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "idpago", nullable = false, unique = true)
-    private PagoEntity pago;
+    @Column(name = "idpago", nullable = false, unique = true)
+    private Long idPago;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "idtipo", nullable = false, length = 30)
@@ -103,9 +101,9 @@ public class ComprobanteEntity {
 
     @CreationTimestamp
     @Column(name = "fechaemision", nullable = false, updatable = false)
-    private LocalDateTime fechaEmision;
+    private OffsetDateTime fechaEmision;
 
     @UpdateTimestamp
     @Column(name = "fechaactualizacion", nullable = false)
-    private LocalDateTime fechaActualizacion;
+    private OffsetDateTime fechaActualizacion;
 }

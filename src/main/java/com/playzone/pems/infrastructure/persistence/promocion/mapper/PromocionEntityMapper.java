@@ -1,9 +1,11 @@
 package com.playzone.pems.infrastructure.persistence.promocion.mapper;
 
+import com.playzone.pems.domain.calendario.model.enums.TipoDia;
 import com.playzone.pems.domain.promocion.model.Promocion;
+import com.playzone.pems.domain.promocion.model.PromocionMarketing;
+import com.playzone.pems.domain.promocion.model.enums.TipoPromocion;
 import com.playzone.pems.infrastructure.persistence.promocion.entity.PromocionEntity;
-import com.playzone.pems.infrastructure.persistence.usuario.entity.SedeEntity;
-import com.playzone.pems.infrastructure.persistence.usuario.entity.UsuarioAdminEntity;
+import com.playzone.pems.infrastructure.persistence.promocion.entity.PromocionMarketingEntity;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -13,74 +15,86 @@ public class PromocionEntityMapper {
         if (e == null) return null;
         return Promocion.builder()
                 .id(e.getId())
-                .tipoPromocion(e.getTipoPromocion())
-                .idSede(e.getSede() != null ? e.getSede().getId() : null)
+                .tipoPromocion(TipoPromocion.desdeCodigo(e.getTipoCodigo()))
+                .idSede(e.getSedeId())
                 .nombre(e.getNombre())
                 .descripcion(e.getDescripcion())
                 .valorDescuento(e.getValorDescuento())
-                .condicion(e.getCondicion())
                 .minimoPersonas(e.getMinimoPersonas())
-                .soloTipoDia(e.getSoloTipoDia())
+                .soloTipoDia(e.getTipoDiaCodigo() != null ? TipoDia.desdeCodigo(e.getTipoDiaCodigo()) : null)
                 .fechaInicio(e.getFechaInicio())
                 .fechaFin(e.getFechaFin())
-                .activo(e.isActivo())
+                .activo(e.isEsActivo())
                 .esAutomatica(e.isEsAutomatica())
-                .idUsuarioCreador(e.getUsuarioCreador().getId())
-                .fechaCreacion(e.getFechaCreacion())
-                .imagenUrl(e.getImagenUrl())
-                .bannerUrl(e.getBannerUrl())
-                .colorDestacado(e.getColorDestacado())
+                .idUsuarioCreador(e.getCreatedBy())
+                .fechaCreacion(e.getCreatedAt() != null ? e.getCreatedAt() : null)
                 .prioridad(e.getPrioridad())
-                .textoPublicitario(e.getTextoPublicitario())
-                .textoBoton(e.getTextoBoton())
-                .urlBoton(e.getUrlBoton())
-                .mostrarEnInicio(e.isMostrarEnInicio())
-                .mostrarEnCarrusel(e.isMostrarEnCarrusel())
-                .mostrarEnPaginaPromociones(e.isMostrarEnPaginaPromociones())
-                .mostrarEnCheckout(e.isMostrarEnCheckout())
-                .mostrarDestacado(e.isMostrarDestacado())
-                .soloMovil(e.isSoloMovil())
                 .limiteUsos(e.getLimiteUsos())
                 .limitePorCliente(e.getLimitePorCliente())
-                .minimoAsistentes(e.getMinimoAsistentes())
                 .montoMinimo(e.getMontoMinimo())
+                .marketing(toMarketingDomain(e.getMarketing()))
                 .build();
     }
 
-    public PromocionEntity toEntity(Promocion d, SedeEntity sede, UsuarioAdminEntity creador) {
+    private PromocionMarketing toMarketingDomain(PromocionMarketingEntity m) {
+        if (m == null) return null;
+        return PromocionMarketing.builder()
+                .imagenPath(m.getImagenPath())
+                .bannerPath(m.getBannerPath())
+                .colorDestacado(m.getColorDestacado())
+                .textoPublicitario(m.getTextoPublicitario())
+                .textoBoton(m.getTextoBoton())
+                .urlBoton(m.getUrlBoton())
+                .mostrarEnInicio(m.isMostrarEnInicio())
+                .mostrarEnCarrusel(m.isMostrarEnCarrusel())
+                .mostrarEnPromociones(m.isMostrarEnPromociones())
+                .mostrarEnCheckout(m.isMostrarEnCheckout())
+                .soloMovil(m.isSoloMovil())
+                .build();
+    }
+
+    public PromocionEntity toEntity(Promocion d) {
         if (d == null) return null;
-        return PromocionEntity.builder()
+        PromocionEntity entity = PromocionEntity.builder()
                 .id(d.getId())
-                .tipoPromocion(d.getTipoPromocion())
-                .sede(sede)
+                .tipoCodigo(d.getTipoPromocion().getCodigo())
+                .sedeId(d.getIdSede())
                 .nombre(d.getNombre())
                 .descripcion(d.getDescripcion())
                 .valorDescuento(d.getValorDescuento())
-                .condicion(d.getCondicion())
-                .minimoPersonas(d.getMinimoPersonas())
-                .soloTipoDia(d.getSoloTipoDia())
+                .tipoDiaCodigo(d.getSoloTipoDia() != null ? d.getSoloTipoDia().getCodigo() : null)
                 .fechaInicio(d.getFechaInicio())
                 .fechaFin(d.getFechaFin())
-                .activo(d.isActivo())
                 .esAutomatica(d.isEsAutomatica())
-                .usuarioCreador(creador)
-                .imagenUrl(d.getImagenUrl())
-                .bannerUrl(d.getBannerUrl())
-                .colorDestacado(d.getColorDestacado())
+                .esActivo(d.isActivo())
                 .prioridad(d.getPrioridad())
-                .textoPublicitario(d.getTextoPublicitario())
-                .textoBoton(d.getTextoBoton())
-                .urlBoton(d.getUrlBoton())
-                .mostrarEnInicio(d.isMostrarEnInicio())
-                .mostrarEnCarrusel(d.isMostrarEnCarrusel())
-                .mostrarEnPaginaPromociones(d.isMostrarEnPaginaPromociones())
-                .mostrarEnCheckout(d.isMostrarEnCheckout())
-                .mostrarDestacado(d.isMostrarDestacado())
-                .soloMovil(d.isSoloMovil())
+                .minimoPersonas(d.getMinimoPersonas())
+                .montoMinimo(d.getMontoMinimo())
                 .limiteUsos(d.getLimiteUsos())
                 .limitePorCliente(d.getLimitePorCliente())
-                .minimoAsistentes(d.getMinimoAsistentes())
-                .montoMinimo(d.getMontoMinimo())
+                .createdBy(d.getIdUsuarioCreador())
+                .build();
+
+        if (d.getMarketing() != null) {
+            entity.setMarketing(toMarketingEntity(d.getMarketing(), entity));
+        }
+        return entity;
+    }
+
+    private PromocionMarketingEntity toMarketingEntity(PromocionMarketing m, PromocionEntity entity) {
+        return PromocionMarketingEntity.builder()
+                .promocion(entity)
+                .imagenPath(m.getImagenPath())
+                .bannerPath(m.getBannerPath())
+                .colorDestacado(m.getColorDestacado())
+                .textoPublicitario(m.getTextoPublicitario())
+                .textoBoton(m.getTextoBoton())
+                .urlBoton(m.getUrlBoton())
+                .mostrarEnInicio(m.isMostrarEnInicio())
+                .mostrarEnCarrusel(m.isMostrarEnCarrusel())
+                .mostrarEnPromociones(m.isMostrarEnPromociones())
+                .mostrarEnCheckout(m.isMostrarEnCheckout())
+                .soloMovil(m.isSoloMovil())
                 .build();
     }
 }

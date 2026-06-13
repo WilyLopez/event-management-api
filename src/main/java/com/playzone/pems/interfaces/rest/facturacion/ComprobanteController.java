@@ -5,6 +5,7 @@ import com.playzone.pems.application.facturacion.dto.command.EmitirComprobanteCo
 import com.playzone.pems.application.facturacion.dto.query.ComprobanteQuery;
 import com.playzone.pems.application.facturacion.port.in.AnularComprobanteUseCase;
 import com.playzone.pems.application.facturacion.port.in.EmitirComprobanteUseCase;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.interfaces.rest.facturacion.request.EmitirComprobanteRequest;
 import com.playzone.pems.interfaces.rest.facturacion.response.ComprobanteResponse;
 import com.playzone.pems.shared.response.ApiResponse;
@@ -18,13 +19,14 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/comprobantes")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class ComprobanteController {
 
     private final EmitirComprobanteUseCase emitirUseCase;
     private final AnularComprobanteUseCase anularUseCase;
+    private final SupabaseAuthFacade       supabaseAuthFacade;
 
     @PostMapping("/sedes/{idSede}")
+    @PreAuthorize("hasAuthority('comprobante.emitir')")
     public ResponseEntity<ApiResponse<ComprobanteResponse>> emitir(
             @PathVariable Long idSede,
             @Valid @RequestBody EmitirComprobanteRequest request) {
@@ -44,15 +46,15 @@ public class ComprobanteController {
     }
 
     @PostMapping("/{idComprobante}/anular")
+    @PreAuthorize("hasAuthority('comprobante.anular')")
     public ResponseEntity<ApiResponse<ComprobanteResponse>> anular(
             @PathVariable Long idComprobante,
-            @RequestParam String motivo,
-            @RequestAttribute Long idUsuarioAdmin) {
+            @RequestParam String motivo) {
 
         ComprobanteQuery query = anularUseCase.ejecutar(AnularComprobanteCommand.builder()
                 .idComprobante(idComprobante)
                 .motivoAnulacion(motivo)
-                .idUsuario(idUsuarioAdmin)
+                .idUsuario(supabaseAuthFacade.usuarioActualId().orElseThrow(() -> new IllegalStateException("Sin usuario autenticado en contexto")))
                 .build());
 
         return ResponseEntity.ok(ApiResponse.ok(toResponse(query)));

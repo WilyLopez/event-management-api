@@ -39,7 +39,7 @@ public class FacturacionService implements EmitirComprobanteUseCase, AnularCompr
                 .orElseThrow(() -> new ValidationException(
                         "No existe una serie activa para ese tipo de comprobante en la sede."));
 
-        int correlativo    = serieRepository.incrementarCorrelativoYRetornar(serie.getId());
+        int correlativo    = serieRepository.incrementarCorrelativoYRetornar(command.getIdSede(), command.getTipoComprobante());
         String numeroCompleto = serie.getSerie() + "-" + String.format("%08d", correlativo);
 
         if (comprobanteRepository.existsByNumeroCompleto(numeroCompleto)) {
