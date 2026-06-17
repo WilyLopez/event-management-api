@@ -26,7 +26,7 @@ public class ResenaPersistenceAdapter implements ResenaRepository {
 
     @Override
     public Page<Resena> findAprobadas(Pageable pageable) {
-        return resenaJpa.findByAprobadaTrueOrderByFechaCreacionDesc(pageable).map(mapper::toDomain);
+        return resenaJpa.findAprobadas(pageable).map(mapper::toDomain);
     }
 
     @Override

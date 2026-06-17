@@ -45,6 +45,14 @@ public class ContenidoLegalController {
         return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
+    @GetMapping("/{tipo}")
+    @PreAuthorize("hasAuthority('sitio.legal')")
+    public ResponseEntity<ApiResponse<ContenidoLegalResponse>> obtenerPorTipo(
+            @PathVariable String tipo) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                ContenidoLegalResponse.from(legalUseCase.obtenerPorTipo(tipo))));
+    }
+
     @PostMapping
     @PreAuthorize("hasAuthority('sitio.legal')")
     public ResponseEntity<ApiResponse<ContenidoLegalResponse>> crear(
@@ -55,7 +63,7 @@ public class ContenidoLegalController {
                         request.getTitulo(),
                         request.getContenido(),
                         supabaseAuthFacade.usuarioActualId().orElseThrow())));
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(response));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(response));
     }
 
     @PutMapping("/{tipo}")

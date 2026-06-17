@@ -49,6 +49,8 @@ public class GaleriaController {
     public ResponseEntity<ApiResponse<GaleriaResponse>> subir(
             @RequestParam MultipartFile archivo,
             @RequestParam(defaultValue = "GENERAL") CategoriaImagen categoria,
+            @RequestParam(required = false) String titulo,
+            @RequestParam(required = false) String descripcion,
             @RequestParam(required = false) String altTexto,
             @RequestParam(defaultValue = "0") int orden,
             @RequestParam(required = false) Long idSede) throws IOException {
@@ -58,6 +60,8 @@ public class GaleriaController {
                 archivo.getBytes(),
                 archivo.getOriginalFilename(),
                 archivo.getContentType(),
+                titulo,
+                descripcion,
                 altTexto,
                 categoria,
                 orden,
@@ -72,6 +76,8 @@ public class GaleriaController {
             @PathVariable Long idSede,
             @RequestParam MultipartFile archivo,
             @RequestParam(defaultValue = "GENERAL") CategoriaImagen categoria,
+            @RequestParam(required = false) String titulo,
+            @RequestParam(required = false) String descripcion,
             @RequestParam(required = false) String altTexto,
             @RequestParam(defaultValue = "0") int orden) throws IOException {
 
@@ -80,6 +86,8 @@ public class GaleriaController {
                 archivo.getBytes(),
                 archivo.getOriginalFilename(),
                 archivo.getContentType(),
+                titulo,
+                descripcion,
                 altTexto,
                 categoria,
                 orden,
@@ -95,7 +103,8 @@ public class GaleriaController {
             @RequestBody ActualizarGaleriaRequest request) {
 
         ImagenGaleria imagen = galeriaUseCase.actualizar(
-                idImagen, request.getAltTexto(), request.getCategoria(), request.getOrden());
+                idImagen, request.getTitulo(), request.getDescripcion(),
+                request.getAltTexto(), request.getCategoria(), request.getOrden());
 
         return ResponseEntity.ok(ApiResponse.ok(toResponse(imagen)));
     }
@@ -135,8 +144,12 @@ public class GaleriaController {
                 .id(i.getId())
                 .idSede(i.getIdSede())
                 .url(i.getUrlImagen())
+                .titulo(i.getTitulo())
+                .descripcion(i.getDescripcion())
                 .altTexto(i.getAltTexto())
                 .categoria(i.getCategoriaImagen())
+                .tipoMime(i.getTipoMime())
+                .tamanioBytes(i.getTamanioBytes())
                 .orden(i.getOrdenVisualizacion())
                 .destacada(i.isDestacada())
                 .fechaCreacion(i.getFechaSubida())
@@ -147,6 +160,8 @@ public class GaleriaController {
     @Setter
     @NoArgsConstructor
     public static class ActualizarGaleriaRequest {
+        private String          titulo;
+        private String          descripcion;
         private String          altTexto;
         private CategoriaImagen categoria;
         private Integer         orden;
@@ -158,10 +173,14 @@ public class GaleriaController {
         private Long            id;
         private Long            idSede;
         private String          url;
+        private String          titulo;
+        private String          descripcion;
         private String          altTexto;
         private CategoriaImagen categoria;
+        private String          tipoMime;
+        private Long            tamanioBytes;
         private int             orden;
         private boolean         destacada;
-        private OffsetDateTime   fechaCreacion;
+        private OffsetDateTime  fechaCreacion;
     }
 }

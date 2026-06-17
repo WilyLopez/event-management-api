@@ -32,7 +32,7 @@ public class FaqPersistenceAdapter implements FaqRepository {
 
     @Override
     public List<Faq> findVisibles() {
-        return faqJpa.findByVisibleTrueOrderByOrdenVisualizacionAsc()
+        return faqJpa.findByVisibleTrueOrderByOrdenAsc()
                 .stream().map(mapper::toDomain).toList();
     }
 

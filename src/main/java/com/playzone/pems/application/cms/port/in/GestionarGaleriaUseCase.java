@@ -16,6 +16,8 @@ public interface GestionarGaleriaUseCase {
             byte[] contenido,
             String nombreArchivo,
             String contentType,
+            String titulo,
+            String descripcion,
             String altTexto,
             CategoriaImagen categoria,
             int orden,
@@ -29,5 +31,5 @@ public interface GestionarGaleriaUseCase {
 
     void quitarDestacado(Long idImagen);
 
-    ImagenGaleria actualizar(Long idImagen, String altTexto, CategoriaImagen categoria, Integer orden);
+    ImagenGaleria actualizar(Long idImagen, String titulo, String descripcion, String altTexto, CategoriaImagen categoria, Integer orden);
 }

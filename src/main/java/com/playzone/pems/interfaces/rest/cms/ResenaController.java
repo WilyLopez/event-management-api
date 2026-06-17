@@ -5,6 +5,7 @@ import com.playzone.pems.domain.cms.model.Resena;
 import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.interfaces.rest.cms.response.ResenaResponse;
 import com.playzone.pems.shared.response.ApiResponse;
+import com.playzone.pems.shared.response.PagedResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -13,13 +14,12 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/resenas")
@@ -49,12 +49,17 @@ public class ResenaController {
 
     @GetMapping
     @PreAuthorize("hasAuthority('sitio.resena')")
-    public ResponseEntity<ApiResponse<List<ResenaResponse>>> listar(
+    public ResponseEntity<ApiResponse<PagedResponse<ResenaResponse>>> listar(
             @RequestParam(defaultValue = "false") boolean pendientes,
-            Pageable pageable) {
-        var responses = moderarUseCase.listar(pendientes, pageable)
-                .getContent().stream().map(this::toResponse).toList();
-        return ResponseEntity.ok(ApiResponse.ok(responses));
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "fechaCreacion") String sort,
+            @RequestParam(defaultValue = "desc") String dir) {
+        var pageable = PageRequest.of(page, size,
+                "asc".equalsIgnoreCase(dir) ? Sort.Direction.ASC : Sort.Direction.DESC, sort);
+        PagedResponse<ResenaResponse> response = PagedResponse.of(
+                moderarUseCase.listar(pendientes, pageable).map(this::toResponse));
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     @PostMapping("/{idResena}/aprobar")

@@ -45,12 +45,19 @@ public class HealthController {
                 .orElse(null);
 
         String tipoPerfil;
+        Long sedeId   = null;
+        Long staffId  = null;
         if (ctx.clientePerfilId() != null) {
             tipoPerfil = "CLIENTE";
-        } else if (staffPerfilRepository.buscarPorUsuarioId(ctx.userId()).isPresent()) {
-            tipoPerfil = "STAFF";
         } else {
-            tipoPerfil = "NINGUNO";
+            var staffOpt = staffPerfilRepository.buscarPorUsuarioId(ctx.userId());
+            if (staffOpt.isPresent()) {
+                tipoPerfil = "STAFF";
+                sedeId  = staffOpt.get().getSedeId();
+                staffId = staffOpt.get().getId();
+            } else {
+                tipoPerfil = "NINGUNO";
+            }
         }
 
         return ResponseEntity.ok(ApiResponse.ok(new MeResponse(
@@ -59,7 +66,10 @@ public class HealthController {
                 ctx.email(),
                 ctx.roles(),
                 ctx.permisos(),
-                tipoPerfil
+                tipoPerfil,
+                ctx.clientePerfilId(),
+                sedeId,
+                staffId
         )));
     }
 
@@ -69,6 +79,9 @@ public class HealthController {
             String       correo,
             List<String> roles,
             List<String> permisos,
-            String       tipoPerfil
+            String       tipoPerfil,
+            Long         clientePerfilId,
+            Long         sedeId,
+            Long         staffId
     ) {}
 }

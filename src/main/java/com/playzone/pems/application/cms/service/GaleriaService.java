@@ -37,7 +37,8 @@ public class GaleriaService implements GestionarGaleriaUseCase {
     @Override
     @Transactional
     public ImagenGaleria subir(Long idSede, byte[] contenido, String nombreArchivo,
-                               String contentType, String altTexto, CategoriaImagen categoria,
+                               String contentType, String titulo, String descripcion,
+                               String altTexto, CategoriaImagen categoria,
                                int orden, UUID idUsuario) {
 
         String key = "galeria/" + LocalDateTime.now().format(FMT) + "_" + nombreArchivo;
@@ -46,6 +47,8 @@ public class GaleriaService implements GestionarGaleriaUseCase {
         ImagenGaleria imagen = ImagenGaleria.builder()
                 .idSede(idSede)
                 .urlImagen(url)
+                .titulo(titulo)
+                .descripcion(descripcion)
                 .altTexto(altTexto)
                 .categoriaImagen(categoria)
                 .tipoMime(contentType)
@@ -97,14 +100,17 @@ public class GaleriaService implements GestionarGaleriaUseCase {
 
     @Override
     @Transactional
-    public ImagenGaleria actualizar(Long idImagen, String altTexto, CategoriaImagen categoria, Integer orden) {
+    public ImagenGaleria actualizar(Long idImagen, String titulo, String descripcion,
+                                    String altTexto, CategoriaImagen categoria, Integer orden) {
         ImagenGaleria imagen = galeriaRepository.findById(idImagen)
                 .orElseThrow(() -> new ResourceNotFoundException("ImagenGaleria", idImagen));
 
         ImagenGaleria.ImagenGaleriaBuilder builder = imagen.toBuilder();
-        if (altTexto != null) builder.altTexto(altTexto);
+        if (titulo != null)    builder.titulo(titulo);
+        if (descripcion != null) builder.descripcion(descripcion);
+        if (altTexto != null)  builder.altTexto(altTexto);
         if (categoria != null) builder.categoriaImagen(categoria);
-        if (orden != null) builder.ordenVisualizacion(orden);
+        if (orden != null)     builder.ordenVisualizacion(orden);
 
         return galeriaRepository.save(builder.build());
     }
