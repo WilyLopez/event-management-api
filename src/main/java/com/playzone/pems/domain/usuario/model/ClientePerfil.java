@@ -24,15 +24,25 @@ public class ClientePerfil {
     private String     apellidoMaterno;
     private String     correo;
     private String     telefono;
+    private java.time.LocalDate fechaNacimiento;
+    private String     ruc;
+    private String     razonSocial;
+    private String     direccionFiscal;
     private String     segmentoCodigo;
     private boolean    esVip;
     private BigDecimal descuentoVip;
     private boolean    aceptaComunicaciones;
+    private String     fotoPerfilPath;
+    private String     observaciones;
     private int        contadorVisitas;
     private BigDecimal totalGastado;
     private String     origen;
     private OffsetDateTime ultimaVisitaAt;
-    private OffsetDateTime creadoEn;
+    private OffsetDateTime createdAt;
+    private OffsetDateTime updatedAt;
+    private java.util.UUID createdBy;
+    private java.util.UUID updatedBy;
+    private OffsetDateTime deletedAt;
 
     public String nombreCompleto() {
         StringBuilder sb = new StringBuilder(nombres != null ? nombres : "");

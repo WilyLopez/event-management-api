@@ -34,6 +34,7 @@ public class SecurityConfig {
                                 "/api/v1/calendario/**",
                                 "/api/v1/feriados",
                                 "/api/v1/tarifas",
+                                "/api/v1/tarifas/sedes/*/precios",
                                 "/api/v1/banners/**",
                                 "/api/v1/galeria/**",
                                 "/api/v1/cms/**",
@@ -47,7 +48,11 @@ public class SecurityConfig {
                                 "/api/v1/servicios-cotizacion/**",
                                 "/api/v1/health/ping"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/resenas").permitAll()
+                        .requestMatchers(HttpMethod.POST, 
+                                "/api/v1/resenas",
+                                "/api/v1/clientes/registro",
+                                "/api/v1/auth/**"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex

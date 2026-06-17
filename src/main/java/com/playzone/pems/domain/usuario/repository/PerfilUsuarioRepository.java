@@ -10,4 +10,6 @@ public interface PerfilUsuarioRepository {
     Optional<PerfilUsuario> buscarPorId(UUID id);
 
     Optional<PerfilUsuario> buscarPorCorreo(String correo);
+
+    void actualizarPerfil(UUID id, String nombre, String telefono);
 }

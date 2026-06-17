@@ -21,4 +21,8 @@ public interface UsuarioRolJpaRepository extends JpaRepository<UsuarioRolEntity,
             WHERE ur.usuario_id = :usuarioId
             """, nativeQuery = true)
     List<String> findPermisoCodigosByUsuarioId(@Param("usuarioId") UUID usuarioId);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional
+    void deleteByUsuarioIdAndRolCodigo(UUID usuarioId, String rolCodigo);
 }

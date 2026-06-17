@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bienvenido al Panel Administrativo — Kiki y Lala</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f0f7ff;font-family:'Segoe UI',Helvetica,Arial,sans-serif;">
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+         style="background-color:#f0f7ff;padding:36px 12px;">
+    <tr>
+      <td align="center">
+
+        <!-- Tarjeta principal -->
+        <table role="presentation" cellpadding="0" cellspacing="0"
+               style="background:#ffffff;border-radius:16px;overflow:hidden;
+                      box-shadow:0 4px 24px rgba(0,174,239,0.13);
+                      max-width:580px;width:100%;">
+
+          <!-- ═══ ENCABEZADO ═══ -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#0098d4 0%,#00AEEF 55%,#33c1f0 100%);
+                       padding:32px 40px 26px;text-align:center;">
+              <img src="cid:logo" alt="Kiki y Lala"
+                   style="max-height:80px;max-width:220px;display:block;margin:0 auto 16px;"/>
+              <p style="margin:0;font-size:11px;font-weight:700;letter-spacing:2px;
+                        text-transform:uppercase;color:rgba(255,255,255,0.80);">
+                PANEL ADMINISTRATIVO
+              </p>
+            </td>
+          </tr>
+
+          <!-- ═══ SALUDO ═══ -->
+          <tr>
+            <td style="padding:32px 40px 4px;">
+              <h1 style="margin:0 0 10px;font-size:22px;font-weight:800;color:#1A1A2E;
+                         letter-spacing:-0.3px;">
+                ¡Bienvenido, {{nombre}}!
+              </h1>
+              <p style="margin:0;font-size:15px;color:#475569;line-height:1.7;">
+                Tu cuenta de acceso al panel administrativo de
+                <strong style="color:#00AEEF;">Kiki y Lala</strong> ha sido creada.
+                A continuación encontrarás tus credenciales.
+              </p>
+            </td>
+          </tr>
+
+          <!-- ═══ BADGES ROL + SEDE ═══ -->
+          <tr>
+            <td style="padding:18px 40px 0;">
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding-right:8px;">
+                    <span style="display:inline-block;background:#e0f5fd;color:#0077a8;
+                                 font-size:11px;font-weight:700;letter-spacing:0.5px;
+                                 padding:5px 14px;border-radius:20px;
+                                 border:1px solid #b3e5fc;">
+                      {{rol}}
+                    </span>
+                  </td>
+                  <td>
+                    <span style="display:inline-block;background:#f1f5f9;color:#475569;
+                                 font-size:11px;font-weight:600;
+                                 padding:5px 14px;border-radius:20px;
+                                 border:1px solid #e2e8f0;">
+                      &#128205; {{sede}}
+                    </span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ═══ TARJETA CREDENCIALES ═══ -->
+          <tr>
+            <td style="padding:22px 40px 0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                     style="background:#f8fafc;border:1.5px solid #cbd5e1;
+                            border-radius:12px;overflow:hidden;">
+
+                <!-- Header tarjeta -->
+                <tr>
+                  <td colspan="2"
+                      style="background:#1A1A2E;padding:11px 20px;">
+                    <p style="margin:0;font-size:10px;font-weight:700;letter-spacing:1.5px;
+                               text-transform:uppercase;color:rgba(255,255,255,0.65);">
+                      &#128272;&nbsp;&nbsp;Credenciales de acceso
+                    </p>
+                  </td>
+                </tr>
+
+                <!-- Usuario -->
+                <tr>
+                  <td style="padding:15px 20px 8px;width:36%;vertical-align:middle;">
+                    <p style="margin:0;font-size:10px;font-weight:700;letter-spacing:0.8px;
+                               text-transform:uppercase;color:#94a3b8;">
+                      Usuario
+                    </p>
+                  </td>
+                  <td style="padding:15px 20px 8px;vertical-align:middle;">
+                    <p style="margin:0;font-size:14px;font-weight:600;color:#1A1A2E;
+                               font-family:'Courier New',Courier,monospace;">
+                      {{correo}}
+                    </p>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td colspan="2" style="padding:0 20px;">
+                    <hr style="border:none;border-top:1px solid #e2e8f0;margin:0;"/>
+                  </td>
+                </tr>
+
+                <!-- Contraseña -->
+                <tr>
+                  <td style="padding:12px 20px 16px;vertical-align:middle;">
+                    <p style="margin:0;font-size:10px;font-weight:700;letter-spacing:0.8px;
+                               text-transform:uppercase;color:#94a3b8;">
+                      Contraseña
+                    </p>
+                  </td>
+                  <td style="padding:12px 20px 16px;vertical-align:middle;">
+                    <p style="margin:0;font-size:18px;font-weight:900;letter-spacing:3px;
+                               color:#0077a8;font-family:'Courier New',Courier,monospace;">
+                      {{password}}
+                    </p>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+
+          <!-- ═══ AVISO SEGURIDAD ═══ -->
+          <tr>
+            <td style="padding:14px 40px 0;">
+              <table role="presentation" width="100%" cellpadding="13" cellspacing="0"
+                     style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;">
+                <tr>
+                  <td>
+                    <p style="margin:0;font-size:13px;color:#92400e;line-height:1.6;">
+                      &#9888;&#65039;&nbsp; <strong>Esta es una contraseña temporal.</strong>
+                      Deberás cambiarla al iniciar sesión por primera vez.
+                      No la compartas y elimina este correo una vez que hayas accedido.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ═══ PASOS DE ACCESO ═══ -->
+          <tr>
+            <td style="padding:24px 40px 0;">
+              <p style="margin:0 0 14px;font-size:12px;font-weight:700;color:#1A1A2E;
+                         text-transform:uppercase;letter-spacing:0.6px;">
+                Cómo acceder al panel
+              </p>
+
+              <!-- Paso 1 -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                     style="margin-bottom:10px;">
+                <tr>
+                  <td style="width:28px;vertical-align:top;padding-top:2px;">
+                    <span style="display:inline-block;width:22px;height:22px;
+                                 background:#00AEEF;color:white;border-radius:50%;
+                                 font-size:11px;font-weight:800;text-align:center;
+                                 line-height:22px;font-family:Arial,sans-serif;">1</span>
+                  </td>
+                  <td style="padding-left:10px;vertical-align:top;">
+                    <p style="margin:0;font-size:13px;color:#475569;line-height:1.6;">
+                      Haz clic en el botón <strong style="color:#1A1A2E;">Ingresar al panel</strong>.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Paso 2 -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                     style="margin-bottom:10px;">
+                <tr>
+                  <td style="width:28px;vertical-align:top;padding-top:2px;">
+                    <span style="display:inline-block;width:22px;height:22px;
+                                 background:#00AEEF;color:white;border-radius:50%;
+                                 font-size:11px;font-weight:800;text-align:center;
+                                 line-height:22px;font-family:Arial,sans-serif;">2</span>
+                  </td>
+                  <td style="padding-left:10px;vertical-align:top;">
+                    <p style="margin:0;font-size:13px;color:#475569;line-height:1.6;">
+                      Inicia sesión con tu correo <strong style="color:#1A1A2E;">{{correo}}</strong>
+                      y la contraseña temporal.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Paso 3 -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="width:28px;vertical-align:top;padding-top:2px;">
+                    <span style="display:inline-block;width:22px;height:22px;
+                                 background:#00AEEF;color:white;border-radius:50%;
+                                 font-size:11px;font-weight:800;text-align:center;
+                                 line-height:22px;font-family:Arial,sans-serif;">3</span>
+                  </td>
+                  <td style="padding-left:10px;vertical-align:top;">
+                    <p style="margin:0;font-size:13px;color:#475569;line-height:1.6;">
+                      El sistema te solicitará crear una <strong style="color:#1A1A2E;">nueva contraseña segura</strong>.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- ═══ BOTÓN CTA ═══ -->
+          <tr>
+            <td style="padding:28px 40px 10px;text-align:center;">
+              <a href="{{loginUrl}}"
+                 style="display:inline-block;
+                        background:linear-gradient(135deg,#0098d4 0%,#00AEEF 100%);
+                        color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;
+                        padding:14px 48px;border-radius:50px;letter-spacing:0.3px;
+                        box-shadow:0 4px 18px rgba(0,174,239,0.45);">
+                Ingresar al panel &rarr;
+              </a>
+            </td>
+          </tr>
+
+          <!-- ═══ REQUISITOS DE CONTRASEÑA ═══ -->
+          <tr>
+            <td style="padding:0 40px 24px;">
+              <table role="presentation" width="100%" cellpadding="12" cellspacing="0"
+                     style="background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;
+                            margin-top:16px;">
+                <tr>
+                  <td>
+                    <p style="margin:0 0 8px;font-size:11px;font-weight:700;color:#64748b;
+                               text-transform:uppercase;letter-spacing:0.5px;">
+                      Tu nueva contraseña debe cumplir:
+                    </p>
+                    <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                      <tr>
+                        <td style="width:50%;vertical-align:top;">
+                          <p style="margin:0 0 4px;font-size:12px;color:#64748b;">&#10003;&nbsp; Mínimo 8 caracteres</p>
+                          <p style="margin:0 0 4px;font-size:12px;color:#64748b;">&#10003;&nbsp; Una letra mayúscula</p>
+                          <p style="margin:0;font-size:12px;color:#64748b;">&#10003;&nbsp; Una letra minúscula</p>
+                        </td>
+                        <td style="width:50%;vertical-align:top;">
+                          <p style="margin:0 0 4px;font-size:12px;color:#64748b;">&#10003;&nbsp; Un número</p>
+                          <p style="margin:0;font-size:12px;color:#64748b;">&#10003;&nbsp; Un carácter especial (!@#$%&amp;*?)</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- ═══ PIE DE PÁGINA ═══ -->
+          <tr>
+            <td style="background:#f8fafc;border-top:1px solid #e2e8f0;
+                       padding:18px 40px;text-align:center;">
+              <p style="margin:0 0 4px;font-size:12px;color:#94a3b8;line-height:1.6;">
+                Este mensaje fue enviado automáticamente por el sistema de
+                <strong style="color:#00AEEF;">Kiki y Lala</strong>.
+                Si no esperabas recibirlo, ignóralo o contáctanos.
+              </p>
+              <p style="margin:8px 0 0;font-size:11px;color:#cbd5e1;">
+                &copy; 2026 Kiki y Lala &mdash; Panel Administrativo
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

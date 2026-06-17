@@ -35,12 +35,16 @@ public class SupabaseJwtFilter extends OncePerRequestFilter {
     private final UsuarioRolRepository    usuarioRolRepository;
     private final PerfilUsuarioRepository perfilUsuarioRepository;
     private final ClientePerfilRepository clientePerfilRepository;
+    private final com.playzone.pems.domain.usuario.repository.StaffPerfilRepository staffPerfilRepository;
     private final ObjectMapper            objectMapper;
 
     private record CachedAuthorities(
             List<String> roles,
             List<String> permisos,
             Long clientePerfilId,
+            boolean debeCambiarPassword,
+            boolean esActivo,
+            boolean estaBloqueado,
             long cachedAt
     ) {}
 
@@ -117,6 +121,25 @@ public class SupabaseJwtFilter extends OncePerRequestFilter {
             return;
         }
 
+        if (!auth.esActivo()) {
+            writeError(response, HttpServletResponse.SC_FORBIDDEN, "account_inactive",
+                    "Cuenta desactivada. Contacte al administrador.");
+            return;
+        }
+
+        if (auth.estaBloqueado()) {
+            writeError(response, HttpServletResponse.SC_FORBIDDEN, "account_locked",
+                    "Cuenta bloqueada temporalmente por seguridad.");
+            return;
+        }
+
+        // Restricción por cambio obligatorio de contraseña
+        if (auth.debeCambiarPassword() && !request.getRequestURI().equals("/api/v1/usuarios/me/password")) {
+            writeError(response, HttpServletResponse.SC_FORBIDDEN, "password_change_required",
+                    "Debe cambiar su contraseña antes de continuar.");
+            return;
+        }
+
         List<SimpleGrantedAuthority> grantedAuthorities = auth.permisos().stream()
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
@@ -151,7 +174,20 @@ public class SupabaseJwtFilter extends OncePerRequestFilter {
                 .map(cp -> cp.getId())
                 .orElse(null);
 
-        CachedAuthorities fresh = new CachedAuthorities(roles, permisos, clientePerfilId,
+        boolean debeCambiarPassword = false;
+        boolean esActivo             = true;
+        boolean estaBloqueado       = false;
+
+        java.util.Optional<com.playzone.pems.domain.usuario.model.StaffPerfil> staff = staffPerfilRepository.buscarPorUsuarioId(userId);
+        if (staff.isPresent()) {
+            debeCambiarPassword = staff.get().isDebeCambiarContrasena();
+            esActivo             = staff.get().isEsActivo();
+            estaBloqueado       = staff.get().getBloqueadoHasta() != null 
+                    && staff.get().getBloqueadoHasta().isAfter(java.time.OffsetDateTime.now());
+        }
+
+        CachedAuthorities fresh = new CachedAuthorities(roles, permisos, clientePerfilId, 
+                debeCambiarPassword, esActivo, estaBloqueado,
                 System.currentTimeMillis());
         cache.put(userId, fresh);
         return fresh;

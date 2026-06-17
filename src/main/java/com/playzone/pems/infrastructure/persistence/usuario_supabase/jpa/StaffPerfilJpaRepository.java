@@ -9,4 +9,25 @@ import java.util.UUID;
 public interface StaffPerfilJpaRepository extends JpaRepository<StaffPerfilEntity, Long> {
 
     Optional<StaffPerfilEntity> findByUsuarioIdAndDeletedAtIsNull(UUID usuarioId);
+
+    @org.springframework.data.jpa.repository.Query("""
+            SELECT s FROM StaffPerfilEntity s
+            JOIN PerfilUsuarioEntity p ON s.usuarioId = p.id
+            WHERE p.correo = :correo AND s.deletedAt IS NULL
+            """)
+    Optional<StaffPerfilEntity> findByCorreo(@org.springframework.data.repository.query.Param("correo") String correo);
+
+    Optional<StaffPerfilEntity> findByIdAndDeletedAtIsNull(Long id);
+
+    java.util.List<StaffPerfilEntity> findByDeletedAtIsNull();
+
+    @org.springframework.data.jpa.repository.Query(value = """
+            SELECT COUNT(sp.id)
+            FROM staff_perfil sp
+            INNER JOIN usuario_rol ur ON sp.usuario_id = ur.usuario_id
+            WHERE ur.rol_codigo = :rolCodigo
+              AND sp.es_activo = true
+              AND sp.deleted_at IS NULL
+            """, nativeQuery = true)
+    long contarActivosPorRol(@org.springframework.data.repository.query.Param("rolCodigo") String rolCodigo);
 }

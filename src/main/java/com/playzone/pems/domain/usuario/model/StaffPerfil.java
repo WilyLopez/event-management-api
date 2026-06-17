@@ -22,4 +22,12 @@ public class StaffPerfil {
     private String    telefonoEmergencia;
     private String    observaciones;
     private boolean   esActivo;
+    private boolean   debeCambiarContrasena;
+    private Integer   intentosFallidos;
+    private java.time.OffsetDateTime bloqueadoHasta;
+    private java.time.OffsetDateTime createdAt;
+    private java.time.OffsetDateTime updatedAt;
+    private java.util.UUID createdBy;
+    private java.util.UUID updatedBy;
+    private java.time.OffsetDateTime deletedAt;
 }

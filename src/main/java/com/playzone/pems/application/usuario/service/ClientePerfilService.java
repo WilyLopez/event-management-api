@@ -2,6 +2,7 @@ package com.playzone.pems.application.usuario.service;
 
 import com.playzone.pems.application.usuario.dto.command.ActualizarClientePerfilCommand;
 import com.playzone.pems.application.usuario.dto.command.RegistrarClientePerfilCommand;
+import com.playzone.pems.application.usuario.dto.command.RegistrarClientePublicoCommand;
 import com.playzone.pems.application.usuario.dto.query.ClientePerfilQuery;
 import com.playzone.pems.application.usuario.port.in.ActualizarClientePerfilUseCase;
 import com.playzone.pems.application.usuario.port.in.ActualizarSegmentoPerfilUseCase;
@@ -12,7 +13,9 @@ import com.playzone.pems.application.usuario.port.in.ListarClientesPerfilUseCase
 import com.playzone.pems.application.usuario.port.in.ObtenerClientePerfilUseCase;
 import com.playzone.pems.application.usuario.port.in.QuitarVipPerfilUseCase;
 import com.playzone.pems.application.usuario.port.in.RegistrarClientePerfilUseCase;
+import com.playzone.pems.application.usuario.port.in.RegistrarClientePublicoUseCase;
 import com.playzone.pems.application.usuario.port.in.RegistrarVisitaPerfilUseCase;
+import com.playzone.pems.application.usuario.port.out.SupabaseAuthPort;
 import com.playzone.pems.domain.usuario.model.ClientePerfil;
 import com.playzone.pems.domain.usuario.repository.ClientePerfilRepository;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
@@ -25,11 +28,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class ClientePerfilService
         implements RegistrarClientePerfilUseCase,
+        RegistrarClientePublicoUseCase,
         ActualizarClientePerfilUseCase,
         ListarClientesPerfilUseCase,
         ObtenerClientePerfilUseCase,
@@ -41,6 +47,71 @@ public class ClientePerfilService
         ActualizarSegmentoPerfilUseCase {
 
     private final ClientePerfilRepository clientePerfilRepository;
+    private final SupabaseAuthPort        supabaseAuthPort;
+
+    @Override
+    @Transactional
+    public ClientePerfil ejecutar(RegistrarClientePublicoCommand command) {
+        // 1. Validaciones previas (Evitar llamadas innecesarias a Supabase)
+        if (command.getTipoDocumentoCodigo() == null || command.getTipoDocumentoCodigo().isBlank()) {
+            throw new ValidationException("tipoDocumento", "El tipo de documento es obligatorio.");
+        }
+        if (command.getNumeroDocumento() == null || command.getNumeroDocumento().isBlank()) {
+            throw new ValidationException("numeroDocumento", "El número de documento es obligatorio.");
+        }
+
+        // 2. Validar si ya existe un cliente con ese correo
+        Optional<ClientePerfil> clienteExistente = clientePerfilRepository.buscarPorCorreo(command.getCorreo());
+
+        if (clienteExistente.isPresent()) {
+            ClientePerfil cliente = clienteExistente.get();
+            if (cliente.getUsuarioId() != null) {
+                throw new ValidationException("correo", "El correo ya está registrado y vinculado a una cuenta.");
+            }
+            
+            // Caso POS: El cliente existe pero no tiene usuarioId
+            // 2. Crear usuario en Supabase
+            UUID usuarioId = supabaseAuthPort.crearUsuario(command.getCorreo(), command.getPassword(), command.getNombre());
+
+            // 3. Vincular usuarioId al cliente existente
+            ClientePerfil vinculado = cliente.toBuilder()
+                    .usuarioId(usuarioId)
+                    .nombres(command.getNombre()) // Actualizamos el nombre con el del registro web si es necesario
+                    .origen("WEB")
+                    .build();
+
+            return clientePerfilRepository.guardar(vinculado);
+        }
+
+        // Caso Nuevo: No existe el cliente por correo
+        // 2. Validar duplicado por documento
+        clientePerfilRepository.buscarPorDocumento(
+                command.getTipoDocumentoCodigo(), command.getNumeroDocumento()
+        ).ifPresent(c -> {
+            throw new ValidationException("numeroDocumento", "Ya existe una cuenta con ese documento.");
+        });
+
+        // 3. Crear usuario en Supabase
+        UUID usuarioId = supabaseAuthPort.crearUsuario(command.getCorreo(), command.getPassword(), command.getNombre());
+
+        // 4. Crear cliente_perfil
+        ClientePerfil nuevo = ClientePerfil.builder()
+                .usuarioId(usuarioId)
+                .tipoDocumentoCodigo(command.getTipoDocumentoCodigo())
+                .numeroDocumento(command.getNumeroDocumento())
+                .nombres(command.getNombre())
+                .correo(command.getCorreo())
+                .telefono(command.getTelefono())
+                .origen("WEB")
+                .aceptaComunicaciones(true)
+                .segmentoCodigo("NUEVO")
+                .esVip(false)
+                .contadorVisitas(0)
+                .totalGastado(BigDecimal.ZERO)
+                .build();
+
+        return clientePerfilRepository.guardar(nuevo);
+    }
 
     @Override
     @Transactional

@@ -2,6 +2,7 @@ package com.playzone.pems.interfaces.rest.usuario;
 
 import com.playzone.pems.application.usuario.dto.command.ActualizarClientePerfilCommand;
 import com.playzone.pems.application.usuario.dto.command.RegistrarClientePerfilCommand;
+import com.playzone.pems.application.usuario.dto.command.RegistrarClientePublicoCommand;
 import com.playzone.pems.application.usuario.dto.query.ClientePerfilQuery;
 import com.playzone.pems.application.usuario.port.in.ActualizarClientePerfilUseCase;
 import com.playzone.pems.application.usuario.port.in.ActualizarSegmentoPerfilUseCase;
@@ -12,11 +13,13 @@ import com.playzone.pems.application.usuario.port.in.ListarClientesPerfilUseCase
 import com.playzone.pems.application.usuario.port.in.ObtenerClientePerfilUseCase;
 import com.playzone.pems.application.usuario.port.in.QuitarVipPerfilUseCase;
 import com.playzone.pems.application.usuario.port.in.RegistrarClientePerfilUseCase;
+import com.playzone.pems.application.usuario.port.in.RegistrarClientePublicoUseCase;
 import com.playzone.pems.application.usuario.port.in.RegistrarVisitaPerfilUseCase;
 import com.playzone.pems.domain.usuario.model.ClientePerfil;
 import com.playzone.pems.interfaces.rest.usuario.request.ActualizarClientePerfilRequest;
 import com.playzone.pems.interfaces.rest.usuario.request.HacerVipRequest;
 import com.playzone.pems.interfaces.rest.usuario.request.RegistrarClientePerfilRequest;
+import com.playzone.pems.interfaces.rest.usuario.request.RegistrarClientePublicoRequest;
 import com.playzone.pems.interfaces.rest.usuario.response.ClientePerfilResponse;
 import com.playzone.pems.shared.response.ApiResponse;
 import com.playzone.pems.shared.response.PagedResponse;
@@ -46,6 +49,7 @@ import java.math.BigDecimal;
 public class ClienteController {
 
     private final RegistrarClientePerfilUseCase  registrarUseCase;
+    private final RegistrarClientePublicoUseCase registrarPublicoUseCase;
     private final ActualizarClientePerfilUseCase actualizarUseCase;
     private final ListarClientesPerfilUseCase    listarUseCase;
     private final ObtenerClientePerfilUseCase    obtenerUseCase;
@@ -55,6 +59,23 @@ public class ClienteController {
     private final QuitarVipPerfilUseCase         quitarVipUseCase;
     private final RegistrarVisitaPerfilUseCase   visitaUseCase;
     private final ActualizarSegmentoPerfilUseCase segmentoUseCase;
+
+    @PostMapping("/registro")
+    public ResponseEntity<ApiResponse<ClientePerfilResponse>> registrarPublico(
+            @Valid @RequestBody RegistrarClientePublicoRequest request) {
+
+        ClientePerfil perfil = registrarPublicoUseCase.ejecutar(
+                RegistrarClientePublicoCommand.builder()
+                        .nombre(request.getNombre())
+                        .correo(request.getCorreo())
+                        .password(request.getPassword())
+                        .telefono(request.getTelefono())
+                        .tipoDocumentoCodigo(request.getTipoDocumento())
+                        .numeroDocumento(request.getNumeroDocumento())
+                        .build());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(perfil)));
+    }
 
     @PostMapping("/admin")
     @PreAuthorize("hasAuthority('cliente.crear')")
@@ -82,7 +103,7 @@ public class ClienteController {
     public ResponseEntity<ApiResponse<PagedResponse<ClientePerfilResponse>>> listar(
             @RequestParam(defaultValue = "0")              int     page,
             @RequestParam(defaultValue = "15")             int     size,
-            @RequestParam(defaultValue = "creadoEn,desc")  String  sort,
+            @RequestParam(defaultValue = "createdAt,desc")  String  sort,
             @RequestParam(required = false)                String  search,
             @RequestParam(required = false)                Boolean esVip,
             @RequestParam(required = false)                Boolean activo,
@@ -211,7 +232,7 @@ public class ClienteController {
                 .segmentoCodigo(p.getSegmentoCodigo())
                 .origen(p.getOrigen())
                 .aceptaComunicaciones(p.isAceptaComunicaciones())
-                .creadoEn(p.getCreadoEn())
+                .creadoEn(p.getCreatedAt())
                 .build();
     }
 }

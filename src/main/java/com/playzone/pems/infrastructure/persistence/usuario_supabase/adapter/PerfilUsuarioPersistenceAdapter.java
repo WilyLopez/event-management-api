@@ -6,6 +6,7 @@ import com.playzone.pems.infrastructure.persistence.usuario_supabase.entity.Perf
 import com.playzone.pems.infrastructure.persistence.usuario_supabase.jpa.PerfilUsuarioJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -24,6 +25,12 @@ public class PerfilUsuarioPersistenceAdapter implements PerfilUsuarioRepository 
     @Override
     public Optional<PerfilUsuario> buscarPorCorreo(String correo) {
         return jpa.findByCorreoAndDeletedAtIsNull(correo).map(this::toDomain);
+    }
+
+    @Override
+    @Transactional
+    public void actualizarPerfil(UUID id, String nombre, String telefono) {
+        jpa.actualizarNombreYTelefono(id, nombre, telefono);
     }
 
     private PerfilUsuario toDomain(PerfilUsuarioEntity e) {
