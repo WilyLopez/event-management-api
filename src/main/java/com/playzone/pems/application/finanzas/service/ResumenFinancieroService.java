@@ -7,6 +7,9 @@ import com.playzone.pems.domain.evento.repository.EventoPrivadoRepository;
 import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
 import com.playzone.pems.domain.usuario.model.ClientePerfil;
 import com.playzone.pems.domain.usuario.repository.ClientePerfilRepository;
+import com.playzone.pems.domain.evento.query.IngresosPorDia;
+import com.playzone.pems.domain.evento.query.ReservasPorDia;
+import com.playzone.pems.domain.finanzas.query.GastosPorDia;
 import com.playzone.pems.domain.finanzas.repository.GastoEventoPrivadoRepository;
 import com.playzone.pems.domain.finanzas.repository.GastoOperativoDiarioRepository;
 import com.playzone.pems.domain.finanzas.repository.RegistroEgresoRepository;
@@ -24,6 +27,7 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -92,8 +96,8 @@ public class ResumenFinancieroService implements ConsultarResumenFinancieroUseCa
         EventoPrivado evento = eventoPrivadoRepository.findById(idEvento)
                 .orElseThrow(() -> new ResourceNotFoundException("Evento privado no encontrado."));
 
-        BigDecimal ingresoContrato = evento.getPrecioTotalContrato() != null
-                ? evento.getPrecioTotalContrato() : BigDecimal.ZERO;
+        BigDecimal ingresoContrato = evento.getPrecioContrato() != null
+                ? evento.getPrecioContrato() : BigDecimal.ZERO;
         BigDecimal montoAdelanto   = evento.getMontoAdelanto() != null
                 ? evento.getMontoAdelanto() : BigDecimal.ZERO;
 
@@ -118,22 +122,33 @@ public class ResumenFinancieroService implements ConsultarResumenFinancieroUseCa
 
     @Override
     public List<ResumenDiarioFinancieroQuery> resumenDiario(Long idSede, LocalDate inicio, LocalDate fin) {
+        Map<LocalDate, BigDecimal> ingresosMap = reservaPublicaRepository.sumIngresosAgrupadoPorDia(idSede, inicio, fin).stream()
+                .collect(Collectors.toMap(IngresosPorDia::fecha, IngresosPorDia::monto));
+
+        Map<LocalDate, BigDecimal> gastosMap = gastoOperativoRepository.sumMontoAgrupadoPorDia(idSede, inicio, fin).stream()
+                .collect(Collectors.toMap(GastosPorDia::fecha, GastosPorDia::monto));
+
+        Map<LocalDate, Long> reservasMap = reservaPublicaRepository.countAgrupadoPorDia(idSede, inicio, fin).stream()
+                .collect(Collectors.toMap(ReservasPorDia::fecha, ReservasPorDia::cantidad));
+
         List<ResumenDiarioFinancieroQuery> resultado = new ArrayList<>();
         LocalDate cursor = inicio;
         while (!cursor.isAfter(fin)) {
-            BigDecimal ingresoReservas = reservaPublicaRepository.sumIngresosBySedeAndFecha(idSede, cursor);
-            BigDecimal gastoOperativo  = gastoOperativoRepository.sumMontoBySedeAndFecha(idSede, cursor);
-            int cantidadReservas       = reservaPublicaRepository.countConfirmadasBySedeAndFecha(idSede, cursor);
+            BigDecimal ingresoReservas = ingresosMap.getOrDefault(cursor, BigDecimal.ZERO);
+            BigDecimal gastoOperativo  = gastosMap.getOrDefault(cursor, BigDecimal.ZERO);
+            long cantidadReservas      = reservasMap.getOrDefault(cursor, 0L);
+
             BigDecimal utilidadDia     = ingresoReservas.subtract(gastoOperativo);
             BigDecimal ticketPromedio  = cantidadReservas > 0
                     ? ingresoReservas.divide(BigDecimal.valueOf(cantidadReservas), 2, RoundingMode.HALF_UP)
                     : BigDecimal.ZERO;
+
             resultado.add(ResumenDiarioFinancieroQuery.builder()
                     .fecha(cursor)
                     .ingresoReservas(ingresoReservas)
                     .gastoOperativo(gastoOperativo)
                     .utilidadDia(utilidadDia)
-                    .cantidadReservas(cantidadReservas)
+                    .cantidadReservas((int) cantidadReservas)
                     .ticketPromedio(ticketPromedio)
                     .build());
             cursor = cursor.plusDays(1);

@@ -15,6 +15,7 @@ public class HistorialFidelizacion {
     private Long          idReservaPublica;
     private int           visitaNumero;
     private boolean       esBeneficioAplicado;
+    private int           umbralAplicado;
     private OffsetDateTime fechaRegistro;
 
     public boolean fueVisitaBeneficio() {

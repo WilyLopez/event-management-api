@@ -29,4 +29,18 @@ public interface GastoOperativoDiarioJpaRepository extends JpaRepository<GastoOp
            "WHERE g.sede.id = :idSede AND g.fecha BETWEEN :inicio AND :fin")
     BigDecimal sumMontoBySedeAndRango(
             @Param("idSede") Long idSede, @Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
+
+    @Query("""
+            SELECT new com.playzone.pems.domain.finanzas.query.GastosPorDia(
+                g.fecha, COALESCE(SUM(g.monto), 0))
+            FROM GastoOperativoDiarioEntity g
+            WHERE g.sede.id = :idSede
+              AND g.fecha BETWEEN :inicio AND :fin
+            GROUP BY g.fecha
+            ORDER BY g.fecha
+            """)
+    List<com.playzone.pems.domain.finanzas.query.GastosPorDia> sumMontoAgrupadoPorDia(
+            @Param("idSede") Long idSede,
+            @Param("inicio") LocalDate inicio,
+            @Param("fin")    LocalDate fin);
 }

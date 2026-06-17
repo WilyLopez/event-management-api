@@ -1,6 +1,7 @@
 package com.playzone.pems.domain.finanzas.repository;
 
 import com.playzone.pems.domain.finanzas.model.GastoOperativoDiario;
+import com.playzone.pems.domain.finanzas.query.GastosPorDia;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -14,6 +15,7 @@ public interface GastoOperativoDiarioRepository {
     BigDecimal sumMontoBySedeAndFecha(Long idSede, LocalDate fecha);
     BigDecimal sumMontoBySedeAndPeriodo(Long idSede, int anio, int mes);
     BigDecimal sumMontoBySedeAndRango(Long idSede, LocalDate inicio, LocalDate fin);
+    List<GastosPorDia> sumMontoAgrupadoPorDia(Long idSede, LocalDate inicio, LocalDate fin);
     GastoOperativoDiario save(GastoOperativoDiario gasto);
     void deleteById(Long id);
 }

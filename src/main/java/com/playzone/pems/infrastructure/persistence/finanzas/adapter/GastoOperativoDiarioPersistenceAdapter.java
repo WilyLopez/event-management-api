@@ -1,6 +1,7 @@
 package com.playzone.pems.infrastructure.persistence.finanzas.adapter;
 
 import com.playzone.pems.domain.finanzas.model.GastoOperativoDiario;
+import com.playzone.pems.domain.finanzas.query.GastosPorDia;
 import com.playzone.pems.domain.finanzas.repository.GastoOperativoDiarioRepository;
 import com.playzone.pems.infrastructure.persistence.finanzas.entity.GastoOperativoDiarioEntity;
 import com.playzone.pems.infrastructure.persistence.finanzas.jpa.GastoOperativoDiarioJpaRepository;
@@ -54,6 +55,11 @@ public class GastoOperativoDiarioPersistenceAdapter implements GastoOperativoDia
     @Override
     public BigDecimal sumMontoBySedeAndRango(Long idSede, LocalDate inicio, LocalDate fin) {
         return jpaRepository.sumMontoBySedeAndRango(idSede, inicio, fin);
+    }
+
+    @Override
+    public List<GastosPorDia> sumMontoAgrupadoPorDia(Long idSede, LocalDate inicio, LocalDate fin) {
+        return jpaRepository.sumMontoAgrupadoPorDia(idSede, inicio, fin);
     }
 
     @Override

@@ -34,6 +34,9 @@ public class HistorialFidelizacionEntity {
     @Column(name = "es_beneficio", nullable = false)
     private boolean esBeneficioAplicado = false;
 
+    @Column(name = "umbral_aplicado")
+    private int umbralAplicado;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime fechaRegistro;

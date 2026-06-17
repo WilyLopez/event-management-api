@@ -16,6 +16,7 @@ public class HistorialFidelizacionEntityMapper {
                 .idReservaPublica(e.getReservaPublica().getId())
                 .visitaNumero(e.getVisitaNumero())
                 .esBeneficioAplicado(e.isEsBeneficioAplicado())
+                .umbralAplicado(e.getUmbralAplicado())
                 .fechaRegistro(e.getFechaRegistro())
                 .build();
     }
@@ -28,6 +29,7 @@ public class HistorialFidelizacionEntityMapper {
                 .reservaPublica(reserva)
                 .visitaNumero(d.getVisitaNumero())
                 .esBeneficioAplicado(d.isEsBeneficioAplicado())
+                .umbralAplicado(d.getUmbralAplicado())
                 .build();
     }
 }
