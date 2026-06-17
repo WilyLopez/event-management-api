@@ -17,26 +17,22 @@ public class MedioZonaJuegoEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "zona_id", nullable = false)
     private ZonaJuegoEntity zona;
 
-    @Column(name = "tipo", nullable = false)
-    private String tipo;
-
-    @Column(name = "archivo_path", nullable = false)
+    @Column(name = "archivo_path", nullable = false, length = 500)
     private String url;
 
-    @Column(name = "alt_texto")
-    private String altTexto;
+    @Column(name = "tipo", nullable = false, length = 20)
+    private String tipo; // IMAGEN, VIDEO
 
-    @Column(name = "orden", nullable = false)
+    @Column(nullable = false)
     private int orden;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime fechaCreacion;
+    private OffsetDateTime createdAt;
 }

@@ -26,6 +26,7 @@ public class PaqueteEventoResponse {
     private boolean       activo;
     private boolean       destacado;
     private int           orden;
+    private String        tipoEventoCodigo;
     private List<String>  beneficios;
     private OffsetDateTime fechaCreacion;
     private OffsetDateTime fechaActualizacion;

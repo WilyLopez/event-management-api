@@ -5,38 +5,37 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "servicio_cotizacion")
+@Table(name = "tipo_evento")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ServicioCotizacionEntity {
+public class TipoEventoEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "codigo", nullable = false, length = 50)
+    private String codigo;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "nombre", nullable = false)
     private String nombre;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "descripcion", columnDefinition = "TEXT")
     private String descripcion;
 
-    @Column(name = "precio_referencial", nullable = false)
-    private BigDecimal precioReferencial;
-
-    @Column(length = 50)
+    @Column(name = "icono")
     private String icono;
 
-    @Column(name = "es_activo", nullable = false)
+    @Column(name = "es_sistema", nullable = false)
+    private boolean esSistema;
+
+    @Column(name = "activo", nullable = false)
     private boolean activo;
 
-    @Column(nullable = false)
+    @Column(name = "orden", nullable = false)
     private int orden;
 
     @CreationTimestamp

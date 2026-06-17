@@ -17,20 +17,19 @@ public class BeneficioPaqueteEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "paquete_id", nullable = false)
     private PaqueteEventoEntity paquete;
 
-    @Column(name = "descripcion", nullable = false)
+    @Column(nullable = false, length = 300)
     private String descripcion;
 
-    @Column(name = "orden", nullable = false)
+    @Column(nullable = false)
     private int orden;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime fechaCreacion;
+    private OffsetDateTime createdAt;
 }

@@ -11,14 +11,7 @@ import java.util.List;
 public class ZonaJuegoEntityMapper {
 
     public ZonaJuego toDomain(ZonaJuegoEntity entity, List<MedioZonaJuegoEntity> medios) {
-        List<String> imagenes = medios.stream()
-                .filter(m -> "IMAGEN".equals(m.getTipo()))
-                .map(MedioZonaJuegoEntity::getUrl)
-                .toList();
-        List<String> videos = medios.stream()
-                .filter(m -> "VIDEO".equals(m.getTipo()))
-                .map(MedioZonaJuegoEntity::getUrl)
-                .toList();
+        if (entity == null) return null;
         return ZonaJuego.builder()
                 .id(entity.getId())
                 .nombre(entity.getNombre())
@@ -29,14 +22,21 @@ public class ZonaJuegoEntityMapper {
                 .activa(entity.isActiva())
                 .destacada(entity.isDestacada())
                 .orden(entity.getOrden())
-                .imagenes(imagenes)
-                .videos(videos)
-                .fechaCreacion(entity.getFechaCreacion() != null ? entity.getFechaCreacion() : null)
-                .fechaActualizacion(entity.getFechaActualizacion() != null ? entity.getFechaActualizacion() : null)
+                .fechaCreacion(entity.getCreatedAt())
+                .fechaActualizacion(entity.getUpdatedAt())
+                .imagenes(medios.stream()
+                        .filter(m -> "IMAGEN".equals(m.getTipo()))
+                        .map(MedioZonaJuegoEntity::getUrl)
+                        .toList())
+                .videos(medios.stream()
+                        .filter(m -> "VIDEO".equals(m.getTipo()))
+                        .map(MedioZonaJuegoEntity::getUrl)
+                        .toList())
                 .build();
     }
 
     public ZonaJuegoEntity toEntity(ZonaJuego domain) {
+        if (domain == null) return null;
         return ZonaJuegoEntity.builder()
                 .id(domain.getId())
                 .nombre(domain.getNombre())

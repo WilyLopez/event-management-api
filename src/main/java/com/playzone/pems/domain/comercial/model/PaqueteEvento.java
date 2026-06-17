@@ -18,14 +18,15 @@ public class PaqueteEvento {
     private String        descripcionLarga;
     private BigDecimal    precio;
     private String        badge;
-    private String        color;
-    private String        imagenUrl;
+    private String        colorHex;
+    private String        imagenPath;
     private Integer       duracionMinutos;
-    private Integer       limitepersonas;
-    private boolean       activo;
-    private boolean       destacado;
+    private Integer       limitePersonas;
+    private boolean       esActivo;
+    private boolean       esDestacado;
     private int           orden;
+    private String        tipoEventoCodigo;
     private List<String>  beneficios;
-    private OffsetDateTime fechaCreacion;
-    private OffsetDateTime fechaActualizacion;
+    private OffsetDateTime createdAt;
+    private OffsetDateTime updatedAt;
 }

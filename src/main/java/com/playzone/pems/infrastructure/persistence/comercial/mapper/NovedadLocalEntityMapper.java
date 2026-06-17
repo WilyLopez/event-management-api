@@ -8,38 +8,32 @@ import org.springframework.stereotype.Component;
 public class NovedadLocalEntityMapper {
 
     public NovedadLocal toDomain(NovedadLocalEntity entity) {
+        if (entity == null) return null;
         return NovedadLocal.builder()
                 .id(entity.getId())
                 .titulo(entity.getTitulo())
-                .descripcion(entity.getDescripcion())
+                .descripcion(entity.getContenido())
                 .imagenUrl(entity.getImagenUrl())
-                .textoCta(entity.getTextoCta())
-                .urlCta(entity.getUrlCta())
-                .prioridad(entity.getPrioridad())
-                .fechaInicio(entity.getFechaInicio())
-                .fechaFin(entity.getFechaFin())
+                .activa(entity.isActiva())
                 .visibleHome(entity.isVisibleHome())
                 .destacada(entity.isDestacada())
-                .activa(entity.isActiva())
-                .fechaCreacion(entity.getFechaCreacion() != null ? entity.getFechaCreacion() : null)
-                .fechaActualizacion(entity.getFechaActualizacion() != null ? entity.getFechaActualizacion() : null)
+                .prioridad(entity.getPrioridad())
+                .fechaCreacion(entity.getCreatedAt())
+                .fechaActualizacion(entity.getUpdatedAt())
                 .build();
     }
 
     public NovedadLocalEntity toEntity(NovedadLocal domain) {
+        if (domain == null) return null;
         return NovedadLocalEntity.builder()
                 .id(domain.getId())
                 .titulo(domain.getTitulo())
-                .descripcion(domain.getDescripcion())
+                .contenido(domain.getDescripcion())
                 .imagenUrl(domain.getImagenUrl())
-                .textoCta(domain.getTextoCta())
-                .urlCta(domain.getUrlCta())
-                .prioridad(domain.getPrioridad())
-                .fechaInicio(domain.getFechaInicio())
-                .fechaFin(domain.getFechaFin())
+                .activa(domain.isActiva())
                 .visibleHome(domain.isVisibleHome())
                 .destacada(domain.isDestacada())
-                .activa(domain.isActiva())
+                .prioridad(domain.getPrioridad())
                 .build();
     }
 }

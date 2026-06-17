@@ -43,25 +43,28 @@ public class PaqueteEventoEntity {
     private String badge;
 
     @Column(name = "color_hex")
-    private String color;
+    private String colorHex;
 
     @Column(name = "imagen_path")
-    private String imagenUrl;
+    private String imagenPath;
 
     @Column(name = "duracion_minutos")
     private Integer duracionMinutos;
 
     @Column(name = "limite_personas")
-    private Integer limitepersonas;
+    private Integer limitePersonas;
 
     @Column(name = "es_activo", nullable = false)
-    private boolean activo;
+    private boolean esActivo;
 
     @Column(name = "es_destacado", nullable = false)
-    private boolean destacado;
+    private boolean esDestacado;
 
     @Column(name = "orden", nullable = false)
     private int orden;
+
+    @Column(name = "tipo_evento_codigo")
+    private String tipoEventoCodigo;
 
     @OneToMany(mappedBy = "paquete", cascade = CascadeType.ALL, orphanRemoval = true,
                fetch = FetchType.LAZY)
@@ -70,11 +73,11 @@ public class PaqueteEventoEntity {
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime fechaCreacion;
+    private OffsetDateTime createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
-    private OffsetDateTime fechaActualizacion;
+    private OffsetDateTime updatedAt;
 
     @Column(name = "created_by")
     private UUID createdBy;

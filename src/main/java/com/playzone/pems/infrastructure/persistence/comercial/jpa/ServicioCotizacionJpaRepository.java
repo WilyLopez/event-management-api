@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface ServicioCotizacionJpaRepository extends JpaRepository<ServicioCotizacionEntity, Long> {
     List<ServicioCotizacionEntity> findByActivoTrueOrderByOrdenAsc();
+    List<ServicioCotizacionEntity> findAllByOrderByOrdenAsc();
 }

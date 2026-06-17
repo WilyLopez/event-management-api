@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface PaqueteEventoJpaRepository extends JpaRepository<PaqueteEventoEntity, Long> {
-    List<PaqueteEventoEntity> findByActivoTrueOrderByOrdenAsc();
-    List<PaqueteEventoEntity> findAllByOrderByOrdenAsc();
-    boolean existsBySlug(String slug);
-    Optional<PaqueteEventoEntity> findBySlug(String slug);
+    List<PaqueteEventoEntity> findByEsActivoTrueAndDeletedAtIsNullOrderByOrdenAsc();
+    List<PaqueteEventoEntity> findByDeletedAtIsNullOrderByOrdenAsc();
+    boolean existsBySlugAndDeletedAtIsNull(String slug);
+    Optional<PaqueteEventoEntity> findBySlugAndDeletedAtIsNull(String slug);
 }

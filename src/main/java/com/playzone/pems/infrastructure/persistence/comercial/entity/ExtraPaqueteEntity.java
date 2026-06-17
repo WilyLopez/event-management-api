@@ -7,7 +7,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "extra_paquete")
+@Table(name = "paquete_extra")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -17,28 +17,28 @@ public class ExtraPaqueteEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idextra")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "idpaquete", nullable = false)
+    @JoinColumn(name = "paquete_id", nullable = false)
     private PaqueteEventoEntity paquete;
 
-    @Column(nullable = false, length = 150)
+    @Column(nullable = false, length = 100)
     private String nombre;
 
-    @Column(length = 300)
+    @Column(columnDefinition = "TEXT")
     private String descripcion;
 
     @Column(nullable = false)
-    @Builder.Default
-    private boolean activo = true;
+    private java.math.BigDecimal precio;
+
+    @Column(name = "es_activo", nullable = false)
+    private boolean activo;
 
     @Column(nullable = false)
-    @Builder.Default
-    private int orden = 0;
+    private int orden;
 
     @CreationTimestamp
-    @Column(name = "fechacreacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 }

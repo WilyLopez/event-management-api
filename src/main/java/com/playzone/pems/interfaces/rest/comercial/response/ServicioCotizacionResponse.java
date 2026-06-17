@@ -13,4 +13,6 @@ public class ServicioCotizacionResponse {
     private final String     descripcion;
     private final BigDecimal precioReferencial;
     private final String     icono;
+    private final boolean    activo;
+    private final int        orden;
 }

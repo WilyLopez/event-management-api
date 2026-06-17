@@ -6,7 +6,10 @@ import com.playzone.pems.application.comercial.dto.query.PaqueteEventoQuery;
 import com.playzone.pems.application.comercial.port.in.GestionarPaquetesUseCase;
 import com.playzone.pems.domain.comercial.model.PaqueteEvento;
 import com.playzone.pems.domain.comercial.repository.PaqueteEventoRepository;
+import com.playzone.pems.domain.comercial.repository.TipoEventoRepository;
+import com.playzone.pems.shared.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,9 +21,11 @@ import java.util.List;
 public class PaqueteService implements GestionarPaquetesUseCase {
 
     private final PaqueteEventoRepository repo;
+    private final TipoEventoRepository    tipoEventoRepo;
 
     @Override
     public PaqueteEventoQuery crear(CrearPaqueteCommand command) {
+        validarTipoEvento(command.getTipoEventoCodigo());
         String slug = generarSlug(command.getNombre());
         if (repo.existsBySlug(slug)) {
             slug = slug + "-" + System.currentTimeMillis();
@@ -32,13 +37,14 @@ public class PaqueteService implements GestionarPaquetesUseCase {
                 .descripcionLarga(command.getDescripcionLarga())
                 .precio(command.getPrecio())
                 .badge(command.getBadge())
-                .color(command.getColor())
-                .imagenUrl(command.getImagenUrl())
+                .colorHex(command.getColor())
+                .imagenPath(command.getImagenUrl())
                 .duracionMinutos(command.getDuracionMinutos())
-                .limitepersonas(command.getLimitepersonas())
-                .activo(true)
-                .destacado(false)
+                .limitePersonas(command.getLimitepersonas())
+                .esActivo(true)
+                .esDestacado(false)
                 .orden(0)
+                .tipoEventoCodigo(command.getTipoEventoCodigo())
                 .beneficios(command.getBeneficios())
                 .build();
         return toQuery(repo.save(paquete));
@@ -46,6 +52,7 @@ public class PaqueteService implements GestionarPaquetesUseCase {
 
     @Override
     public PaqueteEventoQuery actualizar(ActualizarPaqueteCommand command) {
+        validarTipoEvento(command.getTipoEventoCodigo());
         PaqueteEvento existente = repo.findById(command.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Paquete no encontrado: " + command.getId()));
         PaqueteEvento actualizado = PaqueteEvento.builder()
@@ -56,13 +63,14 @@ public class PaqueteService implements GestionarPaquetesUseCase {
                 .descripcionLarga(command.getDescripcionLarga())
                 .precio(command.getPrecio())
                 .badge(command.getBadge())
-                .color(command.getColor())
-                .imagenUrl(command.getImagenUrl())
+                .colorHex(command.getColor())
+                .imagenPath(command.getImagenUrl())
                 .duracionMinutos(command.getDuracionMinutos())
-                .limitepersonas(command.getLimitepersonas())
-                .activo(command.isActivo())
-                .destacado(command.isDestacado())
+                .limitePersonas(command.getLimitepersonas())
+                .esActivo(command.isActivo())
+                .esDestacado(command.isDestacado())
                 .orden(command.getOrden())
+                .tipoEventoCodigo(command.getTipoEventoCodigo())
                 .beneficios(command.getBeneficios())
                 .build();
         return toQuery(repo.save(actualizado));
@@ -98,16 +106,26 @@ public class PaqueteService implements GestionarPaquetesUseCase {
                 .descripcionLarga(existente.getDescripcionLarga())
                 .precio(existente.getPrecio())
                 .badge(existente.getBadge())
-                .color(existente.getColor())
-                .imagenUrl(url)
+                .colorHex(existente.getColorHex())
+                .imagenPath(url)
                 .duracionMinutos(existente.getDuracionMinutos())
-                .limitepersonas(existente.getLimitepersonas())
-                .activo(existente.isActivo())
-                .destacado(existente.isDestacado())
+                .limitePersonas(existente.getLimitePersonas())
+                .esActivo(existente.isEsActivo())
+                .esDestacado(existente.isEsDestacado())
                 .orden(existente.getOrden())
+                .tipoEventoCodigo(existente.getTipoEventoCodigo())
                 .beneficios(existente.getBeneficios())
                 .build();
         return toQuery(repo.save(actualizado));
+    }
+
+    private void validarTipoEvento(String codigo) {
+        if (codigo == null || codigo.isBlank()) {
+            throw new BusinessException("Debe seleccionar un tipo de evento.", HttpStatus.BAD_REQUEST);
+        }
+        if (!tipoEventoRepo.existePorCodigo(codigo)) {
+            throw new BusinessException("Tipo de evento no válido: " + codigo, HttpStatus.BAD_REQUEST);
+        }
     }
 
     @Override
@@ -122,20 +140,22 @@ public class PaqueteService implements GestionarPaquetesUseCase {
                     PaqueteEvento intercambiado = PaqueteEvento.builder()
                             .id(otro.getId()).nombre(otro.getNombre()).slug(otro.getSlug())
                             .descripcionCorta(otro.getDescripcionCorta()).descripcionLarga(otro.getDescripcionLarga())
-                            .precio(otro.getPrecio()).badge(otro.getBadge()).color(otro.getColor())
-                            .imagenUrl(otro.getImagenUrl()).duracionMinutos(otro.getDuracionMinutos())
-                            .limitepersonas(otro.getLimitepersonas()).activo(otro.isActivo())
-                            .destacado(otro.isDestacado()).orden(paquete.getOrden())
+                            .precio(otro.getPrecio()).badge(otro.getBadge()).colorHex(otro.getColorHex())
+                            .imagenPath(otro.getImagenPath()).duracionMinutos(otro.getDuracionMinutos())
+                            .limitePersonas(otro.getLimitePersonas()).esActivo(otro.isEsActivo())
+                            .esDestacado(otro.isEsDestacado()).orden(paquete.getOrden())
+                            .tipoEventoCodigo(otro.getTipoEventoCodigo())
                             .beneficios(otro.getBeneficios()).build();
                     repo.save(intercambiado);
                 });
         PaqueteEvento actualizado = PaqueteEvento.builder()
                 .id(paquete.getId()).nombre(paquete.getNombre()).slug(paquete.getSlug())
                 .descripcionCorta(paquete.getDescripcionCorta()).descripcionLarga(paquete.getDescripcionLarga())
-                .precio(paquete.getPrecio()).badge(paquete.getBadge()).color(paquete.getColor())
-                .imagenUrl(paquete.getImagenUrl()).duracionMinutos(paquete.getDuracionMinutos())
-                .limitepersonas(paquete.getLimitepersonas()).activo(paquete.isActivo())
-                .destacado(paquete.isDestacado()).orden(nuevoOrden)
+                .precio(paquete.getPrecio()).badge(paquete.getBadge()).colorHex(paquete.getColorHex())
+                .imagenPath(paquete.getImagenPath()).duracionMinutos(paquete.getDuracionMinutos())
+                .limitePersonas(paquete.getLimitePersonas()).esActivo(paquete.isEsActivo())
+                .esDestacado(paquete.isEsDestacado()).orden(nuevoOrden)
+                .tipoEventoCodigo(paquete.getTipoEventoCodigo())
                 .beneficios(paquete.getBeneficios()).build();
         return toQuery(repo.save(actualizado));
     }
@@ -153,16 +173,17 @@ public class PaqueteService implements GestionarPaquetesUseCase {
                 .descripcionLarga(p.getDescripcionLarga())
                 .precio(p.getPrecio())
                 .badge(p.getBadge())
-                .color(p.getColor())
-                .imagenUrl(p.getImagenUrl())
+                .color(p.getColorHex())
+                .imagenUrl(p.getImagenPath())
                 .duracionMinutos(p.getDuracionMinutos())
-                .limitepersonas(p.getLimitepersonas())
-                .activo(p.isActivo())
-                .destacado(p.isDestacado())
+                .limitepersonas(p.getLimitePersonas())
+                .activo(p.isEsActivo())
+                .destacado(p.isEsDestacado())
                 .orden(p.getOrden())
+                .tipoEventoCodigo(p.getTipoEventoCodigo())
                 .beneficios(p.getBeneficios())
-                .fechaCreacion(p.getFechaCreacion())
-                .fechaActualizacion(p.getFechaActualizacion())
+                .fechaCreacion(p.getCreatedAt())
+                .fechaActualizacion(p.getUpdatedAt())
                 .build();
     }
 }

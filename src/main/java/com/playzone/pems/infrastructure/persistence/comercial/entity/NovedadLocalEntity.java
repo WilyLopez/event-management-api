@@ -5,7 +5,6 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -20,32 +19,19 @@ public class NovedadLocalEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
     private Long id;
 
-    @Column(name = "titulo", nullable = false)
+    @Column(nullable = false, length = 150)
     private String titulo;
 
-    @Column(name = "descripcion", nullable = false)
-    private String descripcion;
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String contenido;
 
-    @Column(name = "imagen_path")
+    @Column(name = "imagen_path", length = 500)
     private String imagenUrl;
 
-    @Column(name = "texto_cta")
-    private String textoCta;
-
-    @Column(name = "url_cta")
-    private String urlCta;
-
-    @Column(name = "prioridad", nullable = false)
-    private int prioridad;
-
-    @Column(name = "fecha_inicio")
-    private LocalDate fechaInicio;
-
-    @Column(name = "fecha_fin")
-    private LocalDate fechaFin;
+    @Column(name = "es_activa", nullable = false)
+    private boolean activa;
 
     @Column(name = "es_visible_home", nullable = false)
     private boolean visibleHome;
@@ -53,22 +39,19 @@ public class NovedadLocalEntity {
     @Column(name = "es_destacada", nullable = false)
     private boolean destacada;
 
-    @Column(name = "es_activa", nullable = false)
-    private boolean activa;
+    @Column(nullable = false)
+    private int prioridad;
+
+    @Column(name = "created_by", columnDefinition = "uuid")
+    private UUID createdBy;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime fechaCreacion;
+    private OffsetDateTime createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
-    private OffsetDateTime fechaActualizacion;
-
-    @Column(name = "created_by")
-    private UUID createdBy;
-
-    @Column(name = "updated_by")
-    private UUID updatedBy;
+    private OffsetDateTime updatedAt;
 
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;

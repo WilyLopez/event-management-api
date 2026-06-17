@@ -43,4 +43,6 @@ public class CrearPaqueteCommand {
 
     @Size(max = 8)
     private List<@Size(max = 60) String> beneficios;
+
+    private String tipoEventoCodigo;
 }

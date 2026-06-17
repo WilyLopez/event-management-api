@@ -9,36 +9,34 @@ import org.springframework.stereotype.Component;
 public class ActividadLocalEntityMapper {
 
     public ActividadLocal toDomain(ActividadLocalEntity entity) {
+        if (entity == null) return null;
         return ActividadLocal.builder()
                 .id(entity.getId())
+                .idZona(entity.getZona() != null ? entity.getZona().getId() : null)
+                .nombreZona(entity.getZona() != null ? entity.getZona().getNombre() : null)
                 .nombre(entity.getNombre())
                 .descripcion(entity.getDescripcion())
                 .imagenUrl(entity.getImagenUrl())
-                .idZona(entity.getZona() != null ? entity.getZona().getId() : null)
-                .nombreZona(entity.getZona() != null ? entity.getZona().getNombre() : null)
-                .esEspecial(entity.isEsEspecial())
-                .fechaInicio(entity.getFechaInicio())
-                .fechaFin(entity.getFechaFin())
                 .activa(entity.isActiva())
                 .destacada(entity.isDestacada())
+                .esEspecial(entity.isEsEspecial())
                 .orden(entity.getOrden())
-                .fechaCreacion(entity.getFechaCreacion() != null ? entity.getFechaCreacion() : null)
-                .fechaActualizacion(entity.getFechaActualizacion() != null ? entity.getFechaActualizacion() : null)
+                .fechaCreacion(entity.getCreatedAt())
+                .fechaActualizacion(entity.getUpdatedAt())
                 .build();
     }
 
     public ActividadLocalEntity toEntity(ActividadLocal domain, ZonaJuegoEntity zona) {
+        if (domain == null) return null;
         return ActividadLocalEntity.builder()
                 .id(domain.getId())
+                .zona(zona)
                 .nombre(domain.getNombre())
                 .descripcion(domain.getDescripcion())
                 .imagenUrl(domain.getImagenUrl())
-                .zona(zona)
-                .esEspecial(domain.isEsEspecial())
-                .fechaInicio(domain.getFechaInicio())
-                .fechaFin(domain.getFechaFin())
                 .activa(domain.isActiva())
                 .destacada(domain.isDestacada())
+                .esEspecial(domain.isEsEspecial())
                 .orden(domain.getOrden())
                 .build();
     }
