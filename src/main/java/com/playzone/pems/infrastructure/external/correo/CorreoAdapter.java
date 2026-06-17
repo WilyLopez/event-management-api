@@ -6,6 +6,8 @@ import com.playzone.pems.application.evento.port.out.EnviarNotificacionEventoPor
 import com.playzone.pems.application.evento.port.out.EnviarTicketPorCorreoPort;
 import com.playzone.pems.domain.usuario.repository.SedeRepository;
 import com.playzone.pems.infrastructure.pdf.PdfTicketService;
+import com.playzone.pems.application.usuario.port.out.EnviarCorreoBienvenidaPort;
+import com.playzone.pems.infrastructure.template.TemplateService;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,18 +20,21 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class CorreoAdapter
         implements EnviarTicketPorCorreoPort,
-        EnviarNotificacionEventoPort {
+        EnviarNotificacionEventoPort,
+        EnviarCorreoBienvenidaPort {
 
     private final JavaMailCorreoClient correoClient;
     private final JavaMailSender       mailSender;
     private final PdfTicketService     pdfTicketService;
     private final SedeRepository       sedeRepository;
+    private final TemplateService      templateService;
 
     @Value("${spring.mail.username}")
     private String remitente;
@@ -39,6 +44,27 @@ public class CorreoAdapter
 
     @Value("${playzone.negocio.correo-admin:admin@kikiylala.com}")
     private String correoAdmin;
+
+    @Value("${playzone.url-login:http://localhost:3000/auth/login}")
+    private String loginUrl;
+
+    @Override
+    public void enviarCredencialesUsuario(String correo, String nombre, String password,
+                                          String rolLabel, String sedeNombre) {
+        String asunto = "Bienvenido al Panel Administrativo — Kiki y Lala";
+
+        Map<String, String> variables = Map.of(
+                "nombre",    nombre,
+                "correo",    correo,
+                "password",  password,
+                "rol",       rolLabel,
+                "sede",      sedeNombre,
+                "loginUrl",  loginUrl
+        );
+
+        String cuerpoHtml = templateService.procesarTemplate("welcome-user", variables);
+        correoClient.enviarConLogo(correo, asunto, cuerpoHtml);
+    }
 
     @Override
     public void enviarTicket(String destinatario, String nombreCliente, ReservaPublicaQuery reserva) {

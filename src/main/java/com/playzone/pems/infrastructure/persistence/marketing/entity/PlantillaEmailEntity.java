@@ -40,6 +40,9 @@ public class PlantillaEmailEntity {
     @Column(name = "variables_permitidas", columnDefinition = "jsonb")
     private String variablesPermitidas;
 
+    @Column(name = "contenido_bloques", columnDefinition = "jsonb")
+    private String contenidoBloques;
+
     @Column(name = "es_activa", nullable = false)
     @Builder.Default
     private boolean esActiva = true;

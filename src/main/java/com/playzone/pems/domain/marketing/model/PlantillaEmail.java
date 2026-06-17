@@ -20,6 +20,7 @@ public class PlantillaEmail {
     private String  contenidoHtml;
     private String  contenidoFallback;
     private String  variablesPermitidas;
+    private String  contenidoBloques;
     private boolean activa;
     private UUID    createdBy;
     private UUID    updatedBy;

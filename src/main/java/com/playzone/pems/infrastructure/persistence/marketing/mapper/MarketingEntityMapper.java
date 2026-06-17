@@ -36,6 +36,7 @@ public class MarketingEntityMapper {
                 .contenidoHtml(e.getContenidoHtml())
                 .contenidoFallback(e.getContenidoFallback())
                 .variablesPermitidas(e.getVariablesPermitidas())
+                .contenidoBloques(e.getContenidoBloques())
                 .activa(e.isEsActiva())
                 .createdBy(e.getCreatedBy())
                 .updatedBy(e.getUpdatedBy())

@@ -10,4 +10,8 @@ public interface TipoEmailRepository {
     List<TipoEmail> findAllActivos();
 
     Optional<TipoEmail> findById(String codigo);
+
+    TipoEmail save(TipoEmail tipo);
+
+    void deleteById(String codigo);
 }

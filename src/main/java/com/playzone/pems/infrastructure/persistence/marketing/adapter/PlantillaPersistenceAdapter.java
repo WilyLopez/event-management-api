@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,12 +25,26 @@ public class PlantillaPersistenceAdapter implements PlantillaEmailRepository {
 
     @Override
     public Optional<PlantillaEmail> findById(Long id) {
-        return jpa.findById(id).map(mapper::toDomain);
+        return jpa.findById(id)
+                .filter(e -> e.getDeletedAt() == null)
+                .map(mapper::toDomain);
+    }
+
+    @Override
+    public List<PlantillaEmail> findAllById(List<Long> ids) {
+        return jpa.findAllById(ids).stream()
+                .filter(e -> e.getDeletedAt() == null)
+                .map(mapper::toDomain).toList();
     }
 
     @Override
     public Page<PlantillaEmail> findAll(Pageable pageable) {
-        return jpa.findAll(pageable).map(mapper::toDomain);
+        return jpa.findAllActivas(pageable).map(mapper::toDomain);
+    }
+
+    @Override
+    public Page<PlantillaEmail> findAllMarketing(Pageable pageable) {
+        return jpa.findAllMarketing(pageable).map(mapper::toDomain);
     }
 
     @Override
@@ -48,6 +64,7 @@ public class PlantillaPersistenceAdapter implements PlantillaEmailRepository {
                 .contenidoHtml(plantilla.getContenidoHtml())
                 .contenidoFallback(plantilla.getContenidoFallback())
                 .variablesPermitidas(plantilla.getVariablesPermitidas())
+                .contenidoBloques(plantilla.getContenidoBloques())
                 .esActiva(plantilla.isActiva())
                 .createdBy(plantilla.getCreatedBy())
                 .updatedBy(plantilla.getUpdatedBy())
@@ -57,8 +74,8 @@ public class PlantillaPersistenceAdapter implements PlantillaEmailRepository {
 
     @Override
     @Transactional
-    public void eliminar(Long id) {
-        jpa.deleteById(id);
+    public void softDelete(Long id) {
+        jpa.softDelete(id, OffsetDateTime.now(ZoneOffset.UTC));
     }
 
     @Override

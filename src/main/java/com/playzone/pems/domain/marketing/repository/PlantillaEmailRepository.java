@@ -11,13 +11,17 @@ public interface PlantillaEmailRepository {
 
     Optional<PlantillaEmail> findById(Long id);
 
+    List<PlantillaEmail> findAllById(List<Long> ids);
+
     Page<PlantillaEmail> findAll(Pageable pageable);
+
+    Page<PlantillaEmail> findAllMarketing(Pageable pageable);
 
     List<PlantillaEmail> findAllActivasByTipo(String tipoEmailCodigo);
 
     PlantillaEmail save(PlantillaEmail plantilla);
 
-    void eliminar(Long id);
+    void softDelete(Long id);
 
     boolean existsById(Long id);
 }

@@ -1,8 +1,12 @@
 package com.playzone.pems.application.marketing.service;
 
+import com.playzone.pems.application.marketing.dto.command.ActualizarCorreoMarketingCommand;
 import com.playzone.pems.application.marketing.dto.command.CrearCampanaCommand;
+import com.playzone.pems.application.marketing.dto.command.CrearCorreoMarketingCommand;
+import com.playzone.pems.application.marketing.dto.command.CrearTipoEmailCommand;
 import com.playzone.pems.application.marketing.dto.command.FiltroDestinatariosCommand;
 import com.playzone.pems.application.marketing.dto.command.GuardarPlantillaCommand;
+import com.playzone.pems.application.marketing.util.VariableCatalog;
 import com.playzone.pems.application.marketing.dto.query.CampanaEmailQuery;
 import com.playzone.pems.application.marketing.dto.query.EnvioEmailQuery;
 import com.playzone.pems.application.marketing.dto.query.PlantillaEmailQuery;
@@ -16,6 +20,7 @@ import com.playzone.pems.application.marketing.port.in.ListarPlantillasUseCase;
 import com.playzone.pems.domain.marketing.model.CampanaEmail;
 import com.playzone.pems.domain.marketing.model.EnvioEmail;
 import com.playzone.pems.domain.marketing.model.PlantillaEmail;
+import com.playzone.pems.domain.marketing.model.TipoEmail;
 import com.playzone.pems.domain.marketing.repository.CampanaEmailRepository;
 import com.playzone.pems.domain.marketing.repository.EnvioEmailRepository;
 import com.playzone.pems.domain.marketing.repository.PlantillaEmailRepository;
@@ -29,14 +34,15 @@ import com.playzone.pems.shared.response.PagedResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -80,10 +86,10 @@ public class MarketingService
     @Override
     @Transactional(readOnly = true)
     public List<PlantillaEmailQuery> listarPlantillas(Pageable pageable) {
-        return plantillaRepo.findAll(pageable)
-                .getContent()
-                .stream()
-                .map(this::toPlantillaQuery)
+        Map<String, String> tiposNombre = tipoEmailRepo.findAllActivos().stream()
+                .collect(Collectors.toMap(TipoEmail::getCodigo, TipoEmail::getNombre));
+        return plantillaRepo.findAll(pageable).getContent().stream()
+                .map(p -> toPlantillaQuery(p, tiposNombre))
                 .toList();
     }
 
@@ -115,8 +121,14 @@ public class MarketingService
     @Transactional(readOnly = true)
     public PagedResponse<CampanaEmailQuery> listarCampanas(Pageable pageable) {
         Page<CampanaEmail> pagina = campanaRepo.findAll(pageable);
+        List<Long> plantillaIds = pagina.getContent().stream()
+                .map(CampanaEmail::getIdPlantillaEmail).distinct().toList();
+        Map<Long, String> plantillasNombre = plantillaRepo.findAllById(plantillaIds).stream()
+                .collect(Collectors.toMap(PlantillaEmail::getId, PlantillaEmail::getNombre));
         return PagedResponse.<CampanaEmailQuery>builder()
-                .content(pagina.getContent().stream().map(this::toCampanaQuery).toList())
+                .content(pagina.getContent().stream()
+                        .map(c -> toCampanaQuery(c, plantillasNombre))
+                        .toList())
                 .page(pagina.getNumber())
                 .size(pagina.getSize())
                 .totalElements(pagina.getTotalElements())
@@ -193,18 +205,166 @@ public class MarketingService
                 .toList();
     }
 
+    @Transactional
+    public TipoEmailQuery crearTipo(CrearTipoEmailCommand command) {
+        if (tipoEmailRepo.findById(command.getCodigo()).isPresent()) {
+            throw new ValidationException("codigo", "Ya existe un tipo con el código: " + command.getCodigo());
+        }
+        int orden = tipoEmailRepo.findAllActivos().size();
+        TipoEmail tipo = TipoEmail.builder()
+                .codigo(command.getCodigo())
+                .nombre(command.getNombre())
+                .descripcion(command.getDescripcion())
+                .esSistema(false)
+                .orden(orden)
+                .activo(true)
+                .build();
+        TipoEmail saved = tipoEmailRepo.save(tipo);
+        return TipoEmailQuery.builder()
+                .codigo(saved.getCodigo())
+                .nombre(saved.getNombre())
+                .descripcion(saved.getDescripcion())
+                .esSistema(saved.isEsSistema())
+                .orden(saved.getOrden())
+                .activo(saved.isActivo())
+                .build();
+    }
+
+    @Transactional
+    public void eliminarTipo(String codigo) {
+        TipoEmail tipo = tipoEmailRepo.findById(codigo)
+                .orElseThrow(() -> new ResourceNotFoundException("TipoEmail", "codigo", codigo));
+        if (tipo.isEsSistema()) {
+            throw new ValidationException("codigo", "Los tipos de sistema no pueden eliminarse.");
+        }
+        tipoEmailRepo.deleteById(codigo);
+    }
+
+    @Transactional(readOnly = true)
+    public PagedResponse<PlantillaEmailQuery> listarCorreosMarketing(Pageable pageable) {
+        Page<PlantillaEmail> pagina = plantillaRepo.findAllMarketing(pageable);
+        Map<String, String> tiposNombre = tipoEmailRepo.findAllActivos().stream()
+                .collect(Collectors.toMap(TipoEmail::getCodigo, TipoEmail::getNombre));
+        return PagedResponse.<PlantillaEmailQuery>builder()
+                .content(pagina.getContent().stream()
+                        .map(p -> toPlantillaQuery(p, tiposNombre))
+                        .toList())
+                .page(pagina.getNumber())
+                .size(pagina.getSize())
+                .totalElements(pagina.getTotalElements())
+                .totalPages(pagina.getTotalPages())
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public PlantillaEmailQuery getCorreoMarketingById(Long id) {
+        PlantillaEmail plantilla = plantillaRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("PlantillaEmail", id));
+        validarTipoMarketing(plantilla.getTipoEmailCodigo());
+        return toPlantillaQuery(plantilla);
+    }
+
+    @Transactional
+    public PlantillaEmailQuery crearCorreoMarketing(CrearCorreoMarketingCommand command, UUID idUsuario) {
+        TipoEmail tipo = tipoEmailRepo.findById(command.getTipoEmailCodigo())
+                .orElseThrow(() -> new ResourceNotFoundException("TipoEmail", "codigo", command.getTipoEmailCodigo()));
+        if (tipo.isEsSistema()) {
+            throw new com.playzone.pems.shared.exception.ValidationException(
+                    "tipoEmailCodigo", "No se pueden crear plantillas de marketing para tipos de sistema.");
+        }
+        VariableCatalog.validarParaMarketing(command.getContenidoBloques());
+
+        PlantillaEmail plantilla = PlantillaEmail.builder()
+                .tipoEmailCodigo(command.getTipoEmailCodigo())
+                .nombre(command.getNombre())
+                .asunto(command.getAsunto())
+                .contenidoBloques(command.getContenidoBloques())
+                .variablesPermitidas(command.getVariablesPermitidas())
+                .contenidoFallback(command.getContenidoFallback())
+                .activa(true)
+                .createdBy(idUsuario)
+                .updatedBy(idUsuario)
+                .fechaActualizacion(Instant.now())
+                .build();
+
+        return toPlantillaQuery(plantillaRepo.save(plantilla));
+    }
+
+    @Transactional
+    public PlantillaEmailQuery actualizarCorreoMarketing(ActualizarCorreoMarketingCommand command, UUID idUsuario) {
+        PlantillaEmail existente = plantillaRepo.findById(command.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("PlantillaEmail", command.getId()));
+        validarTipoMarketing(existente.getTipoEmailCodigo());
+        VariableCatalog.validarParaMarketing(command.getContenidoBloques());
+
+        PlantillaEmail actualizada = existente.toBuilder()
+                .nombre(command.getNombre())
+                .asunto(command.getAsunto())
+                .contenidoBloques(command.getContenidoBloques())
+                .variablesPermitidas(command.getVariablesPermitidas())
+                .contenidoFallback(command.getContenidoFallback())
+                .updatedBy(idUsuario)
+                .fechaActualizacion(Instant.now())
+                .build();
+
+        return toPlantillaQuery(plantillaRepo.save(actualizada));
+    }
+
+    @Transactional
+    public void toggleCorreoMarketing(Long id, boolean activa) {
+        PlantillaEmail plantilla = plantillaRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("PlantillaEmail", id));
+        validarTipoMarketing(plantilla.getTipoEmailCodigo());
+        PlantillaEmail actualizada = plantilla.toBuilder().activa(activa).build();
+        plantillaRepo.save(actualizada);
+    }
+
+    @Transactional
+    public void eliminarCorreoMarketing(Long id) {
+        PlantillaEmail plantilla = plantillaRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("PlantillaEmail", id));
+        validarTipoMarketing(plantilla.getTipoEmailCodigo());
+        plantillaRepo.softDelete(id);
+    }
+
+    private void validarTipoMarketing(String tipoEmailCodigo) {
+        TipoEmail tipo = tipoEmailRepo.findById(tipoEmailCodigo)
+                .orElseThrow(() -> new ResourceNotFoundException("TipoEmail", "codigo", tipoEmailCodigo));
+        if (tipo.isEsSistema()) {
+            throw new com.playzone.pems.shared.exception.ValidationException(
+                    "tipoEmailCodigo",
+                    "Las plantillas de sistema no pueden modificarse desde el módulo de marketing.");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public CampanaEmailQuery getCampanaById(Long id) {
+        return campanaRepo.findById(id)
+                .map(this::toCampanaQuery)
+                .orElseThrow(() -> new ResourceNotFoundException("CampanaEmail", id));
+    }
+
     private PlantillaEmailQuery toPlantillaQuery(PlantillaEmail p) {
+        String tipoNombre = tipoEmailRepo.findById(p.getTipoEmailCodigo())
+                .map(TipoEmail::getNombre).orElse(null);
+        return toPlantillaQuery(p, tipoNombre);
+    }
+
+    private PlantillaEmailQuery toPlantillaQuery(PlantillaEmail p, Map<String, String> tiposNombre) {
+        return toPlantillaQuery(p, tiposNombre.get(p.getTipoEmailCodigo()));
+    }
+
+    private PlantillaEmailQuery toPlantillaQuery(PlantillaEmail p, String tipoNombre) {
         return PlantillaEmailQuery.builder()
                 .id(p.getId())
                 .tipoEmailCodigo(p.getTipoEmailCodigo())
-                .tipoEmailNombre(tipoEmailRepo.findById(p.getTipoEmailCodigo())
-                        .map(t -> t.getNombre())
-                        .orElse(null))
+                .tipoEmailNombre(tipoNombre)
                 .nombre(p.getNombre())
                 .asunto(p.getAsunto())
                 .contenidoHtml(p.getContenidoHtml())
                 .contenidoFallback(p.getContenidoFallback())
                 .variablesPermitidas(p.getVariablesPermitidas())
+                .contenidoBloques(p.getContenidoBloques())
                 .activa(p.isActiva())
                 .createdBy(p.getCreatedBy())
                 .updatedBy(p.getUpdatedBy())
@@ -213,14 +373,22 @@ public class MarketingService
     }
 
     private CampanaEmailQuery toCampanaQuery(CampanaEmail c) {
+        String plantillaNombre = plantillaRepo.findById(c.getIdPlantillaEmail())
+                .map(PlantillaEmail::getNombre).orElse(null);
+        return toCampanaQuery(c, plantillaNombre);
+    }
+
+    private CampanaEmailQuery toCampanaQuery(CampanaEmail c, Map<Long, String> plantillasNombre) {
+        return toCampanaQuery(c, plantillasNombre.get(c.getIdPlantillaEmail()));
+    }
+
+    private CampanaEmailQuery toCampanaQuery(CampanaEmail c, String plantillaNombre) {
         return CampanaEmailQuery.builder()
                 .id(c.getId())
                 .nombre(c.getNombre())
                 .descripcion(c.getDescripcion())
                 .idPlantillaEmail(c.getIdPlantillaEmail())
-                .plantillaNombre(plantillaRepo.findById(c.getIdPlantillaEmail())
-                        .map(p -> p.getNombre())
-                        .orElse(null))
+                .plantillaNombre(plantillaNombre)
                 .estado(c.getEstado())
                 .fechaProgramada(c.getFechaProgramada())
                 .totalDestinatarios(c.getTotalDestinatarios())
