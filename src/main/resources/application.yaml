@@ -125,6 +125,8 @@ supabase:
   jwt:
     issuer: ${SUPABASE_JWT_ISSUER:https://divljjsnorvkrgcznwlh.supabase.co/auth/v1}
     jwks-url: ${SUPABASE_JWKS_URL:https://divljjsnorvkrgcznwlh.supabase.co/auth/v1/.well-known/jwks.json}
+  auth:
+    anon-key: ${SUPABASE_ANON_KEY:}
   storage:
     endpoint: ${SUPABASE_STORAGE_S3_ENDPOINT:https://divljjsnorvkrgcznwlh.supabase.co/storage/v1/s3}
     access-key: ${SUPABASE_STORAGE_ACCESS_KEY:}

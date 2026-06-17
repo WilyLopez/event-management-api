@@ -7,12 +7,11 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "contrato")
+@Table(name = "contrato_evento")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -22,15 +21,14 @@ public class ContratoEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "evento_id", nullable = false, unique = true)
+    @JoinColumn(name = "evento_id", nullable = false)
     private EventoPrivadoEntity eventoPrivado;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado_codigo", nullable = false, length = 40)
+    @Column(nullable = false, length = 30)
     private EstadoContrato estado;
 
     @Column(name = "contenido_texto", columnDefinition = "TEXT")
@@ -39,26 +37,26 @@ public class ContratoEntity {
     @Column(name = "archivo_pdf_path", length = 500)
     private String archivoPdfUrl;
 
-    @Column(name = "fecha_firma")
-    private LocalDate fechaFirma;
+    @Column(name = "firmado_at")
+    private OffsetDateTime fechaFirma;
 
     @Column(name = "redactor_id", columnDefinition = "uuid")
     private UUID redactorId;
 
-    @Column(name = "plantilla", length = 100)
+    @Column(length = 60)
     private String plantilla;
 
-    @Column(name = "observaciones", columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String observaciones;
 
-    @Column(name = "version", nullable = false)
+    @Column(name = "version_v")
     private int version;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime fechaCreacion;
+    private OffsetDateTime createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
-    private OffsetDateTime fechaActualizacion;
+    private OffsetDateTime updatedAt;
 }

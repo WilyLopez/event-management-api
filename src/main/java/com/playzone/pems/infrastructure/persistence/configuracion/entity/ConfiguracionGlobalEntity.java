@@ -24,7 +24,7 @@ public class ConfiguracionGlobalEntity {
     @Column(name = "descripcion", columnDefinition = "TEXT")
     private String descripcion;
 
-    @Column(name = "tipo", nullable = false, length = 30)
+    @Column(name = "tipo_dato", nullable = false, length = 30)
     private String tipo;
 
     @Column(name = "es_secreto", nullable = false)

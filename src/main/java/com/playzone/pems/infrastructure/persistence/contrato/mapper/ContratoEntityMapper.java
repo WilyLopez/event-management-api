@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.time.ZoneOffset;
 
 @Component
 @RequiredArgsConstructor
@@ -23,8 +24,8 @@ public class ContratoEntityMapper {
         var ev = e.getEventoPrivado();
 
         BigDecimal saldo = BigDecimal.ZERO;
-        if (ev.getPrecioTotalContrato() != null) {
-            saldo = ev.getPrecioTotalContrato().subtract(
+        if (ev.getPrecioContrato() != null) {
+            saldo = ev.getPrecioContrato().subtract(
                 ev.getMontoAdelanto() != null ? ev.getMontoAdelanto() : BigDecimal.ZERO);
         }
 
@@ -34,7 +35,7 @@ public class ContratoEntityMapper {
                 .estado(e.getEstado())
                 .contenidoTexto(e.getContenidoTexto())
                 .archivoPdfUrl(e.getArchivoPdfUrl())
-                .fechaFirma(e.getFechaFirma())
+                .fechaFirma(e.getFechaFirma() != null ? e.getFechaFirma().toLocalDate() : null)
                 .idUsuarioRedactor(e.getRedactorId())
                 .usuarioRedactor(e.getRedactorId() != null
                         ? perfilUsuarioRepository.buscarPorId(e.getRedactorId())
@@ -51,11 +52,11 @@ public class ContratoEntityMapper {
                 .fechaEvento(ev.getFechaEvento())
                 .turno(ev.getTurno().getNombre())
                 .aforoDeclarado(ev.getAforoDeclarado())
-                .precioTotalContrato(ev.getPrecioTotalContrato())
+                .precioTotalContrato(ev.getPrecioContrato())
                 .montoAdelanto(ev.getMontoAdelanto())
                 .saldoPendiente(saldo)
-                .fechaCreacion(e.getFechaCreacion())
-                .fechaActualizacion(e.getFechaActualizacion())
+                .fechaCreacion(e.getCreatedAt())
+                .fechaActualizacion(e.getUpdatedAt())
                 .build();
     }
 
@@ -67,7 +68,7 @@ public class ContratoEntityMapper {
                 .estado(d.getEstado())
                 .contenidoTexto(d.getContenidoTexto())
                 .archivoPdfUrl(d.getArchivoPdfUrl())
-                .fechaFirma(d.getFechaFirma())
+                .fechaFirma(d.getFechaFirma() != null ? d.getFechaFirma().atStartOfDay().atOffset(ZoneOffset.UTC) : null)
                 .redactorId(d.getIdUsuarioRedactor())
                 .plantilla(d.getPlantilla())
                 .observaciones(d.getObservaciones())
