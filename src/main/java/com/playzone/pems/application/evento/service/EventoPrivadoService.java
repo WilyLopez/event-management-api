@@ -137,7 +137,7 @@ public class EventoPrivadoService
                 .nombreNino(command.getNombreNino())
                 .edadCumple(command.getEdadCumple())
                 .notasInternas(command.getObservaciones())
-                .idPaquete(command.getIdPaquete())
+                .paqueteId(command.getIdPaquete())
                 .descripcionPersonalizada(command.getDescripcionPersonalizada())
                 .presupuestoEstimado(command.getPresupuestoEstimado())
                 .esCotizacionPersonalizada(command.isEsCotizacionPersonalizada())
@@ -174,7 +174,7 @@ public class EventoPrivadoService
 
         EventoPrivado confirmado = evento.toBuilder()
                 .estado(EstadoEventoPrivado.CONFIRMADA)
-                .precioTotalContrato(precioTotal)
+                .precioContrato(precioTotal)
                 .montoAdelanto(montoAdelanto != null ? montoAdelanto : BigDecimal.ZERO)
                 .idUsuarioGestor(idUsuarioGestor)
                 .build();
@@ -409,13 +409,13 @@ public class EventoPrivadoService
                 .tipoEvento(e.getTipoEvento())
                 .contactoAdicional(e.getContactoAdicional())
                 .aforoDeclarado(e.getAforoDeclarado())
-                .precioTotalContrato(e.getPrecioTotalContrato())
+                .precioTotalContrato(e.getPrecioContrato())
                 .montoAdelanto(e.getMontoAdelanto())
                 .montoSaldo(e.calcularMontoSaldo())
                 .observaciones(e.getNotasInternas())
                 .nombreNino(e.getNombreNino())
                 .edadCumple(e.getEdadCumple())
-                .idPaquete(e.getIdPaquete())
+                .idPaquete(e.getPaqueteId())
                 .descripcionPersonalizada(e.getDescripcionPersonalizada())
                 .presupuestoEstimado(e.getPresupuestoEstimado())
                 .esCotizacionPersonalizada(e.isEsCotizacionPersonalizada())
@@ -426,7 +426,7 @@ public class EventoPrivadoService
                 .horaFinReal(e.getHoraFinReal())
                 .extras(extras)
                 .medioPago(fetchMedioPagoEvento(e.getId()))
-                .fechaCreacion(e.getFechaCreacion())
+                .fechaCreacion(e.getCreatedAt())
                 .build();
     }
 

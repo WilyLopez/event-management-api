@@ -177,8 +177,7 @@ BEGIN
           AND r.fecha_evento = NEW.fecha_evento
           AND r.estado_codigo IN ('PENDIENTE', 'CONFIRMADA', 'REPROGRAMADA')
           AND r.deleted_at IS NULL
-          AND r.id <> COALESCE(NEW.id, -1)
-        FOR UPDATE;
+          AND r.id <> COALESCE(NEW.id, -1);
 
         IF v_aforo_actual + 1 > v_cfg.aforo_maximo THEN
             RAISE EXCEPTION 'Aforo maximo (%) alcanzado para la fecha %', v_cfg.aforo_maximo, NEW.fecha_evento

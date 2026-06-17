@@ -3,6 +3,7 @@ package com.playzone.pems.domain.evento.repository;
 import com.playzone.pems.application.evento.dto.query.MetricasReservaQuery;
 import com.playzone.pems.domain.evento.model.ReservaPublica;
 import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
+import com.playzone.pems.domain.evento.query.IngresosPorDia;
 import com.playzone.pems.domain.evento.query.ReservasPorDia;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -67,4 +68,6 @@ public interface ReservaPublicaRepository {
     int countBySedeAndFechaAndEstado(Long idSede, LocalDate fecha, EstadoReservaPublica estado);
 
     List<ReservasPorDia> countAgrupadoPorDia(Long idSede, LocalDate inicio, LocalDate fin);
+
+    List<IngresosPorDia> sumIngresosAgrupadoPorDia(Long idSede, LocalDate inicio, LocalDate fin);
 }

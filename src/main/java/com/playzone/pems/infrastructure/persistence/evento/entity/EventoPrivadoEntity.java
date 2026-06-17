@@ -57,7 +57,7 @@ public class EventoPrivadoEntity {
     private Integer aforoDeclarado;
 
     @Column(name = "precio_contrato", precision = 10, scale = 2)
-    private BigDecimal precioTotalContrato;
+    private BigDecimal precioContrato;
 
     @Column(name = "monto_adelanto", precision = 10, scale = 2)
     @Builder.Default
@@ -76,7 +76,7 @@ public class EventoPrivadoEntity {
     private Integer edadCumple;
 
     @Column(name = "paquete_id")
-    private Long idPaquete;
+    private Long paqueteId;
 
     @Column(name = "descripcion_personalizada", columnDefinition = "TEXT")
     private String descripcionPersonalizada;
@@ -106,9 +106,18 @@ public class EventoPrivadoEntity {
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime fechaCreacion;
+    private OffsetDateTime createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
-    private OffsetDateTime fechaActualizacion;
+    private OffsetDateTime updatedAt;
+
+    @Column(name = "created_by", columnDefinition = "uuid")
+    private UUID createdBy;
+
+    @Column(name = "updated_by", columnDefinition = "uuid")
+    private UUID updatedBy;
+
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
 }

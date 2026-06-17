@@ -20,7 +20,7 @@ import java.util.UUID;
 public class ReservaPublica {
 
     private Long                 id;
-    private Long                 idVenta;
+    private Long                 ventaId;
     private Long                 idCliente;
     private Long                 idSede;
     private EstadoReservaPublica estado;
@@ -40,14 +40,14 @@ public class ReservaPublica {
     private String               dniAcompanante;
     private boolean              firmoConsentimiento;
     private String               motivoCancelacion;
-    private OffsetDateTime        fechaCreacion;
-    private OffsetDateTime        fechaActualizacion;
+    private OffsetDateTime       createdAt;
+    private OffsetDateTime       updatedAt;
     private boolean              ingresado;
-    private OffsetDateTime        fechaIngreso;
+    private OffsetDateTime       ingresoAt;
     private String               codigoQr;
     private UUID                 createdBy;
     private UUID                 updatedBy;
-    private OffsetDateTime        deletedAt;
+    private OffsetDateTime       deletedAt;
 
     public boolean puedeReprogramarse(int maxReprogramaciones) {
         return estado.esReprogramable() && vecesReprogramada < maxReprogramaciones;

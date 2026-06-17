@@ -144,7 +144,7 @@ public class VentaMostradorService {
         List<ReservaPublica> reservas = new ArrayList<>();
         for (NinoMostradorCommand nino : cmd.getNinos()) {
             ReservaPublica reserva = reservaRepository.save(ReservaPublica.builder()
-                    .idVenta(ventaGuardada.getId())
+                    .ventaId(ventaGuardada.getId())
                     .idSede(cmd.getSedeId())
                     .idCliente(clienteEfectivo)
                     .canalReserva(CanalReserva.MOSTRADOR)

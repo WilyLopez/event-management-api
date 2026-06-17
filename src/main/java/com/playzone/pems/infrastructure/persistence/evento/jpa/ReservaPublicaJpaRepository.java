@@ -1,6 +1,7 @@
 package com.playzone.pems.infrastructure.persistence.evento.jpa;
 
 import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
+import com.playzone.pems.domain.evento.query.IngresosPorDia;
 import com.playzone.pems.domain.evento.query.ReservasPorDia;
 import com.playzone.pems.infrastructure.persistence.evento.entity.ReservaPublicaEntity;
 import org.springframework.data.domain.Page;
@@ -126,6 +127,21 @@ public interface ReservaPublicaJpaRepository extends JpaRepository<ReservaPublic
             ORDER BY r.fechaEvento
             """)
     List<ReservasPorDia> countAgrupadoPorDia(
+            @Param("idSede") Long idSede,
+            @Param("inicio") LocalDate inicio,
+            @Param("fin")    LocalDate fin);
+
+    @Query("""
+            SELECT new com.playzone.pems.domain.evento.query.IngresosPorDia(
+                r.fechaEvento, COALESCE(SUM(r.totalPagado), 0))
+            FROM ReservaPublicaEntity r
+            WHERE r.sede.id = :idSede
+              AND r.fechaEvento BETWEEN :inicio AND :fin
+              AND r.estado <> 'CANCELADA'
+            GROUP BY r.fechaEvento
+            ORDER BY r.fechaEvento
+            """)
+    List<IngresosPorDia> sumIngresosAgrupadoPorDia(
             @Param("idSede") Long idSede,
             @Param("inicio") LocalDate inicio,
             @Param("fin")    LocalDate fin);

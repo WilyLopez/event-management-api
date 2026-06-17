@@ -9,6 +9,10 @@ public interface GestionarChecklistUseCase {
 
     List<ChecklistEventoQuery> listar(Long idEvento);
 
+    default List<ChecklistEventoQuery> consultarPorEvento(Long idEvento) {
+        return listar(idEvento);
+    }
+
     ChecklistEventoQuery completar(Long idChecklist, UUID idUsuarioAdmin);
 
     ChecklistEventoQuery descompletar(Long idChecklist);

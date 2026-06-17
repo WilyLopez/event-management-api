@@ -152,7 +152,7 @@ public class ReservaPublicaService
                 .build());
 
         ReservaPublica reserva = ReservaPublica.builder()
-                .idVenta(venta.getId())
+                .ventaId(venta.getId())
                 .idCliente(command.getIdCliente())
                 .idSede(command.getIdSede())
                 .estado(EstadoReservaPublica.PENDIENTE)
@@ -280,7 +280,7 @@ public class ReservaPublicaService
         ReservaPublica guardada = reservaRepository.save(
                 reserva.toBuilder().estado(EstadoReservaPublica.CONFIRMADA).build());
         ventaPagoRepository.save(VentaPago.builder()
-                .ventaId(guardada.getIdVenta())
+                .ventaId(guardada.getVentaId())
                 .medioPagoCodigo(medioPago)
                 .monto(guardada.getTotalPagado())
                 .esValidado(true)
@@ -366,7 +366,7 @@ public class ReservaPublicaService
                 cliente != null ? cliente.nombreCompleto() : null,
                 cliente != null ? cliente.getCorreo() : null,
                 fetchNombreSede(r.getIdSede()),
-                fetchMedioPago(r.getIdVenta()));
+                fetchMedioPago(r.getVentaId()));
     }
 
     private ReservaPublicaQuery toQuery(ReservaPublica r, String nombreCliente,
@@ -395,10 +395,10 @@ public class ReservaPublicaService
                 .esReprogramacion(r.isEsReprogramacion())
                 .vecesReprogramada(r.getVecesReprogramada())
                 .ingresado(r.isIngresado())
-                .fechaIngreso(r.getFechaIngreso())
+                .fechaIngreso(r.getIngresoAt())
                 .codigoQr(r.getCodigoQr())
                 .medioPago(medioPago)
-                .fechaCreacion(r.getFechaCreacion())
+                .fechaCreacion(r.getCreatedAt())
                 .build();
     }
 

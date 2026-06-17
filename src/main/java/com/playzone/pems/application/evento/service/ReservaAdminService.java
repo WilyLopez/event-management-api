@@ -1,5 +1,6 @@
 package com.playzone.pems.application.evento.service;
 
+import com.playzone.pems.application.fidelizacion.port.in.RegistrarVisitaUseCase;
 import com.playzone.pems.application.evento.dto.query.MetricasReservaQuery;
 import com.playzone.pems.application.evento.dto.query.ReservaPublicaQuery;
 import com.playzone.pems.application.evento.dto.query.TicketDetalleQuery;
@@ -41,6 +42,7 @@ public class ReservaAdminService
     private final BloqueCalendarioRepository        bloqueRepository;
     private final ConfiguracionCalendarioRepository configRepository;
     private final EventoPrivadoRepository           eventoRepository;
+    private final RegistrarVisitaUseCase            registrarVisitaUseCase;
 
     @Override
     @Transactional
@@ -56,10 +58,17 @@ public class ReservaAdminService
         ReservaPublica actualizada = reserva.toBuilder()
                 .estado(EstadoReservaPublica.COMPLETADA)
                 .ingresado(true)
-                .fechaIngreso(OffsetDateTime.now(ZoneId.of("America/Lima")))
+                .ingresoAt(OffsetDateTime.now(ZoneId.of("America/Lima")))
                 .build();
 
         ReservaPublica guardada = reservaRepository.save(actualizada);
+
+        try {
+            registrarVisitaUseCase.registrarVisita(guardada.getId());
+        } catch (Exception e) {
+            System.err.println("Error fidelizacion: " + e.getMessage());
+        }
+
         String nombre = clientePerfilRepository.buscarPorId(guardada.getIdCliente())
                 .map(ClientePerfil::nombreCompleto).orElse(null);
 
@@ -124,7 +133,7 @@ public class ReservaAdminService
         ReservaPublica actualizada = r.toBuilder()
                 .ingresado(true)
                 .estado(EstadoReservaPublica.COMPLETADA)
-                .fechaIngreso(OffsetDateTime.now(ZoneId.of("America/Lima")))
+                .ingresoAt(OffsetDateTime.now(ZoneId.of("America/Lima")))
                 .build();
         return toDetalle(reservaRepository.save(actualizada));
     }
@@ -179,7 +188,7 @@ public class ReservaAdminService
                 .numeroTicket(r.getNumeroTicket())
                 .estado(r.getEstado().getCodigo())
                 .yaIngreso(r.isIngresado())
-                .fechaIngreso(r.getFechaIngreso())
+                .fechaIngreso(r.getIngresoAt())
                 .fechaVisita(r.getFechaEvento())
                 .esHoy(r.getFechaEvento().isEqual(hoy))
                 .nombreNino(r.getNombreNino())
@@ -215,9 +224,9 @@ public class ReservaAdminService
                 .esReprogramacion(r.isEsReprogramacion())
                 .vecesReprogramada(r.getVecesReprogramada())
                 .ingresado(r.isIngresado())
-                .fechaIngreso(r.getFechaIngreso())
+                .fechaIngreso(r.getIngresoAt())
                 .codigoQr(r.getCodigoQr())
-                .fechaCreacion(r.getFechaCreacion())
+                .fechaCreacion(r.getCreatedAt())
                 .build();
     }
 }

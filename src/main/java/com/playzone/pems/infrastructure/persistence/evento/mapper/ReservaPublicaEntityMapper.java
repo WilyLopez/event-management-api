@@ -14,7 +14,7 @@ public class ReservaPublicaEntityMapper {
         if (e == null) return null;
         return ReservaPublica.builder()
                 .id(e.getId())
-                .idVenta(e.getIdVenta())
+                .ventaId(e.getVentaId())
                 .idCliente(e.getClienteId())
                 .idSede(e.getSede().getId())
                 .estado(e.getEstado())
@@ -35,13 +35,13 @@ public class ReservaPublicaEntityMapper {
                 .firmoConsentimiento(e.isFirmoConsentimiento())
                 .motivoCancelacion(e.getMotivoCancelacion())
                 .ingresado(e.isIngresado())
-                .fechaIngreso(e.getFechaIngreso() != null ? e.getFechaIngreso() : null)
+                .ingresoAt(e.getIngresoAt())
                 .codigoQr(e.getCodigoQr())
-                .fechaCreacion(e.getFechaCreacion() != null ? e.getFechaCreacion() : null)
-                .fechaActualizacion(e.getFechaActualizacion() != null ? e.getFechaActualizacion() : null)
+                .createdAt(e.getCreatedAt())
+                .updatedAt(e.getUpdatedAt())
                 .createdBy(e.getCreatedBy())
                 .updatedBy(e.getUpdatedBy())
-                .deletedAt(e.getDeletedAt() != null ? e.getDeletedAt() : null)
+                .deletedAt(e.getDeletedAt())
                 .build();
     }
 
@@ -51,7 +51,7 @@ public class ReservaPublicaEntityMapper {
         if (d == null) return null;
         return ReservaPublicaEntity.builder()
                 .id(d.getId())
-                .idVenta(d.getIdVenta())
+                .ventaId(d.getVentaId())
                 .clienteId(d.getIdCliente())
                 .sede(sede)
                 .estado(d.getEstado())
@@ -71,11 +71,11 @@ public class ReservaPublicaEntityMapper {
                 .firmoConsentimiento(d.isFirmoConsentimiento())
                 .motivoCancelacion(d.getMotivoCancelacion())
                 .ingresado(d.isIngresado())
-                .fechaIngreso(d.getFechaIngreso() != null ? d.getFechaIngreso() : null)
+                .ingresoAt(d.getIngresoAt())
                 .codigoQr(d.getCodigoQr())
                 .createdBy(d.getCreatedBy())
                 .updatedBy(d.getUpdatedBy())
-                .deletedAt(d.getDeletedAt() != null ? d.getDeletedAt() : null)
+                .deletedAt(d.getDeletedAt())
                 .build();
     }
 }

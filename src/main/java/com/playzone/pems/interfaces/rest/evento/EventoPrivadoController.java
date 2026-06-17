@@ -14,7 +14,6 @@ import com.playzone.pems.interfaces.rest.evento.response.EventoPrivadoResponse;
 import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.shared.response.ApiResponse;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.DecimalMin;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -32,6 +31,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/eventos-privados")
@@ -154,7 +154,6 @@ public class EventoPrivadoController {
     @PreAuthorize("hasAuthority('evento.confirmar')")
     public ResponseEntity<ApiResponse<EventoPrivadoResponse>> completar(
             @PathVariable Long id) {
-
         return ResponseEntity.ok(ApiResponse.ok(
                 toResponse(eventoService.completar(id,
                         supabaseAuthFacade.usuarioActualId()
@@ -165,9 +164,8 @@ public class EventoPrivadoController {
     @PreAuthorize("hasAuthority('evento.confirmar')")
     public ResponseEntity<ApiResponse<EventoPrivadoResponse>> registrarSaldo(
             @PathVariable Long id,
-            @RequestParam @DecimalMin("0.01") BigDecimal monto,
+            @RequestParam BigDecimal monto,
             @RequestParam String medioPago) {
-
         return ResponseEntity.ok(ApiResponse.ok(
                 toResponse(eventoService.registrarSaldo(id, monto, medioPago,
                         supabaseAuthFacade.usuarioActualId()
@@ -175,21 +173,18 @@ public class EventoPrivadoController {
     }
 
     @PostMapping("/{id}/cancelar")
-    @PreAuthorize("hasAuthority('evento.cancelar')")
+    @PreAuthorize("hasAuthority('evento.confirmar')")
     public ResponseEntity<ApiResponse<EventoPrivadoResponse>> cancelar(
             @PathVariable Long id,
             @RequestParam String motivoCancelacion) {
-
-        return ResponseEntity.ok(ApiResponse.ok(
-                toResponse(cancelarUseCase.ejecutar(id, motivoCancelacion))));
+        return ResponseEntity.ok(ApiResponse.ok(toResponse(cancelarUseCase.ejecutar(id, motivoCancelacion))));
     }
 
     @GetMapping("/{idEvento}/checklist")
-    @PreAuthorize("hasAuthority('evento.confirmar')")
+    @PreAuthorize("hasAuthority('evento.ver')")
     public ResponseEntity<ApiResponse<List<ChecklistEventoQuery>>> listarChecklist(
             @PathVariable Long idEvento) {
-
-        return ResponseEntity.ok(ApiResponse.ok(checklistUseCase.listar(idEvento)));
+        return ResponseEntity.ok(ApiResponse.ok(checklistUseCase.consultarPorEvento(idEvento)));
     }
 
     @PostMapping("/{idEvento}/checklist/{idChecklist}/completar")
@@ -211,49 +206,6 @@ public class EventoPrivadoController {
             @PathVariable Long idChecklist) {
 
         return ResponseEntity.ok(ApiResponse.ok(checklistUseCase.descompletar(idChecklist)));
-    }
-
-    @GetMapping("/paquetes/{idPaquete}/extras")
-    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> listarExtrasPaquete(
-            @PathVariable Long idPaquete) {
-
-        List<Map<String, Object>> extras = extraPaqueteRepository.findActivosByPaquete(idPaquete)
-                .stream().map(e -> Map.of(
-                        "id",          (Object) e.getId(),
-                        "nombre",      e.getNombre(),
-                        "descripcion", e.getDescripcion() != null ? e.getDescripcion() : "",
-                        "orden",       e.getOrden()
-                )).toList();
-
-        return ResponseEntity.ok(ApiResponse.ok(extras));
-    }
-
-    @PostMapping("/paquetes/{idPaquete}/extras")
-    @PreAuthorize("hasAuthority('paquete.gestionar')")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> crearExtra(
-            @PathVariable Long idPaquete,
-            @RequestBody Map<String, Object> body) {
-
-        ExtraPaquete extra = ExtraPaquete.builder()
-                .idPaquete(idPaquete)
-                .nombre((String) body.get("nombre"))
-                .descripcion((String) body.get("descripcion"))
-                .activo(true)
-                .orden(body.containsKey("orden") ? (Integer) body.get("orden") : 0)
-                .build();
-
-        ExtraPaquete guardado = extraPaqueteRepository.save(extra);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(
-                Map.of("id", guardado.getId(), "nombre", guardado.getNombre(),
-                        "descripcion", guardado.getDescripcion() != null ? guardado.getDescripcion() : "",
-                        "orden", guardado.getOrden())));
-    }
-
-    @DeleteMapping("/extras/{idExtra}")
-    @PreAuthorize("hasAuthority('paquete.gestionar')")
-    public ResponseEntity<ApiResponse<Void>> desactivarExtra(@PathVariable Long idExtra) {
-        extraPaqueteRepository.desactivar(idExtra);
-        return ResponseEntity.ok(ApiResponse.noContent());
     }
 
     private Long resolverIdCliente(Long solicitado) {

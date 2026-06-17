@@ -3,6 +3,7 @@ package com.playzone.pems.infrastructure.persistence.evento.adapter;
 import com.playzone.pems.application.evento.dto.query.MetricasReservaQuery;
 import com.playzone.pems.domain.evento.model.ReservaPublica;
 import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
+import com.playzone.pems.domain.evento.query.IngresosPorDia;
 import com.playzone.pems.domain.evento.query.ReservasPorDia;
 import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
 import com.playzone.pems.infrastructure.persistence.evento.entity.ReservaPublicaEntity;
@@ -168,5 +169,9 @@ public class ReservaPublicaPersistenceAdapter implements ReservaPublicaRepositor
 
     @Override public List<ReservasPorDia> countAgrupadoPorDia(Long idSede, LocalDate inicio, LocalDate fin) {
         return reservaJpa.countAgrupadoPorDia(idSede, inicio, fin);
+    }
+
+    @Override public List<IngresosPorDia> sumIngresosAgrupadoPorDia(Long idSede, LocalDate inicio, LocalDate fin) {
+        return reservaJpa.sumIngresosAgrupadoPorDia(idSede, inicio, fin);
     }
 }

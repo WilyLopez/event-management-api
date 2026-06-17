@@ -1,12 +1,7 @@
 package com.playzone.pems.domain.evento.model.enums;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-
 import java.util.Arrays;
 
-@Getter
-@RequiredArgsConstructor
 public enum CanalReserva {
 
     WEB(
@@ -20,6 +15,14 @@ public enum CanalReserva {
 
     private final String codigo;
     private final String descripcion;
+
+    CanalReserva(String codigo, String descripcion) {
+        this.codigo = codigo;
+        this.descripcion = descripcion;
+    }
+
+    public String getCodigo() { return codigo; }
+    public String getDescripcion() { return descripcion; }
 
     public boolean esAutoservicio() {
         return this == WEB;

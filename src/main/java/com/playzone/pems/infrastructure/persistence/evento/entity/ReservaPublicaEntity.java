@@ -98,22 +98,22 @@ public class ReservaPublicaEntity {
     private boolean ingresado = false;
 
     @Column(name = "ingreso_at")
-    private OffsetDateTime fechaIngreso;
+    private OffsetDateTime ingresoAt;
 
     @Generated(GenerationTime.INSERT)
     @Column(name = "codigo_qr", insertable = false, updatable = false, length = 200)
     private String codigoQr;
 
     @Column(name = "venta_id")
-    private Long idVenta;
+    private Long ventaId;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime fechaCreacion;
+    private OffsetDateTime createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
-    private OffsetDateTime fechaActualizacion;
+    private OffsetDateTime updatedAt;
 
     @Column(name = "created_by", columnDefinition = "uuid")
     private UUID createdBy;
