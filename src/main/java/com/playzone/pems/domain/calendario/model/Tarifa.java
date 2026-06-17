@@ -20,7 +20,7 @@ public class Tarifa {
     private LocalDate     vigenciaDesde;
     private LocalDate     vigenciaHasta;
     private boolean       activo;
-    private OffsetDateTime fechaCreacion;
+    private OffsetDateTime createdAt;
 
     public boolean estaVigenteEn(LocalDate fecha) {
         if (!activo) return false;

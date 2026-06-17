@@ -17,7 +17,7 @@ public class Feriado {
     private LocalDate     fecha;
     private String        descripcion;
     private int           anio;
-    private OffsetDateTime fechaCreacion;
+    private OffsetDateTime createdAt;
     public boolean esNacional() {
         return TipoFeriado.NACIONAL == tipoFeriado;
     }

@@ -129,6 +129,7 @@ public class CalendarioController {
                 .plazasDisponibles(q.getPlazasDisponibles())
                 .aforoCompleto(q.isAforoCompleto())
                 .bloqueadoManualmente(q.isBloqueadoManualmente())
+                .idBloqueo(q.getIdBloqueo())
                 .tipoBloqueo(q.getTipoBloqueo())
                 .motivoBloqueo(q.getMotivoBloqueo())
                 .totalReservas(q.getTotalReservas())
@@ -159,6 +160,8 @@ public class CalendarioController {
                 .pagosPendientes(q.getPagosPendientes())
                 .aforoPublicoActual(q.getAforoPublicoActual())
                 .aforoMaximo(q.getAforoMaximo())
+                .tipoOcupacion(q.getTipoOcupacion())
+                .bloqueadoManualmente(q.isBloqueadoManualmente())
                 .turnoT1(toTurnoResponse(q.getTurnoT1()))
                 .turnoT2(toTurnoResponse(q.getTurnoT2()))
                 .reservas(q.getReservas().stream().map(r ->

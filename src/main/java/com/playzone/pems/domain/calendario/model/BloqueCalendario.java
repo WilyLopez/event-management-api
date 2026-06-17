@@ -16,10 +16,11 @@ public class BloqueCalendario {
     private Long          idSede;
     private LocalDate     fechaInicio;
     private LocalDate     fechaFin;
+    private String        tipoBloqueo;
     private String        motivo;
     private boolean       activo;
     private UUID          idUsuarioCreador;
-    private OffsetDateTime fechaCreacion;
+    private OffsetDateTime createdAt;
 
     public boolean comprendeFecha(LocalDate fecha) {
         return activo

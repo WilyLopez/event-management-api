@@ -9,6 +9,8 @@ import com.playzone.pems.domain.evento.model.ReservaPublica;
 import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
 import com.playzone.pems.domain.evento.repository.EventoPrivadoRepository;
 import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
+import com.playzone.pems.domain.calendario.repository.BloqueCalendarioRepository;
+import com.playzone.pems.domain.calendario.repository.FeriadoRepository;
 import com.playzone.pems.domain.usuario.model.ClientePerfil;
 import com.playzone.pems.domain.usuario.repository.ClientePerfilRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,8 @@ public class ResumenDiaService implements ConsultarResumenDiaUseCase {
     private final EventoPrivadoRepository          eventoRepository;
     private final ConfiguracionCalendarioRepository configRepository;
     private final ClientePerfilRepository          clientePerfilRepository;
+    private final BloqueCalendarioRepository       bloqueRepository;
+    private final FeriadoRepository                feriadoRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -35,6 +39,24 @@ public class ResumenDiaService implements ConsultarResumenDiaUseCase {
         ConfiguracionCalendario cfg = configRepository.obtener(idSede);
         List<ReservaPublica> reservas = reservaRepository.findBySedeAndFecha(idSede, fecha);
         List<EventoPrivado> eventos = eventoRepository.findActivosBySedeAndFecha(idSede, fecha);
+
+        boolean esFeriado = feriadoRepository.existsByFecha(fecha);
+        boolean bloqueado = bloqueRepository.existsBloqueActivoEnFecha(idSede, fecha);
+
+        String tipoOcupacion = "LIBRE";
+        if (esFeriado) tipoOcupacion = "FERIADO";
+        else if (bloqueado) {
+             var b = bloqueRepository.findActivosBySede(idSede).stream()
+                     .filter(x -> x.comprendeFecha(fecha))
+                     .findFirst().orElse(null);
+             if (b != null && "PLANIFICACION_SEMANAL".equals(b.getTipoBloqueo())) {
+                 tipoOcupacion = "LIBRE";
+             } else {
+                 tipoOcupacion = "BLOQUEADO";
+             }
+        } else if (eventos.size() >= 2) tipoOcupacion = "PRIVADO_LLENO";
+        else if (eventos.size() == 1) tipoOcupacion = "PRIVADO_PARCIAL";
+        else if (reservas.size() > 0) tipoOcupacion = "PUBLICO";
 
         BigDecimal ingresoEstimado = reservas.stream()
                 .filter(r -> r.getEstado() == EstadoReservaPublica.CONFIRMADA
@@ -97,6 +119,8 @@ public class ResumenDiaService implements ConsultarResumenDiaUseCase {
                 .pagosPendientes(pagosPendientes)
                 .aforoPublicoActual(aforoActual)
                 .aforoMaximo(aforoMax)
+                .tipoOcupacion(tipoOcupacion)
+                .bloqueadoManualmente(bloqueado)
                 .turnoT1(turnoT1)
                 .turnoT2(turnoT2)
                 .reservas(reservas.stream().map(this::toResumenReserva).toList())

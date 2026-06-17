@@ -34,6 +34,9 @@ public class BloqueCalendarioEntity {
     @Column(name = "fecha_fin", nullable = false)
     private LocalDate fechaFin;
 
+    @Column(name = "tipo_bloqueo", length = 30)
+    private String tipoBloqueo;
+
     @Column(name = "motivo", nullable = false, length = 300)
     private String motivo;
 
@@ -46,7 +49,7 @@ public class BloqueCalendarioEntity {
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime fechaCreacion;
+    private OffsetDateTime createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at")

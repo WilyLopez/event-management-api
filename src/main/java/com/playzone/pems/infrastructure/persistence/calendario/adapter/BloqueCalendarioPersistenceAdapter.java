@@ -34,8 +34,18 @@ public class BloqueCalendarioPersistenceAdapter implements BloqueCalendarioRepos
     }
 
     @Override
+    public List<BloqueCalendario> findActivosBySedeAndRango(Long idSede, LocalDate inicio, LocalDate fin) {
+        return bloqueJpa.findActivosBySedeAndRango(idSede, inicio, fin).stream().map(mapper::toDomain).toList();
+    }
+
+    @Override
     public boolean existsBloqueActivoEnFecha(Long idSede, LocalDate fecha) {
         return bloqueJpa.existsBloqueActivoEnFecha(idSede, fecha);
+    }
+
+    @Override
+    public boolean existsBloqueEfectivoEnFecha(Long idSede, LocalDate fecha) {
+        return bloqueJpa.existsBloqueEfectivoEnFecha(idSede, fecha);
     }
 
     @Override
@@ -54,6 +64,7 @@ public class BloqueCalendarioPersistenceAdapter implements BloqueCalendarioRepos
                 .sede(sede)
                 .fechaInicio(bloque.getFechaInicio())
                 .fechaFin(bloque.getFechaFin())
+                .tipoBloqueo(bloque.getTipoBloqueo())
                 .motivo(bloque.getMotivo())
                 .activo(bloque.isActivo())
                 .createdBy(bloque.getIdUsuarioCreador())

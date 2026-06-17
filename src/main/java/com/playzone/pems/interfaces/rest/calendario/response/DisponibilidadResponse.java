@@ -25,6 +25,7 @@ public class DisponibilidadResponse {
     private int       plazasDisponibles;
     private boolean   aforoCompleto;
     private boolean   bloqueadoManualmente;
+    private Long      idBloqueo;
     private String    tipoBloqueo;
     private String    motivoBloqueo;
     private int       totalReservas;

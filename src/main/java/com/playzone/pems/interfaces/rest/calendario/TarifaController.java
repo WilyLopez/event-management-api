@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/tarifas")
@@ -53,6 +54,30 @@ public class TarifaController {
                 .build()));
     }
 
+    @GetMapping("/sedes/{idSede}/activas")
+    @PreAuthorize("hasAuthority('tarifa.gestionar')")
+    public ResponseEntity<ApiResponse<List<TarifaResponse>>> listarActivas(@PathVariable Long idSede) {
+        List<TarifaResponse> tarifas = tarifaRepository.findActivasBySede(idSede)
+                .stream()
+                .map(t -> new TarifaResponse(
+                        t.getId(), t.getTipoDia().getCodigo(), t.getPrecio(),
+                        t.getVigenciaDesde(), t.getVigenciaHasta(), t.isActivo()))
+                .toList();
+        return ResponseEntity.ok(ApiResponse.ok(tarifas));
+    }
+
+    @GetMapping("/sedes/{idSede}/precios")
+    public ResponseEntity<ApiResponse<List<PrecioPublicoResponse>>> preciosPublicos(@PathVariable Long idSede) {
+        List<PrecioPublicoResponse> precios = tarifaRepository.findActivasBySede(idSede)
+                .stream()
+                .map(t -> new PrecioPublicoResponse(
+                        t.getTipoDia().getCodigo(),
+                        t.getTipoDia() == TipoDia.SEMANA ? "Lunes a Viernes" : "Sabados, Domingos y Feriados",
+                        t.getPrecio()))
+                .toList();
+        return ResponseEntity.ok(ApiResponse.ok(precios));
+    }
+
     @PostMapping("/sedes/{idSede}")
     @PreAuthorize("hasAuthority('tarifa.gestionar')")
     public ResponseEntity<ApiResponse<Void>> configurar(
@@ -77,4 +102,11 @@ public class TarifaController {
         private String     tipoDia;
         private boolean    esFindeSemanaOFeriado;
     }
+
+    record TarifaResponse(
+            Long id, String tipoDia, BigDecimal precio,
+            LocalDate vigenciaDesde, LocalDate vigenciaHasta, boolean activo) {}
+
+    record PrecioPublicoResponse(
+            String tipoDia, String descripcion, BigDecimal precio) {}
 }

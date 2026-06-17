@@ -26,7 +26,7 @@ public class CalendarioEntityMapper {
                 .fecha(e.getFecha())
                 .descripcion(e.getDescripcion())
                 .anio(e.getAnio())
-                .fechaCreacion(e.getFechaCreacion())
+                .createdAt(e.getCreatedAt())
                 .build();
     }
 
@@ -37,10 +37,11 @@ public class CalendarioEntityMapper {
                 .idSede(e.getSede().getId())
                 .fechaInicio(e.getFechaInicio())
                 .fechaFin(e.getFechaFin())
+                .tipoBloqueo(e.getTipoBloqueo())
                 .motivo(e.getMotivo())
                 .activo(e.isActivo())
                 .idUsuarioCreador(e.getCreatedBy())
-                .fechaCreacion(e.getFechaCreacion() != null ? e.getFechaCreacion() : null)
+                .createdAt(e.getCreatedAt())
                 .build();
     }
 
@@ -54,7 +55,7 @@ public class CalendarioEntityMapper {
                 .vigenciaDesde(e.getVigenciaDesde())
                 .vigenciaHasta(e.getVigenciaHasta())
                 .activo(e.isActivo())
-                .fechaCreacion(e.getFechaCreacion())
+                .createdAt(e.getCreatedAt())
                 .build();
     }
 }
