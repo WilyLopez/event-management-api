@@ -8,10 +8,13 @@ import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Getter
 @Builder
 public class CrearPromocionCommand {
+
+    private final Long id;
 
     @NotNull
     private final TipoPromocion tipoPromocion;
@@ -30,9 +33,6 @@ public class CrearPromocionCommand {
     @Digits(integer = 10, fraction = 2)
     private final BigDecimal valorDescuento;
 
-    @Size(max = 300)
-    private final String condicion;
-
     @Min(1)
     private final Integer minimoPersonas;
 
@@ -46,6 +46,24 @@ public class CrearPromocionCommand {
     @NotNull
     private final Boolean esAutomatica;
 
-    @NotNull
-    private final Long idUsuarioCreador;
+    private final UUID idUsuarioCreador;
+
+    private final Integer prioridad;
+
+    private final Integer    limiteUsos;
+    private final Integer    limitePorCliente;
+    private final BigDecimal montoMinimo;
+
+    // CMS / display
+    private final String  imagenUrl;
+    private final String  bannerUrl;
+    private final String  colorDestacado;
+    private final String  textoPublicitario;
+    private final String  textoBoton;
+    private final String  urlBoton;
+    private final Boolean mostrarEnInicio;
+    private final Boolean mostrarEnCarrusel;
+    private final Boolean mostrarEnPaginaPromociones;
+    private final Boolean mostrarEnCheckout;
+    private final Boolean soloMovil;
 }

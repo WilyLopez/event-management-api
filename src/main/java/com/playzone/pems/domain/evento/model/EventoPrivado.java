@@ -8,7 +8,8 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder(toBuilder = true)
@@ -21,26 +22,35 @@ public class EventoPrivado {
     private Long                idSede;
     private EstadoEventoPrivado estado;
     private Long                idTurno;
+    private String              codigoTurno;
     private LocalDate           fechaEvento;
     private String              tipoEvento;
     private String              contactoAdicional;
     private Integer             aforoDeclarado;
-    private BigDecimal          precioTotalContrato;
+    private BigDecimal          precioContrato;
     private BigDecimal          montoAdelanto;
     private String              motivoCancelacion;
     private String              notasInternas;
-    private Long                idUsuarioGestor;
-    private LocalDateTime       fechaCreacion;
-    private LocalDateTime       fechaActualizacion;
+    private String              nombreNino;
+    private Integer             edadCumple;
+    private Long                paqueteId;
+    private String              descripcionPersonalizada;
+    private BigDecimal          presupuestoEstimado;
+    private boolean             esCotizacionPersonalizada;
+    private UUID                idUsuarioGestor;
+    private OffsetDateTime      createdAt;
+    private OffsetDateTime      updatedAt;
+    private UUID                createdBy;
+    private UUID                updatedBy;
     private String              estadoOperativo;
     private boolean             checklistCompleto;
-    private LocalDateTime       horaInicioReal;
-    private LocalDateTime       horaFinReal;
+    private OffsetDateTime      horaInicioReal;
+    private OffsetDateTime      horaFinReal;
 
     public BigDecimal calcularMontoSaldo() {
-        if (precioTotalContrato == null) return null;
+        if (precioContrato == null) return null;
         BigDecimal adelanto = montoAdelanto != null ? montoAdelanto : BigDecimal.ZERO;
-        return precioTotalContrato.subtract(adelanto);
+        return precioContrato.subtract(adelanto);
     }
 
     public boolean puedeCancelarse() {
@@ -52,9 +62,9 @@ public class EventoPrivado {
     }
 
     public boolean adelantoCubreMitad() {
-        if (precioTotalContrato == null || montoAdelanto == null) return false;
+        if (precioContrato == null || montoAdelanto == null) return false;
         return montoAdelanto.multiply(BigDecimal.valueOf(2))
-                .compareTo(precioTotalContrato) >= 0;
+                .compareTo(precioContrato) >= 0;
     }
 
     public boolean estaSaldado() {

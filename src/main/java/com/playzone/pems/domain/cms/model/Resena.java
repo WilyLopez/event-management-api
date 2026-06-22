@@ -2,7 +2,8 @@ package com.playzone.pems.domain.cms.model;
 
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder(toBuilder = true)
@@ -19,11 +20,11 @@ public class Resena {
     private boolean       aprobada;
     private String        fotoUrl;
     private String        respuestaAdmin;
-    private LocalDateTime fechaRespuesta;
+    private OffsetDateTime fechaRespuesta;
     private boolean       destacada;
     private boolean       mostrarHome;
-    private Long          idUsuarioAprueba;
-    private LocalDateTime fechaCreacion;
+    private UUID          idUsuarioAprueba;
+    private OffsetDateTime fechaCreacion;
 
     public boolean esCalificacionPositiva() {
         return calificacion >= 4;

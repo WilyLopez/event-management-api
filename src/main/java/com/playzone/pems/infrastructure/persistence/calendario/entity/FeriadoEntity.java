@@ -1,13 +1,12 @@
 package com.playzone.pems.infrastructure.persistence.calendario.entity;
 
 import com.playzone.pems.domain.calendario.model.enums.TipoFeriado;
-import com.playzone.pems.infrastructure.persistence.usuario.entity.UsuarioAdminEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "feriado")
@@ -20,11 +19,10 @@ public class FeriadoEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idferiado")
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "idtipoferiado", nullable = false, length = 20)
+    @Column(name = "tipo_codigo", nullable = false, length = 20)
     private TipoFeriado tipoFeriado;
 
     @Column(nullable = false, unique = true)
@@ -33,14 +31,10 @@ public class FeriadoEntity {
     @Column(nullable = false, length = 120)
     private String descripcion;
 
-    @Column(nullable = false)
+    @Column(nullable = false, insertable = false, updatable = false)
     private int anio;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "creadopor")
-    private UsuarioAdminEntity creadoPor;
-
     @CreationTimestamp
-    @Column(name = "fechacreacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
 }

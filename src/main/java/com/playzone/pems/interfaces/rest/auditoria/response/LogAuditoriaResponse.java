@@ -3,13 +3,14 @@ package com.playzone.pems.interfaces.rest.auditoria.response;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder
 public class LogAuditoriaResponse {
     private final Long          id;
-    private final Long          idUsuarioAdmin;
+    private final UUID          idUsuarioAdmin;
     private final String        nombreUsuario;
     private final String        accion;
     private final String        modulo;
@@ -22,5 +23,5 @@ public class LogAuditoriaResponse {
     private final String        userAgent;
     private final String        nivel;
     private final String        resultado;
-    private final LocalDateTime fechaLog;
+    private final OffsetDateTime fechaLog;
 }

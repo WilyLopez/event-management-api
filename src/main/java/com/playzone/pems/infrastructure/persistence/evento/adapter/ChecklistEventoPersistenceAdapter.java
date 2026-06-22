@@ -7,7 +7,7 @@ import com.playzone.pems.infrastructure.persistence.evento.entity.EventoPrivadoE
 import com.playzone.pems.infrastructure.persistence.evento.jpa.ChecklistEventoJpaRepository;
 import com.playzone.pems.infrastructure.persistence.evento.jpa.EventoPrivadoJpaRepository;
 import com.playzone.pems.infrastructure.persistence.evento.mapper.ChecklistEventoEntityMapper;
-import com.playzone.pems.infrastructure.persistence.usuario.jpa.UsuarioAdminJpaRepository;
+import com.playzone.pems.infrastructure.persistence.usuario_supabase.jpa.PerfilUsuarioJpaRepository;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -32,28 +32,26 @@ public class ChecklistEventoPersistenceAdapter implements ChecklistEventoReposit
 
     private final ChecklistEventoJpaRepository checklistJpa;
     private final EventoPrivadoJpaRepository   eventoJpa;
-    private final UsuarioAdminJpaRepository    adminJpa;
+    private final PerfilUsuarioJpaRepository   perfilJpa;
     private final ChecklistEventoEntityMapper  mapper;
 
     @Override
     public Optional<ChecklistEvento> findById(Long id) {
-        return checklistJpa.findById(id).map(mapper::toDomain);
+        return checklistJpa.findById(id).map(mapper::toDomain).map(this::enriquecer);
     }
 
     @Override
     public List<ChecklistEvento> findByEventoOrdenado(Long idEvento) {
         return checklistJpa.findByEventoPrivado_IdOrderByOrdenAsc(idEvento)
-                .stream().map(mapper::toDomain).toList();
+                .stream().map(mapper::toDomain).map(this::enriquecer).toList();
     }
 
     @Override
     @Transactional
     public ChecklistEvento save(ChecklistEvento checklist) {
-        var evento  = eventoJpa.findById(checklist.getIdEventoPrivado())
+        var evento = eventoJpa.findById(checklist.getIdEventoPrivado())
                 .orElseThrow(() -> new ResourceNotFoundException("EventoPrivado", checklist.getIdEventoPrivado()));
-        var usuario = checklist.getIdUsuarioCompleto() != null
-                ? adminJpa.findById(checklist.getIdUsuarioCompleto()).orElse(null) : null;
-        return mapper.toDomain(checklistJpa.save(mapper.toEntity(checklist, evento, usuario)));
+        return enriquecer(mapper.toDomain(checklistJpa.save(mapper.toEntity(checklist, evento))));
     }
 
     @Override
@@ -68,5 +66,13 @@ public class ChecklistEventoPersistenceAdapter implements ChecklistEventoReposit
                     .orden(i + 1)
                     .build());
         }
+    }
+
+    private ChecklistEvento enriquecer(ChecklistEvento d) {
+        if (d.getIdUsuarioCompleto() == null) return d;
+        String nombre = perfilJpa.findByIdAndDeletedAtIsNull(d.getIdUsuarioCompleto())
+                .map(p -> p.getNombreCompleto())
+                .orElse(null);
+        return d.toBuilder().nombreUsuarioCompleto(nombre).build();
     }
 }

@@ -6,7 +6,8 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder(toBuilder = true)
@@ -20,16 +21,19 @@ public class Promocion {
     private String         nombre;
     private String         descripcion;
     private BigDecimal     valorDescuento;
-    private String         condicion;
     private Integer        minimoPersonas;
     private TipoDia        soloTipoDia;
     private LocalDate      fechaInicio;
     private LocalDate      fechaFin;
-
     private boolean        activo;
     private boolean        esAutomatica;
-    private Long           idUsuarioCreador;
-    private LocalDateTime  fechaCreacion;
+    private UUID           idUsuarioCreador;
+    private OffsetDateTime  fechaCreacion;
+    private int            prioridad;
+    private Integer        limiteUsos;
+    private Integer        limitePorCliente;
+    private BigDecimal     montoMinimo;
+    private PromocionMarketing marketing;
 
     public boolean estaVigenteEn(LocalDate fecha) {
         if (!activo) return false;

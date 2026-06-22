@@ -1,4 +1,9 @@
 spring:
+  task:
+    scheduling:
+      enabled: false
+  jackson:
+    time-zone: America/Lima
   jpa:
     show-sql: false
     properties:
@@ -28,6 +33,3 @@ springdoc:
   api-docs:
     enabled: false
 
-playzone:
-  seguridad:
-    jwt-expiracion-ms: 900000

@@ -5,7 +5,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder(toBuilder = true)
@@ -20,8 +20,7 @@ public class Tarifa {
     private LocalDate     vigenciaDesde;
     private LocalDate     vigenciaHasta;
     private boolean       activo;
-    private Long          idUsuarioCreador;
-    private LocalDateTime fechaCreacion;
+    private OffsetDateTime createdAt;
 
     public boolean estaVigenteEn(LocalDate fecha) {
         if (!activo) return false;

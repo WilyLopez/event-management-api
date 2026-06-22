@@ -3,6 +3,8 @@ package com.playzone.pems.application.contrato.dto.command;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.UUID;
+
 @Getter
 @Builder
 public class SubirDocumentoCommand {
@@ -11,5 +13,5 @@ public class SubirDocumentoCommand {
     private String archivoUrl;
     private String tipoArchivo;
     private Long   tamanobytes;
-    private Long   idUsuarioCarga;
+    private UUID   idUsuarioCarga;
 }

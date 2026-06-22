@@ -2,7 +2,8 @@ package com.playzone.pems.domain.cms.model;
 
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder(toBuilder = true)
@@ -11,8 +12,8 @@ import java.time.LocalDateTime;
 public class ContenidoWeb {
 
     private Long          id;
-    private Long          idSeccion;
-    private Long          idTipoContenido;
+    private String        seccionCodigo;
+    private String        tipoContenidoCodigo;
     private String        clave;
     private String        valorEs;
     private String        valorEn;
@@ -23,8 +24,8 @@ public class ContenidoWeb {
     private int           version;
     private String        metadatos;
     private boolean       activo;
-    private Long          idUsuarioEditor;
-    private LocalDateTime fechaActualizacion;
+    private UUID          idUsuarioEditor;
+    private OffsetDateTime fechaActualizacion;
 
     public String valorParaIdioma(String codigoIdioma) {
         if ("en".equalsIgnoreCase(codigoIdioma) && valorEn != null && !valorEn.isBlank()) {

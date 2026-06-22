@@ -1,15 +1,14 @@
 package com.playzone.pems.infrastructure.persistence.cms.entity;
 
-import com.playzone.pems.infrastructure.persistence.usuario.entity.UsuarioAdminEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "contenidoweb",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"idseccion", "clave"}))
+@Table(name = "contenido_web")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,50 +18,48 @@ public class ContenidoWebEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idcontenidoweb")
     private Long id;
 
-    @Column(name = "idseccion", nullable = false)
-    private Integer idSeccion;
+    @Column(name = "seccion_codigo", nullable = false)
+    private String seccionCodigo;
 
-    @Column(name = "idtipocontenido", nullable = false)
-    private Integer idTipoContenido;
+    @Column(name = "tipo_contenido_codigo", nullable = false)
+    private String tipoContenidoCodigo;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false)
     private String clave;
 
-    @Column(name = "valores", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "valor_es", nullable = false)
     private String valorEs;
 
-    @Column(name = "valoren", columnDefinition = "TEXT")
+    @Column(name = "valor_en")
     private String valorEn;
 
-    @Column(name = "imagenurl", length = 500)
+    @Column(name = "imagen_path")
     private String imagenUrl;
 
-    @Column(length = 300)
+    @Column(length = 200)
     private String descripcion;
 
-    @Column(name = "ordenvisualizacion", nullable = false)
-    private int ordenVisualizacion = 0;
+    @Column(name = "orden", nullable = false)
+    private int orden;
 
-    @Column(nullable = false)
-    private boolean visible = true;
+    @Column(name = "es_visible", nullable = false)
+    private boolean visible;
 
-    @Column(nullable = false)
-    private int version = 1;
+    @Column(name = "version_v", nullable = false)
+    private int version;
 
     @Column(name = "metadatos", columnDefinition = "jsonb")
     private String metadatos;
 
-    @Column(nullable = false)
-    private boolean activo = true;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "idusuarioeditor")
-    private UsuarioAdminEntity usuarioEditor;
+    @Column(name = "updated_by", columnDefinition = "uuid")
+    private UUID updatedBy;
 
     @UpdateTimestamp
-    @Column(name = "fechaactualizacion", nullable = false)
-    private LocalDateTime fechaActualizacion;
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt;
+
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
 }

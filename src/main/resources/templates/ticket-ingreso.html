@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8"/>
+<title>Ticket de Ingreso</title>
+<style>
+  @page {
+    size: 80mm 200mm;
+    margin: 0;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #ffffff;
+    color: #000000;
+    margin: 2mm 3mm;
+    padding: 0;
+    font-size: 10px;
+  }
+  .ticket {
+    width: 100%;
+    background: #ffffff;
+  }
+  .header {
+    text-align: center;
+    padding: 10px 0;
+    border-bottom: 1px dashed #000000;
+  }
+  .header-text-title {
+    color: #000000;
+    font-size: 14px;
+    font-weight: bold;
+  }
+  .header-text-sub {
+    color: #333333;
+    font-size: 10px;
+    margin-top: 2px;
+  }
+  .ticket-number-band {
+    padding: 10px 0;
+    text-align: center;
+    border-bottom: 1px dashed #000000;
+  }
+  .tn-label {
+    font-size: 9px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #000000;
+  }
+  .tn-value {
+    font-family: monospace;
+    font-size: 14px;
+    font-weight: bold;
+    color: #000000;
+    margin-top: 3px;
+    display: block;
+  }
+  .estado-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-top: 5px;
+    border: 1px solid #000000;
+    background: #ffffff;
+    color: #000000;
+  }
+  .estado-pendiente, .estado-confirmada, .estado-cancelada, .estado-completada {
+    background: #ffffff;
+    color: #000000;
+    border: 1px solid #000000;
+  }
+  .body { padding: 10px 0; }
+  .nino-section {
+    border: 1px dashed #000000;
+    padding: 8px;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  .nino-avatar {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1px solid #000000;
+    color: #000000;
+    font-size: 12px;
+    font-weight: bold;
+    text-align: center;
+    line-height: 22px;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  .nino-info { display: inline-block; vertical-align: middle; text-align: left; }
+  .nino-name {
+    font-size: 12px;
+    font-weight: bold;
+    color: #000000;
+  }
+  .nino-age {
+    font-size: 10px;
+    color: #000000;
+    margin-top: 1px;
+  }
+  .di-label {
+    font-size: 8px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #000000;
+    margin-bottom: 2px;
+  }
+  .di-value {
+    font-size: 11px;
+    font-weight: bold;
+    color: #000000;
+  }
+  .di-value-azul { color: #000000; }
+  .pago-section {
+    border: 1px dashed #000000;
+    padding: 8px;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  .pago-label {
+    font-size: 8px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #000000;
+  }
+  .pago-monto {
+    font-size: 16px;
+    font-weight: bold;
+    color: #000000;
+    margin-top: 2px;
+  }
+  .medio-badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: bold;
+    border: 1px solid #000000;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 4px;
+  }
+  .referencia {
+    font-size: 9px;
+    font-family: monospace;
+    color: #000000;
+    margin-top: 4px;
+  }
+  .consentimiento {
+    border: 1px solid #000000;
+    padding: 6px;
+    margin-bottom: 10px;
+    font-size: 9px;
+    color: #000000;
+    text-align: center;
+  }
+  .divider {
+    border: none;
+    border-top: 1px dashed #000000;
+    margin: 10px 0;
+  }
+  .qr-section { text-align: center; padding: 5px 0; }
+  .qr-label {
+    font-size: 8px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #000000;
+    margin-bottom: 5px;
+  }
+  .qr-img {
+    width: 80px;
+    height: 80px;
+    border: 1px solid #000000;
+  }
+  .qr-code-text {
+    font-family: monospace;
+    font-size: 9px;
+    color: #000000;
+    margin-top: 4px;
+  }
+  .footer {
+    padding: 8px 0;
+    border-top: 1px dashed #000000;
+    text-align: center;
+  }
+  .footer-text {
+    font-size: 8px;
+    color: #000000;
+    margin-bottom: 4px;
+  }
+  .footer-fecha {
+    font-size: 8px;
+    font-weight: bold;
+    color: #000000;
+  }
+  .grid-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+  }
+  .grid-table td {
+    width: 50%;
+    border: 1px solid #000000;
+    padding: 6px;
+    vertical-align: top;
+    background: #ffffff;
+  }
+  .grid-table td.accent { background: #ffffff; }
+</style>
+</head>
+<body>
+<div class="ticket">
+
+  <div class="header">
+    <div class="header-text-title">Ticket de Ingreso</div>
+    <div class="header-text-sub">Kiki y Lala &#8212; Zona de Juegos</div>
+  </div>
+
+  <div class="ticket-number-band">
+    <span class="tn-label">N&#250;mero de ticket</span>
+    <span class="tn-value" th:text="${reserva.numeroTicket}">TKT-1-20260601-0001</span>
+    <span class="estado-badge"
+          th:classappend="${'estado-' + reserva.estado.toString().toLowerCase()}"
+          th:text="${reserva.estado}">PENDIENTE</span>
+  </div>
+
+  <div class="body">
+
+    <div class="nino-section">
+      <span class="nino-avatar"
+            th:text="${#strings.substring(reserva.nombreNino, 0, 1)}">A</span>
+      <span class="nino-info">
+        <div class="nino-name" th:text="${reserva.nombreNino}">Nombre del Ni&#241;o</div>
+        <div class="nino-age" th:text="${reserva.edadNino + ' a&#241;os de edad'}">5 a&#241;os</div>
+      </span>
+    </div>
+
+    <table class="grid-table">
+      <tr>
+        <td class="accent">
+          <div class="di-label">Fecha del evento</div>
+          <div class="di-value di-value-azul"
+               th:text="${#temporals.format(reserva.fechaEvento, 'dd/MM/yyyy')}">01/06/2026</div>
+        </td>
+        <td class="accent">
+          <div class="di-label">Sede</div>
+          <div class="di-value di-value-azul"
+               th:text="${nombreSede != null ? nombreSede : 'Principal'}">Sede Principal</div>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="di-label">Acompa&#241;ante</div>
+          <div class="di-value" th:text="${reserva.nombreAcompanante}">Juan Perez</div>
+        </td>
+        <td>
+          <div class="di-label">DNI Acompa&#241;ante</div>
+          <div class="di-value" th:text="${reserva.dniAcompanante}">12345678</div>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="di-label">Canal de reserva</div>
+          <div class="di-value" th:text="${reserva.canalReserva}">ONLINE</div>
+        </td>
+        <td>
+          <div class="di-label">Tipo de d&#237;a</div>
+          <div class="di-value" th:text="${reserva.tipoDia}">SEMANA</div>
+        </td>
+      </tr>
+    </table>
+
+    <div class="pago-section">
+      <div class="pago-label">Total pagado</div>
+      <div class="pago-monto"
+           th:text="${'S/ ' + #numbers.formatDecimal(reserva.totalPagado, 1, 2)}">S/ 35.00</div>
+      <span th:if="${reserva.medioPago != null}"
+            class="medio-badge"
+            th:text="${reserva.medioPago}">YAPE</span>
+      <div th:if="${reserva.referenciaPago != null}"
+           class="referencia"
+           th:text="${reserva.referenciaPago}">PAY-12345</div>
+    </div>
+
+    <div th:if="${reserva.firmoConsentimiento}" class="consentimiento">
+      &#x2713; Reglamento del local aceptado digitalmente
+    </div>
+
+    <hr class="divider"/>
+
+    <div class="qr-section">
+      <div class="qr-label">C&#243;digo de validaci&#243;n</div>
+      <img th:src="${'https://api.qrserver.com/v1/create-qr-code/?size=100x100&amp;data=' + reserva.numeroTicket}"
+           th:alt="${reserva.numeroTicket}"
+           class="qr-img"
+           alt="QR Code"/>
+      <div class="qr-code-text"
+           th:text="${reserva.codigoQr != null ? reserva.codigoQr : reserva.numeroTicket}">
+        TKT-1-20260601-0001
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <div class="footer-text">
+      Presenta este ticket en recepci&#243;n el d&#237;a de tu visita.
+      Tambi&#233;n deber&#225;s firmar el Acta de Responsabilidad en el local.
+    </div>
+    <div class="footer-fecha"
+         th:text="${'Emitido: ' + #temporals.format(reserva.fechaCreacion, 'dd/MM/yyyy HH:mm')}">
+      Emitido: 01/06/2026 10:30
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

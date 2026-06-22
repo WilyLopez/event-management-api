@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
@@ -102,7 +103,7 @@ public class BannerService implements GestionarBannerUseCase {
 
     @Override
     @Transactional
-    public BannerQuery duplicar(Long idBanner, Long idUsuario) {
+    public BannerQuery duplicar(Long idBanner, UUID idUsuario) {
         Banner original = findOrThrow(idBanner);
         Banner copia = Banner.builder()
                 .idSede(original.getIdSede())

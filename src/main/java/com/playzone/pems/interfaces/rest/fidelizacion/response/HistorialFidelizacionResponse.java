@@ -3,7 +3,7 @@ package com.playzone.pems.interfaces.rest.fidelizacion.response;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder
@@ -13,5 +13,5 @@ public class HistorialFidelizacionResponse {
     private final Long          idReservaPublica;
     private final int           visitaNumero;
     private final boolean       esBeneficioAplicado;
-    private final LocalDateTime fechaRegistro;
+    private final OffsetDateTime fechaRegistro;
 }

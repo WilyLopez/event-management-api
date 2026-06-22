@@ -2,9 +2,9 @@ package com.playzone.pems.infrastructure.persistence.auditoria.adapter;
 
 import com.playzone.pems.domain.auditoria.model.LogAuditoria;
 import com.playzone.pems.domain.auditoria.repository.LogAuditoriaRepository;
+import com.playzone.pems.domain.usuario.repository.PerfilUsuarioRepository;
 import com.playzone.pems.infrastructure.persistence.auditoria.entity.LogAuditoriaEntity;
 import com.playzone.pems.infrastructure.persistence.auditoria.jpa.LogAuditoriaJpaRepository;
-import com.playzone.pems.infrastructure.persistence.usuario.jpa.UsuarioAdminJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,22 +13,20 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
 public class AuditoriaPersistenceAdapter implements LogAuditoriaRepository {
 
     private final LogAuditoriaJpaRepository logJpa;
-    private final UsuarioAdminJpaRepository adminJpa;
+    private final PerfilUsuarioRepository   perfilUsuarioRepository;
 
     @Override
     @Transactional
     public LogAuditoria save(LogAuditoria log) {
-        var usuario = log.getIdUsuarioAdmin() != null
-                ? adminJpa.findById(log.getIdUsuarioAdmin()).orElse(null) : null;
-
         LogAuditoriaEntity entity = LogAuditoriaEntity.builder()
-                .usuarioAdmin(usuario)
+                .usuarioId(log.getIdUsuarioAdmin())
                 .accion(log.getAccion())
                 .modulo(log.getModulo())
                 .entidadAfectada(log.getEntidadAfectada())
@@ -51,8 +49,8 @@ public class AuditoriaPersistenceAdapter implements LogAuditoriaRepository {
     }
 
     @Override
-    public Page<LogAuditoria> findByUsuario(Long idUsuarioAdmin, Pageable pageable) {
-        return logJpa.findByUsuarioAdmin_IdOrderByFechaLogDesc(idUsuarioAdmin, pageable)
+    public Page<LogAuditoria> findByUsuario(UUID idUsuarioAdmin, Pageable pageable) {
+        return logJpa.findByUsuarioIdOrderByFechaLogDesc(idUsuarioAdmin, pageable)
                 .map(this::toDomain);
     }
 
@@ -70,18 +68,20 @@ public class AuditoriaPersistenceAdapter implements LogAuditoriaRepository {
 
     @Override
     public Page<LogAuditoria> findByFiltros(LocalDateTime desde, LocalDateTime hasta,
-                                             Long idUsuario, String modulo, String accion,
+                                             UUID idUsuario, String modulo, String accion,
                                              String entidad, Pageable pageable) {
         return logJpa.findByFiltros(desde, hasta, idUsuario, modulo, accion, entidad, pageable)
                 .map(this::toDomain);
     }
 
     private LogAuditoria toDomain(LogAuditoriaEntity e) {
-        var admin = e.getUsuarioAdmin();
         return LogAuditoria.builder()
                 .id(e.getId())
-                .idUsuarioAdmin(admin != null ? admin.getId() : null)
-                .nombreUsuario(admin != null ? admin.getNombre() : null)
+                .idUsuarioAdmin(e.getUsuarioId())
+                .nombreUsuario(e.getUsuarioId() != null
+                        ? perfilUsuarioRepository.buscarPorId(e.getUsuarioId())
+                                .map(u -> u.getNombreCompleto()).orElse(null)
+                        : null)
                 .accion(e.getAccion())
                 .modulo(e.getModulo())
                 .entidadAfectada(e.getEntidadAfectada())

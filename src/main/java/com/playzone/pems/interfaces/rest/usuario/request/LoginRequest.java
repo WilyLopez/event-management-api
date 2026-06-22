@@ -4,14 +4,17 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
+@Setter
 @NoArgsConstructor
 public class LoginRequest {
 
-    @NotBlank @Email
-    private String correo;
+    @NotBlank(message = "El correo es obligatorio")
+    @Email(message = "El correo debe ser válido")
+    private String email;
 
-    @NotBlank
-    private String contrasena;
+    @NotBlank(message = "La contraseña es obligatoria")
+    private String password;
 }

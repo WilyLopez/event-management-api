@@ -13,5 +13,5 @@ public interface SerieComprobanteRepository {
 
     SerieComprobante save(SerieComprobante serie);
 
-    int incrementarCorrelativoYRetornar(Long idSerie);
+    int incrementarCorrelativoYRetornar(Long idSede, TipoComprobante tipo);
 }

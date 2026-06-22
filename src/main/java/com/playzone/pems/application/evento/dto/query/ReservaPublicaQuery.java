@@ -5,7 +5,7 @@ import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder(toBuilder = true)
@@ -16,6 +16,7 @@ public class ReservaPublicaQuery {
     private final String        nombreCliente;
     private final String        correoCliente;
     private final Long          idSede;
+    private final String        nombreSede;
     private final String        estado;
     private final String        canalReserva;
     private final String        tipoDia;
@@ -32,9 +33,9 @@ public class ReservaPublicaQuery {
     private final boolean       esReprogramacion;
     private final int           vecesReprogramada;
     private final boolean       ingresado;
-    private final LocalDateTime fechaIngreso;
+    private final OffsetDateTime fechaIngreso;
     private final String        codigoQr;
     private final String        medioPago;
     private final String        referenciaPago;
-    private final LocalDateTime fechaCreacion;
+    private final OffsetDateTime fechaCreacion;
 }

@@ -2,12 +2,14 @@ package com.playzone.pems.infrastructure.persistence.cms.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "configuracionpublica")
+@Table(name = "configuracion_publica")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -17,100 +19,113 @@ public class ConfiguracionPublicaEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idconfiguracionpublica")
+    @Column(name = "id")
     private Long id;
 
-    @Column(name = "nombrenegocio", nullable = false, length = 150)
+    @Column(name = "nombre_negocio", nullable = false)
     private String nombreNegocio;
 
-    @Column(length = 250)
+    @Column(name = "slogan")
     private String slogan;
 
-    @Column(name = "logourl", length = 500)
-    private String logoUrl;
+    @Column(name = "logo_path")
+    private String logoPath;
 
-    @Column(name = "faviconurl", length = 500)
-    private String faviconUrl;
+    @Column(name = "favicon_path")
+    private String faviconPath;
 
-    @Column(length = 20)
+    @Column(name = "telefono")
     private String telefono;
 
-    @Column(name = "telefonosecundario", length = 20)
+    @Column(name = "telefono_secundario")
     private String telefonoSecundario;
 
-    @Column(length = 20)
+    @Column(name = "whatsapp")
     private String whatsapp;
 
-    @Column(length = 120)
+    @Column(name = "correo")
     private String correo;
 
-    @Column(name = "correosecundario", length = 120)
+    @Column(name = "correo_secundario")
     private String correoSecundario;
 
-    @Column(length = 300)
+    @Column(name = "direccion")
     private String direccion;
 
-    @Column(name = "facebookurl", length = 300)
+    @Column(name = "facebook_url")
     private String facebookUrl;
 
-    @Column(name = "instagramurl", length = 300)
+    @Column(name = "instagram_url")
     private String instagramUrl;
 
-    @Column(name = "tiktokurl", length = 300)
+    @Column(name = "tiktok_url")
     private String tiktokUrl;
 
-    @Column(name = "youtubeurl", length = 300)
+    @Column(name = "youtube_url")
     private String youtubeUrl;
 
-    @Column(name = "googlemapsurl", length = 500)
+    @Column(name = "google_maps_url")
     private String googleMapsUrl;
 
-    @Column(name = "horariosemana", length = 120)
+    @Column(name = "horario_semana")
     private String horarioSemana;
 
-    @Column(name = "horariofindesemana", length = 120)
-    private String horarioFinDeSemana;
+    @Column(name = "horario_fin_semana")
+    private String horarioFinSemana;
 
-    @Column(name = "copyrighttexto", length = 300)
-    private String copyrightTexto;
-
-    @Column(name = "metatitle", length = 200)
+    @Column(name = "meta_title")
     private String metaTitle;
 
-    @Column(name = "metadescription", length = 500)
+    @Column(name = "meta_description")
     private String metaDescription;
 
-    @Column(name = "metakeywords", length = 500)
+    @Column(name = "meta_keywords")
     private String metaKeywords;
 
-    @Column(name = "opengraphtitle", length = 200)
+    @Column(name = "open_graph_title")
     private String openGraphTitle;
 
-    @Column(name = "opengraphdescription", length = 500)
+    @Column(name = "open_graph_description")
     private String openGraphDescription;
 
-    @Column(name = "opengraphimageurl", length = 500)
-    private String openGraphImageUrl;
+    @Column(name = "open_graph_image_path")
+    private String openGraphImagePath;
 
-    @Column(name = "googleanalyticsid", length = 120)
+    @Column(name = "google_analytics_id")
     private String googleAnalyticsId;
 
-    @Column(name = "metapixelid", length = 120)
+    @Column(name = "meta_pixel_id")
     private String metaPixelId;
 
-    @Column(name = "colortema", length = 20)
+    @Column(name = "color_primario")
     private String colorTema;
 
-    @Column(name = "colorsecundario", length = 20)
+    @Column(name = "color_secundario")
     private String colorSecundario;
 
-    @Column(name = "mantenimientoactivo", nullable = false)
-    private boolean mantenimientoActivo = false;
+    @Column(name = "metricas_negocio", columnDefinition = "jsonb")
+    private String metricasNegocio;
 
-    @Column(name = "mensajemantenimiento", length = 500)
+    @Column(name = "reglas_local", columnDefinition = "jsonb")
+    private String reglasLocal;
+
+    @Column(name = "es_mantenimiento_activo", nullable = false)
+    private boolean esMantenimientoActivo;
+
+    @Column(name = "mensaje_mantenimiento")
     private String mensajeMantenimiento;
 
+    @Column(name = "copyright_texto")
+    private String copyrightTexto;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
+
     @UpdateTimestamp
-    @Column(name = "fechaactualizacion", nullable = false)
-    private LocalDateTime fechaActualizacion;
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt;
+
+    @Column(name = "updated_by")
+    private UUID updatedBy;
 }

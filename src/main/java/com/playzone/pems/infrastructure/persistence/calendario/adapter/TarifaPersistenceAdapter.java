@@ -7,7 +7,6 @@ import com.playzone.pems.infrastructure.persistence.calendario.entity.TarifaEnti
 import com.playzone.pems.infrastructure.persistence.calendario.jpa.TarifaJpaRepository;
 import com.playzone.pems.infrastructure.persistence.calendario.mapper.CalendarioEntityMapper;
 import com.playzone.pems.infrastructure.persistence.usuario.jpa.SedeJpaRepository;
-import com.playzone.pems.infrastructure.persistence.usuario.jpa.UsuarioAdminJpaRepository;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -23,7 +22,6 @@ public class TarifaPersistenceAdapter implements TarifaRepository {
 
     private final TarifaJpaRepository       tarifaJpa;
     private final SedeJpaRepository         sedeJpa;
-    private final UsuarioAdminJpaRepository adminJpa;
     private final CalendarioEntityMapper    mapper;
 
     @Override
@@ -47,8 +45,6 @@ public class TarifaPersistenceAdapter implements TarifaRepository {
     public Tarifa save(Tarifa tarifa) {
         var sede = sedeJpa.findById(tarifa.getIdSede())
                 .orElseThrow(() -> new ResourceNotFoundException("Sede", tarifa.getIdSede()));
-        var creador = adminJpa.findById(tarifa.getIdUsuarioCreador())
-                .orElseThrow(() -> new ResourceNotFoundException("UsuarioAdmin", tarifa.getIdUsuarioCreador()));
 
         TarifaEntity entity = TarifaEntity.builder()
                 .id(tarifa.getId())
@@ -58,7 +54,6 @@ public class TarifaPersistenceAdapter implements TarifaRepository {
                 .vigenciaDesde(tarifa.getVigenciaDesde())
                 .vigenciaHasta(tarifa.getVigenciaHasta())
                 .activo(tarifa.isActivo())
-                .usuarioCreador(creador)
                 .build();
 
         return mapper.toDomain(tarifaJpa.save(entity));

@@ -16,7 +16,7 @@ public interface ComprobanteJpaRepository extends JpaRepository<ComprobanteEntit
 
     Optional<ComprobanteEntity> findByNumeroCompleto(String numeroCompleto);
 
-    Optional<ComprobanteEntity> findByPago_Id(Long idPago);
+    Optional<ComprobanteEntity> findByIdPago(Long idPago);
 
     @Query("SELECT c FROM ComprobanteEntity c WHERE c.serie.sede.id = :idSede AND c.fechaEmision BETWEEN :desde AND :hasta")
     Page<ComprobanteEntity> findBySedeAndFechasBetween(

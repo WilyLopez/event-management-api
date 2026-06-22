@@ -4,7 +4,7 @@ import com.playzone.pems.domain.cms.model.Faq;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder
@@ -15,7 +15,7 @@ public class FaqQuery {
     private String        respuesta;
     private int           ordenVisualizacion;
     private boolean       visible;
-    private LocalDateTime fechaActualizacion;
+    private OffsetDateTime fechaActualizacion;
 
     public static FaqQuery from(Faq f) {
         return FaqQuery.builder()

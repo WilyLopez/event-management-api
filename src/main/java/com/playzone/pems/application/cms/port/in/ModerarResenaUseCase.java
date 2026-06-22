@@ -3,6 +3,7 @@ package com.playzone.pems.application.cms.port.in;
 import com.playzone.pems.domain.cms.model.Resena;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import java.util.UUID;
 
 public interface ModerarResenaUseCase {
 
@@ -15,7 +16,7 @@ public interface ModerarResenaUseCase {
             String fotoUrl
     ) {}
 
-    record ResponderCommand(Long idResena, String respuesta, Long idUsuarioAdmin) {}
+    record ResponderCommand(Long idResena, String respuesta, UUID idUsuarioAdmin) {}
 
     Page<Resena> listar(boolean pendientes, Pageable pageable);
 
@@ -23,7 +24,7 @@ public interface ModerarResenaUseCase {
 
     Resena submit(SubmitCommand command);
 
-    Resena aprobar(Long idResena, Long idUsuarioAdmin);
+    Resena aprobar(Long idResena, UUID idUsuarioAdmin);
 
     Resena responder(ResponderCommand command);
 

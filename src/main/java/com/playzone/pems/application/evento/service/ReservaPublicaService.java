@@ -9,33 +9,46 @@ import com.playzone.pems.application.evento.port.in.CrearReservaPublicaUseCase;
 import com.playzone.pems.application.evento.port.in.ReprogramarReservaUseCase;
 import com.playzone.pems.application.evento.port.out.EnviarTicketPorCorreoPort;
 import com.playzone.pems.domain.calendario.exception.AforoExcedidoException;
+import com.playzone.pems.domain.venta.model.Venta;
+import com.playzone.pems.domain.venta.model.VentaPago;
+import com.playzone.pems.domain.venta.repository.VentaPagoRepository;
+import com.playzone.pems.domain.venta.repository.VentaRepository;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.domain.calendario.exception.FechaNoDisponibleException;
+import com.playzone.pems.domain.calendario.model.ConfiguracionCalendario;
 import com.playzone.pems.domain.calendario.model.Tarifa;
 import com.playzone.pems.domain.calendario.model.enums.TipoDia;
 import com.playzone.pems.domain.calendario.repository.BloqueCalendarioRepository;
-import com.playzone.pems.domain.calendario.repository.DisponibilidadDiariaRepository;
+import com.playzone.pems.domain.calendario.repository.ConfiguracionCalendarioRepository;
 import com.playzone.pems.domain.calendario.repository.FeriadoRepository;
 import com.playzone.pems.domain.calendario.repository.TarifaRepository;
 import com.playzone.pems.domain.evento.exception.ReservaNotFoundException;
 import com.playzone.pems.domain.evento.model.ReservaPublica;
 import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
+import com.playzone.pems.domain.evento.repository.EventoPrivadoRepository;
 import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
-import com.playzone.pems.domain.usuario.model.Cliente;
-import com.playzone.pems.domain.usuario.repository.ClienteRepository;
+import com.playzone.pems.domain.storage.StoragePort;
+import com.playzone.pems.domain.usuario.model.ClientePerfil;
+import com.playzone.pems.domain.usuario.repository.ClientePerfilRepository;
+import com.playzone.pems.domain.usuario.repository.SedeRepository;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import com.playzone.pems.shared.exception.ValidationException;
 import com.playzone.pems.shared.util.FechaUtil;
-import com.playzone.pems.shared.util.TicketUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ReservaPublicaService
@@ -44,51 +57,65 @@ public class ReservaPublicaService
         CancelarReservaUseCase,
         ConsultarReservasUseCase {
 
-    private final ReservaPublicaRepository   reservaRepository;
-    private final ClienteRepository          clienteRepository;
-    private final TarifaRepository           tarifaRepository;
-    private final FeriadoRepository          feriadoRepository;
-    private final BloqueCalendarioRepository bloqueRepository;
-    private final DisponibilidadDiariaRepository disponibilidadRepository;
-    private final EnviarTicketPorCorreoPort  correoPort;
-
-    @Value("${playzone.negocio.aforo-maximo:60}")
-    private int aforoMaximo;
-
-    @Value("${playzone.negocio.anticipacion-min-horas:1}")
-    private int anticipacionMinHoras;
+    private final ReservaPublicaRepository          reservaRepository;
+    private final EventoPrivadoRepository           eventoRepository;
+    private final ClientePerfilRepository           clientePerfilRepository;
+    private final SedeRepository                    sedeRepository;
+    private final TarifaRepository                  tarifaRepository;
+    private final FeriadoRepository                 feriadoRepository;
+    private final BloqueCalendarioRepository        bloqueRepository;
+    private final ConfiguracionCalendarioRepository configRepository;
+    private final EnviarTicketPorCorreoPort         correoPort;
+    private final StoragePort                       storagePort;
+    private final VentaRepository                   ventaRepository;
+    private final VentaPagoRepository               ventaPagoRepository;
+    private final SupabaseAuthFacade                supabaseAuthFacade;
 
     @Value("${playzone.negocio.max-reprogramaciones:1}")
     private int maxReprogramaciones;
 
+    // ── Consultas ────────────────────────────────────────────────────────────────
+
     @Override
     @Transactional(readOnly = true)
     public Page<ReservaPublicaQuery> consultarPorCliente(Long idCliente, Pageable pageable) {
-        Cliente cliente = clienteRepository.findById(idCliente)
+        ClientePerfil cliente = clientePerfilRepository.buscarPorId(idCliente)
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente", idCliente));
         return reservaRepository.findByCliente(idCliente, pageable)
-                .map(r -> toQuery(r, cliente.getNombre()));
+                .map(r -> toQuery(r, cliente.nombreCompleto(), cliente.getCorreo(), fetchNombreSede(r.getIdSede()), null, null));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<ReservaPublicaQuery> consultarPorSedeYFecha(Long idSede, LocalDate fecha, Pageable pageable) {
+        String nombreSede = fetchNombreSede(idSede);
         return reservaRepository.findBySedeAndFecha(idSede, fecha, pageable)
-                .map(r -> toQuery(r, fetchNombreCliente(r.getIdCliente())));
+                .map(r -> toQuery(r, fetchNombreCliente(r.getIdCliente()), null, nombreSede, null, null));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<ReservaPublicaQuery> consultarPorSedeYEstado(Long idSede, String estado, Pageable pageable) {
+        String nombreSede = fetchNombreSede(idSede);
         return reservaRepository.findBySedeAndEstado(idSede, EstadoReservaPublica.valueOf(estado), pageable)
-                .map(r -> toQuery(r, fetchNombreCliente(r.getIdCliente())));
+                .map(r -> toQuery(r, fetchNombreCliente(r.getIdCliente()), null, nombreSede, null, null));
     }
 
-    private String fetchNombreCliente(Long idCliente) {
-        return clienteRepository.findById(idCliente)
-                .map(Cliente::getNombre)
-                .orElse("Cliente Desconocido");
+    @Transactional(readOnly = true)
+    public ReservaPublicaQuery consultarPorId(Long idReserva) {
+        ReservaPublica r = reservaRepository.findById(idReserva)
+                .orElseThrow(() -> new ReservaNotFoundException(idReserva));
+        return enriquecerQuery(r);
     }
+
+    @Transactional(readOnly = true)
+    public ReservaPublicaQuery consultarPorNumeroTicket(String numeroTicket) {
+        ReservaPublica r = reservaRepository.findByNumeroTicket(numeroTicket)
+                .orElseThrow(() -> new ResourceNotFoundException("Reserva", "numeroTicket", numeroTicket));
+        return enriquecerQuery(r);
+    }
+
+    // ── Comandos ─────────────────────────────────────────────────────────────────
 
     @Override
     @Transactional
@@ -101,27 +128,37 @@ public class ReservaPublicaService
                 .findVigenteBySedeAndTipoDiaAndFecha(command.getIdSede(), tipoDia, command.getFechaEvento())
                 .orElseThrow(() -> new ValidationException("No existe tarifa vigente para esa fecha."));
 
-        Cliente cliente = clienteRepository.findById(command.getIdCliente())
+        ClientePerfil cliente = clientePerfilRepository.buscarPorId(command.getIdCliente())
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente", command.getIdCliente()));
 
         BigDecimal precio    = tarifa.getPrecio();
         BigDecimal descuento = BigDecimal.ZERO;
         BigDecimal total     = precio.subtract(descuento);
 
-        long secuencia = reservaRepository.countConfirmadasBySedeAndFecha(
-                command.getIdSede(), command.getFechaEvento()) + 1L;
-
-        String ticket = TicketUtil.generar(
-                command.getIdSede().intValue(), command.getFechaEvento(), secuencia);
+        Venta venta = ventaRepository.save(Venta.builder()
+                .idSede(command.getIdSede())
+                .clienteId(command.getIdCliente())
+                .tipo("RESERVA")
+                .canalCodigo("WEB")
+                .fechaVisita(command.getFechaEvento())
+                .subtotal(precio)
+                .descuento(descuento)
+                .total(total)
+                .efectivoRecibido(BigDecimal.ZERO)
+                .vuelto(BigDecimal.ZERO)
+                .actaFirmada(false)
+                .esAnticipada(true)
+                .createdBy(cliente.getUsuarioId())
+                .build());
 
         ReservaPublica reserva = ReservaPublica.builder()
+                .ventaId(venta.getId())
                 .idCliente(command.getIdCliente())
                 .idSede(command.getIdSede())
                 .estado(EstadoReservaPublica.PENDIENTE)
                 .canalReserva(command.getCanalReserva())
                 .tipoDia(tipoDia)
                 .fechaEvento(command.getFechaEvento())
-                .numeroTicket(ticket)
                 .precioHistorico(precio)
                 .descuentoAplicado(descuento)
                 .totalPagado(total)
@@ -135,11 +172,14 @@ public class ReservaPublicaService
                 .build();
 
         ReservaPublica guardada = reservaRepository.save(reserva);
-        disponibilidadRepository.incrementarAforo(command.getIdSede(), command.getFechaEvento());
 
-        ReservaPublicaQuery query = toQuery(guardada, cliente.getNombre());
-
-        correoPort.enviarTicket(cliente.getCorreo(), cliente.getNombre(), query);
+        ReservaPublicaQuery query = toQuery(guardada, cliente.nombreCompleto(), cliente.getCorreo(),
+                fetchNombreSede(command.getIdSede()), null, null);
+        if (cliente.getCorreo() != null) {
+            correoPort.enviarTicket(cliente.getCorreo(), cliente.nombreCompleto(), query);
+        } else {
+            log.warn("Reserva {} sin correo de cliente {}, no se envia ticket", guardada.getId(), command.getIdCliente());
+        }
 
         return query;
     }
@@ -151,7 +191,7 @@ public class ReservaPublicaService
                 .orElseThrow(() -> new ReservaNotFoundException(command.getIdReservaOriginal()));
 
         if (!original.puedeReprogramarse(maxReprogramaciones)) {
-            throw new ValidationException("La reserva no puede reprogramarse en su estado actual o superó el límite.");
+            throw new ValidationException("La reserva no puede reprogramarse en su estado actual o supero el limite.");
         }
 
         validarFechaDisponible(original.getIdSede(), command.getNuevaFechaEvento());
@@ -168,12 +208,6 @@ public class ReservaPublicaService
                 .build();
         reservaRepository.save(originalActualizada);
 
-        long secuencia = reservaRepository.countConfirmadasBySedeAndFecha(
-                original.getIdSede(), command.getNuevaFechaEvento()) + 1L;
-
-        String ticket = TicketUtil.generar(
-                original.getIdSede().intValue(), command.getNuevaFechaEvento(), secuencia);
-
         BigDecimal precio = tarifa.getPrecio();
 
         ReservaPublica nueva = ReservaPublica.builder()
@@ -186,7 +220,6 @@ public class ReservaPublicaService
                 .esReprogramacion(true)
                 .vecesReprogramada(original.getVecesReprogramada() + 1)
                 .fechaEvento(command.getNuevaFechaEvento())
-                .numeroTicket(ticket)
                 .precioHistorico(precio)
                 .descuentoAplicado(BigDecimal.ZERO)
                 .totalPagado(precio)
@@ -198,14 +231,17 @@ public class ReservaPublicaService
                 .build();
 
         ReservaPublica guardada = reservaRepository.save(nueva);
-        disponibilidadRepository.decrementarAforo(original.getIdSede(), original.getFechaEvento());
-        disponibilidadRepository.incrementarAforo(original.getIdSede(), command.getNuevaFechaEvento());
 
-        Cliente cliente = clienteRepository.findById(guardada.getIdCliente())
+        ClientePerfil cliente = clientePerfilRepository.buscarPorId(guardada.getIdCliente())
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente", guardada.getIdCliente()));
 
-        ReservaPublicaQuery query = toQuery(guardada, cliente.getNombre());
-        correoPort.enviarTicket(cliente.getCorreo(), cliente.getNombre(), query);
+        ReservaPublicaQuery query = toQuery(guardada, cliente.nombreCompleto(), cliente.getCorreo(),
+                fetchNombreSede(guardada.getIdSede()), null, null);
+        if (cliente.getCorreo() != null) {
+            correoPort.enviarTicket(cliente.getCorreo(), cliente.nombreCompleto(), query);
+        } else {
+            log.warn("Reprogramacion {} sin correo de cliente {}, no se envia ticket", guardada.getId(), guardada.getIdCliente());
+        }
 
         return query;
     }
@@ -226,29 +262,107 @@ public class ReservaPublicaService
                 .build();
 
         ReservaPublica guardada = reservaRepository.save(cancelada);
-        disponibilidadRepository.decrementarAforo(reserva.getIdSede(), reserva.getFechaEvento());
 
-        Cliente cliente = clienteRepository.findById(guardada.getIdCliente())
+        ClientePerfil cliente = clientePerfilRepository.buscarPorId(guardada.getIdCliente())
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente", guardada.getIdCliente()));
 
-        return toQuery(guardada, cliente.getNombre());
+        return toQuery(guardada, cliente.nombreCompleto(), cliente.getCorreo(),
+                fetchNombreSede(guardada.getIdSede()), null, null);
     }
 
-    private void validarFechaDisponible(Long idSede, LocalDate fecha) {
-        if (FechaUtil.esPasado(fecha)) {
-            throw new FechaNoDisponibleException(fecha, "La fecha ya pasó.");
+    @Transactional
+    public ReservaPublicaQuery confirmarPago(Long idReserva, String medioPago) {
+        ReservaPublica reserva = reservaRepository.findById(idReserva)
+                .orElseThrow(() -> new ReservaNotFoundException(idReserva));
+        if (reserva.getEstado() != EstadoReservaPublica.PENDIENTE) {
+            throw new ValidationException("Solo se pueden confirmar reservas en estado PENDIENTE.");
         }
-        // Solo validamos anticipación en horas si la fecha es futura (no hoy)
-        if (fecha.isAfter(FechaUtil.hoyPeru()) && !FechaUtil.superaAnticipacionMinima(fecha, anticipacionMinHoras)) {
-            throw new FechaNoDisponibleException(fecha,
-                    "Debe reservar con al menos " + anticipacionMinHoras + " hora(s) de anticipación.");
+        ReservaPublica guardada = reservaRepository.save(
+                reserva.toBuilder().estado(EstadoReservaPublica.CONFIRMADA).build());
+        
+        ventaPagoRepository.deleteByVentaId(guardada.getVentaId());
+
+        ventaPagoRepository.save(VentaPago.builder()
+                .ventaId(guardada.getVentaId())
+                .medioPagoCodigo(medioPago)
+                .monto(guardada.getTotalPagado())
+                .esValidado(true)
+                .validadoPor(supabaseAuthFacade.usuarioActualId().orElse(null))
+                .validadoAt(java.time.OffsetDateTime.now())
+                .build());
+        return enriquecerQuery(guardada);
+    }
+
+    @Transactional
+    public ReservaPublicaQuery actualizarReferenciaPago(Long idReserva, MultipartFile archivo) {
+        String url;
+        try {
+            byte[] bytes = archivo.getBytes();
+            String key = "comprobantes/" + UUID.randomUUID() + "_" + archivo.getOriginalFilename();
+            String mime = archivo.getContentType() != null ? archivo.getContentType() : "application/octet-stream";
+            url = storagePort.upload("comprobantes", key, bytes, mime);
+        } catch (IOException e) {
+            throw new RuntimeException("No se pudo leer el comprobante", e);
+        }
+        ReservaPublica reserva = reservaRepository.findById(idReserva)
+                .orElseThrow(() -> new ReservaNotFoundException(idReserva));
+
+        var pagosExistentes = ventaPagoRepository.findByVentaId(reserva.getVentaId());
+        boolean actualizado = false;
+        for (var pago : pagosExistentes) {
+            if (!pago.isEsValidado()) {
+                ventaPagoRepository.save(pago.toBuilder()
+                        .referencia(url)
+                        .medioPagoCodigo("YAPE")
+                        .build());
+                actualizado = true;
+                break;
+            }
+        }
+        if (!actualizado) {
+            ventaPagoRepository.save(VentaPago.builder()
+                    .ventaId(reserva.getVentaId())
+                    .medioPagoCodigo("YAPE")
+                    .monto(reserva.getTotalPagado())
+                    .referencia(url)
+                    .esValidado(false)
+                    .build());
+        }
+
+        return enriquecerQuery(reserva);
+    }
+
+    // ── Validaciones internas ────────────────────────────────────────────────────
+
+    private void validarFechaDisponible(Long idSede, LocalDate fecha) {
+        ConfiguracionCalendario cfg = configRepository.obtener(idSede);
+        LocalDate hoy   = FechaUtil.hoy();
+        LocalDate max   = hoy.plusDays(cfg.getDiasMaxReservaPublica());
+
+        if (fecha.isBefore(hoy)) {
+            throw new FechaNoDisponibleException(fecha, "No se puede reservar en fechas pasadas.");
+        }
+        if (fecha.isAfter(max)) {
+            throw new ValidationException(
+                    "Las reservas solo se permiten hasta " + cfg.getDiasMaxReservaPublica()
+                    + " dias de anticipacion.");
+        }
+        if (fecha.isEqual(hoy) && FechaUtil.ahora().toLocalTime().isAfter(cfg.getHoraCierre())) {
+            throw new FechaNoDisponibleException(fecha, "El local ya cerro por hoy. Elige otra fecha.");
+        }
+        if (feriadoRepository.existsByFecha(fecha)) {
+            throw new FechaNoDisponibleException(fecha, "Esta fecha es feriado.");
         }
         if (bloqueRepository.existsBloqueActivoEnFecha(idSede, fecha)) {
-            throw new FechaNoDisponibleException(fecha, "La fecha está bloqueada por el administrador.");
+            throw new FechaNoDisponibleException(fecha, "La fecha esta bloqueada.");
         }
-        int confirmadas = reservaRepository.countConfirmadasBySedeAndFecha(idSede, fecha);
-        if (confirmadas >= aforoMaximo) {
-            throw new AforoExcedidoException(fecha, aforoMaximo);
+        if (eventoRepository.existsActivoBySedeAndFecha(idSede, fecha)) {
+            throw new ValidationException(
+                    "Esta fecha esta reservada para un evento privado. Elige otra fecha.");
+        }
+        int activas = reservaRepository.countActivasBySedeAndFecha(idSede, fecha);
+        if (activas >= cfg.getAforoMaximo()) {
+            throw new AforoExcedidoException(fecha, cfg.getAforoMaximo());
         }
     }
 
@@ -259,12 +373,40 @@ public class ReservaPublicaService
                 : TipoDia.SEMANA;
     }
 
-    private ReservaPublicaQuery toQuery(ReservaPublica r, String nombreCliente) {
+    private String fetchNombreCliente(Long idCliente) {
+        return clientePerfilRepository.buscarPorId(idCliente)
+                .map(ClientePerfil::nombreCompleto)
+                .orElse("Cliente Desconocido");
+    }
+
+    private String fetchNombreSede(Long idSede) {
+        return sedeRepository.findById(idSede)
+                .map(s -> s.getNombre())
+                .orElse("Sede Principal");
+    }
+
+    // ── Mapeo ────────────────────────────────────────────────────────────────────
+
+    private ReservaPublicaQuery enriquecerQuery(ReservaPublica r) {
+        var cliente = clientePerfilRepository.buscarPorId(r.getIdCliente()).orElse(null);
+        return toQuery(r,
+                cliente != null ? cliente.nombreCompleto() : null,
+                cliente != null ? cliente.getCorreo() : null,
+                fetchNombreSede(r.getIdSede()),
+                fetchMedioPago(r.getVentaId()),
+                fetchReferenciaPago(r.getVentaId()));
+    }
+
+    private ReservaPublicaQuery toQuery(ReservaPublica r, String nombreCliente,
+                                        String correoCliente, String nombreSede,
+                                        String medioPago, String referenciaPago) {
         return ReservaPublicaQuery.builder()
                 .id(r.getId())
                 .idCliente(r.getIdCliente())
                 .nombreCliente(nombreCliente)
+                .correoCliente(correoCliente)
                 .idSede(r.getIdSede())
+                .nombreSede(nombreSede)
                 .estado(r.getEstado().getCodigo())
                 .canalReserva(r.getCanalReserva().getCodigo())
                 .tipoDia(r.getTipoDia().getCodigo())
@@ -280,7 +422,28 @@ public class ReservaPublicaService
                 .firmoConsentimiento(r.isFirmoConsentimiento())
                 .esReprogramacion(r.isEsReprogramacion())
                 .vecesReprogramada(r.getVecesReprogramada())
-                .fechaCreacion(r.getFechaCreacion())
+                .ingresado(r.isIngresado())
+                .fechaIngreso(r.getIngresoAt())
+                .codigoQr(r.getCodigoQr())
+                .medioPago(medioPago)
+                .referenciaPago(referenciaPago)
+                .fechaCreacion(r.getCreatedAt())
                 .build();
+    }
+
+    private String fetchMedioPago(Long idVenta) {
+        if (idVenta == null) return null;
+        var pagos = ventaPagoRepository.findByVentaId(idVenta);
+        if (pagos.isEmpty()) return null;
+        if (pagos.size() == 1) return pagos.get(0).getMedioPagoCodigo();
+        return "MULTIPLE";
+    }
+
+    private String fetchReferenciaPago(Long idVenta) {
+        if (idVenta == null) return null;
+        var pagos = ventaPagoRepository.findByVentaId(idVenta);
+        if (pagos.isEmpty()) return null;
+        if (pagos.size() == 1) return pagos.get(0).getReferencia();
+        return null;
     }
 }

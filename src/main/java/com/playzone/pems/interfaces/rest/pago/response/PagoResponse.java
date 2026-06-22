@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder
@@ -15,5 +15,5 @@ public class PagoResponse {
     private final BigDecimal    monto;
     private final String        referenciaPago;
     private final boolean       esParcial;
-    private final LocalDateTime fechaPago;
+    private final OffsetDateTime fechaPago;
 }

@@ -16,4 +16,6 @@ public interface ImagenGaleriaJpaRepository extends JpaRepository<ImagenGaleriaE
             Long idSede, CategoriaImagen categoria);
 
     Page<ImagenGaleriaEntity> findBySede_Id(Long idSede, Pageable pageable);
+
+    Page<ImagenGaleriaEntity> findBySede_IdAndDestacada(Long idSede, boolean destacada, Pageable pageable);
 }

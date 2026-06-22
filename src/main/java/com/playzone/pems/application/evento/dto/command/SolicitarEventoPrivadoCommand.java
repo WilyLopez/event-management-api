@@ -4,7 +4,9 @@ import jakarta.validation.constraints.*;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Builder
@@ -32,4 +34,23 @@ public class SolicitarEventoPrivadoCommand {
 
     @Min(1) @Max(60)
     private final Integer aforoDeclarado;
+
+    @Size(max = 120)
+    private final String nombreNino;
+
+    @Min(0) @Max(18)
+    private final Integer edadCumple;
+
+    private final Long         idPaquete;
+    private final List<Long>   idsExtras;
+    private final List<String> extrasLibres;
+
+    @Size(max = 2000)
+    private final String       observaciones;
+
+    @Size(max = 4000)
+    private final String       descripcionPersonalizada;
+    private final BigDecimal   presupuestoEstimado;
+    private final List<Long>   idsServiciosCotizacion;
+    private final boolean      esCotizacionPersonalizada;
 }

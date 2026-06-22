@@ -6,6 +6,8 @@ import com.playzone.pems.application.calendario.dto.query.ResumenDiaQuery;
 import com.playzone.pems.application.calendario.port.in.BloquearFechasUseCase;
 import com.playzone.pems.application.calendario.port.in.ConsultarDisponibilidadUseCase;
 import com.playzone.pems.application.calendario.port.in.ConsultarResumenDiaUseCase;
+import com.playzone.pems.domain.calendario.repository.TurnoRepository;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.interfaces.rest.calendario.request.BloquearFechasRequest;
 import com.playzone.pems.interfaces.rest.calendario.response.DisponibilidadResponse;
 import com.playzone.pems.interfaces.rest.calendario.response.ResumenDiaResponse;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/calendario")
@@ -28,6 +31,23 @@ public class CalendarioController {
     private final ConsultarDisponibilidadUseCase consultarUseCase;
     private final ConsultarResumenDiaUseCase     resumenDiaUseCase;
     private final BloquearFechasUseCase          bloquearUseCase;
+    private final TurnoRepository                turnoRepository;
+    private final SupabaseAuthFacade             supabaseAuthFacade;
+
+    @GetMapping("/sedes/{idSede}/turnos")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> listarTurnos(
+            @PathVariable Long idSede) {
+
+        List<Map<String, Object>> turnos = turnoRepository.findAll()
+                .stream().map(t -> Map.<String, Object>of(
+                        "id",         t.getId(),
+                        "codigo",     t.getCodigo(),
+                        "nombre",     t.getDescripcion(),
+                        "horaInicio", t.getHoraInicio().toString(),
+                        "horaFin",    t.getHoraFin().toString()
+                )).toList();
+        return ResponseEntity.ok(ApiResponse.ok(turnos));
+    }
 
     @GetMapping("/sedes/{idSede}/disponibilidad")
     public ResponseEntity<ApiResponse<DisponibilidadResponse>> consultarPorFecha(
@@ -55,7 +75,7 @@ public class CalendarioController {
     }
 
     @GetMapping("/sedes/{idSede}/resumen-dia")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('calendario.ver')")
     public ResponseEntity<ApiResponse<ResumenDiaResponse>> resumenDia(
             @PathVariable Long idSede,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
@@ -66,26 +86,27 @@ public class CalendarioController {
     }
 
     @PostMapping("/sedes/{idSede}/bloqueos")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('calendario.bloquear')")
     public ResponseEntity<ApiResponse<Void>> bloquearFechas(
             @PathVariable Long idSede,
             @Valid @RequestBody BloquearFechasRequest request,
-            @RequestAttribute Long idUsuarioAdmin) {
+            @RequestParam(defaultValue = "false") boolean confirmado) {
 
         bloquearUseCase.ejecutar(BloquearFechasCommand.builder()
                 .idSede(idSede)
-                .idUsuarioAdmin(idUsuarioAdmin)
+                .idUsuarioAdmin(supabaseAuthFacade.usuarioActualId().orElseThrow())
                 .fechaInicio(request.getFechaInicio())
                 .fechaFin(request.getFechaFin())
                 .tipoBloqueo(request.getTipoBloqueo())
                 .motivo(request.getMotivo())
+                .confirmado(confirmado)
                 .build());
 
         return ResponseEntity.ok(ApiResponse.noContent());
     }
 
     @DeleteMapping("/bloqueos/{idBloque}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('calendario.bloquear')")
     public ResponseEntity<ApiResponse<Void>> desactivarBloqueo(
             @PathVariable Long idBloque) {
 
@@ -108,6 +129,7 @@ public class CalendarioController {
                 .plazasDisponibles(q.getPlazasDisponibles())
                 .aforoCompleto(q.isAforoCompleto())
                 .bloqueadoManualmente(q.isBloqueadoManualmente())
+                .idBloqueo(q.getIdBloqueo())
                 .tipoBloqueo(q.getTipoBloqueo())
                 .motivoBloqueo(q.getMotivoBloqueo())
                 .totalReservas(q.getTotalReservas())
@@ -115,6 +137,17 @@ public class CalendarioController {
                 .ingresoEstimado(q.getIngresoEstimado())
                 .tieneNotas(q.isTieneNotas())
                 .ocupacionPorcentaje(q.getOcupacionPorcentaje())
+                .tipoOcupacion(q.getTipoOcupacion())
+                .disponiblePublico(q.isDisponiblePublico())
+                .disponiblePrivado(q.isDisponiblePrivado())
+                .turnoT1Ocupado(q.isTurnoT1Ocupado())
+                .turnoT2Ocupado(q.isTurnoT2Ocupado())
+                .tituloEvento(q.getTituloEvento())
+                .idEvento(q.getIdEvento())
+                .tituloEventoT1(q.getTituloEventoT1())
+                .idEventoT1(q.getIdEventoT1())
+                .tituloEventoT2(q.getTituloEventoT2())
+                .idEventoT2(q.getIdEventoT2())
                 .build();
     }
 
@@ -127,6 +160,8 @@ public class CalendarioController {
                 .pagosPendientes(q.getPagosPendientes())
                 .aforoPublicoActual(q.getAforoPublicoActual())
                 .aforoMaximo(q.getAforoMaximo())
+                .tipoOcupacion(q.getTipoOcupacion())
+                .bloqueadoManualmente(q.isBloqueadoManualmente())
                 .turnoT1(toTurnoResponse(q.getTurnoT1()))
                 .turnoT2(toTurnoResponse(q.getTurnoT2()))
                 .reservas(q.getReservas().stream().map(r ->

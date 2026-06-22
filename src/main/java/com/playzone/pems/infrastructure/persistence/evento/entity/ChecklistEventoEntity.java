@@ -1,14 +1,14 @@
 package com.playzone.pems.infrastructure.persistence.evento.entity;
 
-import com.playzone.pems.infrastructure.persistence.usuario.entity.UsuarioAdminEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "checklistevento")
+@Table(name = "checklist_evento")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -18,32 +18,31 @@ public class ChecklistEventoEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idchecklist")
+    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "ideventoprivado", nullable = false)
+    @JoinColumn(name = "evento_id", nullable = false)
     private EventoPrivadoEntity eventoPrivado;
 
-    @Column(nullable = false, length = 200)
+    @Column(name = "tarea", nullable = false, length = 200)
     private String tarea;
 
-    @Column(nullable = false)
+    @Column(name = "completada", nullable = false)
     @Builder.Default
     private boolean completada = false;
 
-    @Column(nullable = false)
+    @Column(name = "orden", nullable = false)
     @Builder.Default
     private int orden = 0;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "idusuariocompleto")
-    private UsuarioAdminEntity usuarioCompleto;
+    @Column(name = "completada_por", columnDefinition = "uuid")
+    private UUID completadaPor;
 
-    @Column(name = "fechacompletado")
-    private LocalDateTime fechaCompletado;
+    @Column(name = "completada_at")
+    private OffsetDateTime fechaCompletado;
 
     @CreationTimestamp
-    @Column(name = "fechacreacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime fechaCreacion;
 }

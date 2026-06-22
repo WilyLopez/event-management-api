@@ -3,6 +3,7 @@ package com.playzone.pems.infrastructure.persistence.facturacion.adapter;
 import com.playzone.pems.domain.facturacion.model.SerieComprobante;
 import com.playzone.pems.domain.facturacion.model.enums.TipoComprobante;
 import com.playzone.pems.domain.facturacion.repository.SerieComprobanteRepository;
+import com.playzone.pems.shared.exception.ValidationException;
 import com.playzone.pems.infrastructure.persistence.facturacion.jpa.SerieComprobanteJpaRepository;
 import com.playzone.pems.infrastructure.persistence.facturacion.mapper.ComprobanteEntityMapper;
 import com.playzone.pems.infrastructure.persistence.usuario.jpa.SedeJpaRepository;
@@ -41,8 +42,11 @@ public class SerieComprobantePersistenceAdapter implements SerieComprobanteRepos
 
     @Override
     @Transactional
-    public int incrementarCorrelativoYRetornar(Long idSerie) {
-        serieJpa.incrementarCorrelativo(idSerie);
-        return serieJpa.findCorrelativoActual(idSerie);
+    public int incrementarCorrelativoYRetornar(Long idSede, TipoComprobante tipo) {
+        Long correlativo = serieJpa.obtenerSiguienteCorrelativo(idSede, tipo.getCodigo());
+        if (correlativo == null) {
+            throw new ValidationException("No se pudo obtener el correlativo SUNAT para la sede y tipo de comprobante indicados.");
+        }
+        return correlativo.intValue();
     }
 }

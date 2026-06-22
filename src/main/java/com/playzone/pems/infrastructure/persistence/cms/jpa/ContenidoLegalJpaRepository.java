@@ -8,4 +8,8 @@ import java.util.Optional;
 public interface ContenidoLegalJpaRepository extends JpaRepository<ContenidoLegalEntity, Long> {
 
     Optional<ContenidoLegalEntity> findByTipoAndActivoTrue(String tipo);
+
+    Optional<ContenidoLegalEntity> findByTipo(String tipo);
+
+    void deleteByTipo(String tipo);
 }

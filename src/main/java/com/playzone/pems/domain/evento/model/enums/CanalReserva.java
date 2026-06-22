@@ -1,28 +1,31 @@
 package com.playzone.pems.domain.evento.model.enums;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-
 import java.util.Arrays;
 
-@Getter
-@RequiredArgsConstructor
 public enum CanalReserva {
 
-    ONLINE(
-            "ONLINE",
+    WEB(
+            "WEB",
             "Reserva realizada desde el sitio web"
     ),
-    PRESENCIAL(
-            "PRESENCIAL",
+    MOSTRADOR(
+            "MOSTRADOR",
             "Registro realizado en el local"
     );
 
     private final String codigo;
     private final String descripcion;
 
+    CanalReserva(String codigo, String descripcion) {
+        this.codigo = codigo;
+        this.descripcion = descripcion;
+    }
+
+    public String getCodigo() { return codigo; }
+    public String getDescripcion() { return descripcion; }
+
     public boolean esAutoservicio() {
-        return this == ONLINE;
+        return this == WEB;
     }
 
     public static CanalReserva desdeCodigo(String codigo) {

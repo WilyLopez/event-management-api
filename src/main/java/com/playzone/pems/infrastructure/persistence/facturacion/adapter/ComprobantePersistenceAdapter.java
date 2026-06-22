@@ -6,7 +6,6 @@ import com.playzone.pems.domain.facturacion.repository.ComprobanteRepository;
 import com.playzone.pems.infrastructure.persistence.facturacion.jpa.ComprobanteJpaRepository;
 import com.playzone.pems.infrastructure.persistence.facturacion.jpa.SerieComprobanteJpaRepository;
 import com.playzone.pems.infrastructure.persistence.facturacion.mapper.ComprobanteEntityMapper;
-import com.playzone.pems.infrastructure.persistence.pago.jpa.PagoJpaRepository;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -24,7 +23,6 @@ public class ComprobantePersistenceAdapter implements ComprobanteRepository {
 
     private final ComprobanteJpaRepository      comprobanteJpa;
     private final SerieComprobanteJpaRepository serieJpa;
-    private final PagoJpaRepository             pagoJpa;
     private final ComprobanteEntityMapper       mapper;
 
     @Override public Optional<Comprobante> findById(Long id) {
@@ -36,7 +34,7 @@ public class ComprobantePersistenceAdapter implements ComprobanteRepository {
     }
 
     @Override public Optional<Comprobante> findByPago(Long idPago) {
-        return comprobanteJpa.findByPago_Id(idPago).map(mapper::toDomain);
+        return comprobanteJpa.findByIdPago(idPago).map(mapper::toDomain);
     }
 
     @Override public Page<Comprobante> findBySedeAndFechasBetween(Long idSede, LocalDateTime desde, LocalDateTime hasta, Pageable pageable) {
@@ -52,10 +50,9 @@ public class ComprobantePersistenceAdapter implements ComprobanteRepository {
     @Override
     @Transactional
     public Comprobante save(Comprobante comprobante) {
-        var pago  = pagoJpa.findById(comprobante.getIdPago()).orElseThrow(() -> new ResourceNotFoundException("Pago", comprobante.getIdPago()));
         var serie = serieJpa.findById(comprobante.getIdSerie()).orElseThrow(() -> new ResourceNotFoundException("SerieComprobante", comprobante.getIdSerie()));
         var nota  = comprobante.getIdComprobanteNota() != null ? comprobanteJpa.findById(comprobante.getIdComprobanteNota()).orElse(null) : null;
-        return mapper.toDomain(comprobanteJpa.save(mapper.toEntity(comprobante, pago, serie, nota)));
+        return mapper.toDomain(comprobanteJpa.save(mapper.toEntity(comprobante, serie, nota)));
     }
 
     @Override public boolean existsByNumeroCompleto(String numero) {

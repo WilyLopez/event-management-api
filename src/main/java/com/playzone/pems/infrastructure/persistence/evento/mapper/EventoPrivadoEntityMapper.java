@@ -3,10 +3,10 @@ package com.playzone.pems.infrastructure.persistence.evento.mapper;
 import com.playzone.pems.domain.evento.model.EventoPrivado;
 import com.playzone.pems.infrastructure.persistence.calendario.entity.TurnoEntity;
 import com.playzone.pems.infrastructure.persistence.evento.entity.EventoPrivadoEntity;
-import com.playzone.pems.infrastructure.persistence.usuario.entity.ClienteEntity;
 import com.playzone.pems.infrastructure.persistence.usuario.entity.SedeEntity;
-import com.playzone.pems.infrastructure.persistence.usuario.entity.UsuarioAdminEntity;
 import org.springframework.stereotype.Component;
+
+import java.time.ZoneOffset;
 
 @Component
 public class EventoPrivadoEntityMapper {
@@ -15,37 +15,44 @@ public class EventoPrivadoEntityMapper {
         if (e == null) return null;
         return EventoPrivado.builder()
                 .id(e.getId())
-                .idCliente(e.getCliente().getId())
+                .idCliente(e.getClienteId())
                 .idSede(e.getSede().getId())
                 .estado(e.getEstado())
                 .idTurno(e.getTurno().getId())
+                .codigoTurno(e.getTurno().getCodigo())
                 .fechaEvento(e.getFechaEvento())
                 .tipoEvento(e.getTipoEvento())
                 .contactoAdicional(e.getContactoAdicional())
                 .aforoDeclarado(e.getAforoDeclarado())
-                .precioTotalContrato(e.getPrecioTotalContrato())
+                .precioContrato(e.getPrecioContrato())
                 .montoAdelanto(e.getMontoAdelanto())
                 .motivoCancelacion(e.getMotivoCancelacion())
                 .notasInternas(e.getNotasInternas())
-                .idUsuarioGestor(e.getUsuarioGestor() != null ? e.getUsuarioGestor().getId() : null)
+                .nombreNino(e.getNombreNino())
+                .edadCumple(e.getEdadCumple())
+                .paqueteId(e.getPaqueteId())
+                .descripcionPersonalizada(e.getDescripcionPersonalizada())
+                .presupuestoEstimado(e.getPresupuestoEstimado())
+                .esCotizacionPersonalizada(e.isEsCotizacionPersonalizada())
+                .idUsuarioGestor(e.getUsuarioGestorId())
                 .estadoOperativo(e.getEstadoOperativo())
                 .checklistCompleto(e.isChecklistCompleto())
                 .horaInicioReal(e.getHoraInicioReal())
                 .horaFinReal(e.getHoraFinReal())
-                .fechaCreacion(e.getFechaCreacion())
-                .fechaActualizacion(e.getFechaActualizacion())
+                .createdAt(e.getCreatedAt())
+                .updatedAt(e.getUpdatedAt())
+                .createdBy(e.getCreatedBy())
+                .updatedBy(e.getUpdatedBy())
                 .build();
     }
 
     public EventoPrivadoEntity toEntity(EventoPrivado d,
-                                         ClienteEntity cliente,
                                          SedeEntity sede,
-                                         TurnoEntity turno,
-                                         UsuarioAdminEntity gestor) {
+                                         TurnoEntity turno) {
         if (d == null) return null;
         return EventoPrivadoEntity.builder()
                 .id(d.getId())
-                .cliente(cliente)
+                .clienteId(d.getIdCliente())
                 .sede(sede)
                 .estado(d.getEstado())
                 .turno(turno)
@@ -53,15 +60,23 @@ public class EventoPrivadoEntityMapper {
                 .tipoEvento(d.getTipoEvento())
                 .contactoAdicional(d.getContactoAdicional())
                 .aforoDeclarado(d.getAforoDeclarado())
-                .precioTotalContrato(d.getPrecioTotalContrato())
+                .precioContrato(d.getPrecioContrato())
                 .montoAdelanto(d.getMontoAdelanto())
                 .motivoCancelacion(d.getMotivoCancelacion())
                 .notasInternas(d.getNotasInternas())
-                .usuarioGestor(gestor)
+                .nombreNino(d.getNombreNino())
+                .edadCumple(d.getEdadCumple())
+                .paqueteId(d.getPaqueteId())
+                .descripcionPersonalizada(d.getDescripcionPersonalizada())
+                .presupuestoEstimado(d.getPresupuestoEstimado())
+                .esCotizacionPersonalizada(d.isEsCotizacionPersonalizada())
+                .usuarioGestorId(d.getIdUsuarioGestor())
                 .estadoOperativo(d.getEstadoOperativo())
                 .checklistCompleto(d.isChecklistCompleto())
                 .horaInicioReal(d.getHoraInicioReal())
                 .horaFinReal(d.getHoraFinReal())
+                .createdBy(d.getCreatedBy())
+                .updatedBy(d.getUpdatedBy())
                 .build();
     }
 }

@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @RestController
 @RequestMapping("/api/v1/cms/configuracion")
@@ -33,16 +33,17 @@ public class ConfiguracionPublicaController {
     // ── Admin ─────────────────────────────────────────────────────────────
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('configuracion.editar')")
     public ResponseEntity<ApiResponse<ConfiguracionPublicaResponse>> obtener() {
         return ResponseEntity.ok(ApiResponse.ok(
                 ConfiguracionPublicaResponse.from(configUseCase.obtener())));
     }
 
     @PutMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('configuracion.editar')")
     public ResponseEntity<ApiResponse<ConfiguracionPublicaResponse>> actualizar(
             @Valid @RequestBody ActualizarConfiguracionRequest request) {
+        // Actualizar la configuración pública del sitio web
         ConfiguracionPublicaResponse response = ConfiguracionPublicaResponse.from(
                 configUseCase.actualizar(new GestionarConfiguracionPublicaUseCase.ActualizarCommand(
                         request.getNombreNegocio(),
@@ -73,6 +74,8 @@ public class ConfiguracionPublicaController {
                         request.getMetaPixelId(),
                         request.getColorTema(),
                         request.getColorSecundario(),
+                        request.getMetricasNegocio(),
+                        request.getReglasLocal(),
                         request.isMantenimientoActivo(),
                         request.getMensajeMantenimiento())));
         return ResponseEntity.ok(ApiResponse.ok(response));
@@ -111,6 +114,8 @@ public class ConfiguracionPublicaController {
         private String  metaPixelId;
         private String  colorTema;
         private String  colorSecundario;
+        private String  metricasNegocio;
+        private String  reglasLocal;
         private boolean mantenimientoActivo;
         private String  mensajeMantenimiento;
     }
@@ -118,7 +123,6 @@ public class ConfiguracionPublicaController {
     @Getter
     @Builder
     public static class ConfiguracionPublicaResponse {
-        private Long          id;
         private String        nombreNegocio;
         private String        slogan;
         private String        logoUrl;
@@ -147,17 +151,18 @@ public class ConfiguracionPublicaController {
         private String        metaPixelId;
         private String        colorTema;
         private String        colorSecundario;
+        private String        metricasNegocio;
+        private String        reglasLocal;
         private boolean       mantenimientoActivo;
         private String        mensajeMantenimiento;
-        private LocalDateTime fechaActualizacion;
+        private OffsetDateTime updatedAt;
 
         public static ConfiguracionPublicaResponse from(ConfiguracionPublicaQuery q) {
             return ConfiguracionPublicaResponse.builder()
-                    .id(q.getId())
                     .nombreNegocio(q.getNombreNegocio())
                     .slogan(q.getSlogan())
-                    .logoUrl(q.getLogoUrl())
-                    .faviconUrl(q.getFaviconUrl())
+                    .logoUrl(q.getLogoPath())
+                    .faviconUrl(q.getFaviconPath())
                     .telefono(q.getTelefono())
                     .telefonoSecundario(q.getTelefonoSecundario())
                     .whatsapp(q.getWhatsapp())
@@ -170,21 +175,23 @@ public class ConfiguracionPublicaController {
                     .youtubeUrl(q.getYoutubeUrl())
                     .googleMapsUrl(q.getGoogleMapsUrl())
                     .horarioSemana(q.getHorarioSemana())
-                    .horarioFinDeSemana(q.getHorarioFinDeSemana())
+                    .horarioFinDeSemana(q.getHorarioFinSemana())
                     .copyrightTexto(q.getCopyrightTexto())
                     .metaTitle(q.getMetaTitle())
                     .metaDescription(q.getMetaDescription())
                     .metaKeywords(q.getMetaKeywords())
                     .openGraphTitle(q.getOpenGraphTitle())
                     .openGraphDescription(q.getOpenGraphDescription())
-                    .openGraphImageUrl(q.getOpenGraphImageUrl())
+                    .openGraphImageUrl(q.getOpenGraphImagePath())
                     .googleAnalyticsId(q.getGoogleAnalyticsId())
                     .metaPixelId(q.getMetaPixelId())
                     .colorTema(q.getColorTema())
                     .colorSecundario(q.getColorSecundario())
-                    .mantenimientoActivo(q.isMantenimientoActivo())
+                    .metricasNegocio(q.getMetricasNegocio())
+                    .reglasLocal(q.getReglasLocal())
+                    .mantenimientoActivo(q.isEsMantenimientoActivo())
                     .mensajeMantenimiento(q.getMensajeMantenimiento())
-                    .fechaActualizacion(q.getFechaActualizacion())
+                    .updatedAt(q.getUpdatedAt())
                     .build();
         }
     }

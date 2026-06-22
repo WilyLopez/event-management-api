@@ -7,7 +7,7 @@ import java.time.LocalDate;
 
 public interface GestionarFeriadoUseCase {
 
-    record CrearCommand(TipoFeriado tipo, LocalDate fecha, String descripcion, Long idUsuario) {}
+    record CrearCommand(TipoFeriado tipo, LocalDate fecha, String descripcion) {}
 
     Feriado crear(CrearCommand command);
 

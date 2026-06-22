@@ -1,6 +1,8 @@
 package com.playzone.pems.infrastructure.persistence.evento.jpa;
 
 import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
+import com.playzone.pems.domain.evento.query.IngresosPorDia;
+import com.playzone.pems.domain.evento.query.ReservasPorDia;
 import com.playzone.pems.infrastructure.persistence.evento.entity.ReservaPublicaEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,7 +19,7 @@ public interface ReservaPublicaJpaRepository extends JpaRepository<ReservaPublic
 
     Optional<ReservaPublicaEntity> findByNumeroTicket(String numeroTicket);
 
-    Page<ReservaPublicaEntity> findByCliente_Id(Long idCliente, Pageable pageable);
+    Page<ReservaPublicaEntity> findByClienteId(Long clienteId, Pageable pageable);
 
     Page<ReservaPublicaEntity> findBySede_IdAndFechaEvento(Long idSede, LocalDate fecha, Pageable pageable);
 
@@ -56,6 +58,12 @@ public interface ReservaPublicaJpaRepository extends JpaRepository<ReservaPublic
     @Query("SELECT COUNT(r) FROM ReservaPublicaEntity r WHERE r.sede.id = :idSede AND r.fechaEvento = :fecha AND r.estado IN ('CONFIRMADA', 'COMPLETADA')")
     int countConfirmadasBySedeAndFecha(@Param("idSede") Long idSede, @Param("fecha") LocalDate fecha);
 
+    @Query("SELECT COUNT(r) FROM ReservaPublicaEntity r WHERE r.sede.id = :idSede AND r.fechaEvento = :fecha AND r.estado <> 'CANCELADA'")
+    int countActivasBySedeAndFecha(@Param("idSede") Long idSede, @Param("fecha") LocalDate fecha);
+
+    @Query("SELECT COUNT(r) > 0 FROM ReservaPublicaEntity r WHERE r.sede.id = :idSede AND r.fechaEvento = :fecha AND r.estado <> 'CANCELADA'")
+    boolean existsActivaBySedeAndFecha(@Param("idSede") Long idSede, @Param("fecha") LocalDate fecha);
+
     @Query("SELECT COUNT(r) FROM ReservaPublicaEntity r WHERE r.sede.id = :idSede AND r.fechaEvento = :fecha AND r.estado = :estado")
     int countBySedeAndFechaAndEstado(
             @Param("idSede") Long idSede,
@@ -69,4 +77,74 @@ public interface ReservaPublicaJpaRepository extends JpaRepository<ReservaPublic
     BigDecimal sumIngresosBySedeAndFecha(@Param("idSede") Long idSede, @Param("fecha") LocalDate fecha);
 
     boolean existsByNumeroTicket(String numeroTicket);
+
+    @Query("SELECT COALESCE(SUM(r.totalPagado), 0) FROM ReservaPublicaEntity r " +
+           "WHERE r.sede.id = :idSede AND YEAR(r.fechaEvento) = :anio " +
+           "AND MONTH(r.fechaEvento) = :mes AND r.estado <> 'CANCELADA'")
+    BigDecimal sumIngresosBySedeAndPeriodo(
+            @Param("idSede") Long idSede,
+            @Param("anio") int anio,
+            @Param("mes") int mes);
+
+    @Query("SELECT COALESCE(SUM(r.totalPagado), 0) FROM ReservaPublicaEntity r " +
+           "WHERE r.sede.id = :idSede AND r.fechaEvento BETWEEN :inicio AND :fin AND r.estado <> 'CANCELADA'")
+    BigDecimal sumIngresosBySedeAndRango(
+            @Param("idSede") Long idSede, @Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
+
+    @Query("SELECT COUNT(r) FROM ReservaPublicaEntity r " +
+           "WHERE r.sede.id = :idSede AND r.fechaEvento BETWEEN :inicio AND :fin AND r.estado IN ('CONFIRMADA', 'COMPLETADA')")
+    long countConfirmadasBySedeAndRango(
+            @Param("idSede") Long idSede, @Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
+
+    @Query("SELECT COUNT(r) FROM ReservaPublicaEntity r " +
+           "WHERE r.sede.id = :idSede AND YEAR(r.fechaEvento) = :anio AND MONTH(r.fechaEvento) = :mes AND r.estado = 'CONFIRMADA'")
+    long countConfirmadasBySedeAndPeriodo(
+            @Param("idSede") Long idSede, @Param("anio") int anio, @Param("mes") int mes);
+
+    @Query("SELECT COUNT(r) FROM ReservaPublicaEntity r " +
+           "WHERE r.sede.id = :idSede AND YEAR(r.fechaEvento) = :anio AND MONTH(r.fechaEvento) = :mes AND r.estado = 'CANCELADA'")
+    long countCanceladasBySedeAndPeriodo(
+            @Param("idSede") Long idSede, @Param("anio") int anio, @Param("mes") int mes);
+
+    @Query("SELECT COUNT(r) FROM ReservaPublicaEntity r " +
+           "WHERE r.sede.id = :idSede AND YEAR(r.fechaEvento) = :anio AND MONTH(r.fechaEvento) = :mes AND r.estado = 'COMPLETADA'")
+    long countCompletadasBySedeAndPeriodo(
+            @Param("idSede") Long idSede, @Param("anio") int anio, @Param("mes") int mes);
+
+    @Query("SELECT COALESCE(AVG(r.totalPagado), 0) FROM ReservaPublicaEntity r " +
+           "WHERE r.sede.id = :idSede AND YEAR(r.fechaEvento) = :anio AND MONTH(r.fechaEvento) = :mes AND r.estado <> 'CANCELADA'")
+    BigDecimal avgTicketBySedeAndPeriodo(
+            @Param("idSede") Long idSede, @Param("anio") int anio, @Param("mes") int mes);
+
+    @Query("""
+            SELECT new com.playzone.pems.domain.evento.query.ReservasPorDia(
+                r.fechaEvento, COUNT(r))
+            FROM ReservaPublicaEntity r
+            WHERE r.sede.id = :idSede
+              AND r.fechaEvento BETWEEN :inicio AND :fin
+              AND r.estado <> 'CANCELADA'
+            GROUP BY r.fechaEvento
+            ORDER BY r.fechaEvento
+            """)
+    List<ReservasPorDia> countAgrupadoPorDia(
+            @Param("idSede") Long idSede,
+            @Param("inicio") LocalDate inicio,
+            @Param("fin")    LocalDate fin);
+
+    @Query("""
+            SELECT new com.playzone.pems.domain.evento.query.IngresosPorDia(
+                r.fechaEvento, COALESCE(SUM(r.totalPagado), 0))
+            FROM ReservaPublicaEntity r
+            WHERE r.sede.id = :idSede
+              AND r.fechaEvento BETWEEN :inicio AND :fin
+              AND r.estado <> 'CANCELADA'
+            GROUP BY r.fechaEvento
+            ORDER BY r.fechaEvento
+            """)
+    List<IngresosPorDia> sumIngresosAgrupadoPorDia(
+            @Param("idSede") Long idSede,
+            @Param("inicio") LocalDate inicio,
+            @Param("fin")    LocalDate fin);
+
+    List<ReservaPublicaEntity> findByVentaId(Long ventaId);
 }

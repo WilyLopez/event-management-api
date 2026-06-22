@@ -3,7 +3,8 @@ package com.playzone.pems.domain.cms.model;
 import com.playzone.pems.domain.cms.model.enums.CategoriaImagen;
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder(toBuilder = true)
@@ -24,8 +25,8 @@ public class ImagenGaleria {
     private boolean          activo;
     private boolean          destacada;
     private boolean          eliminada;
-    private Long             idUsuarioSubio;
-    private LocalDateTime    fechaSubida;
+    private UUID             idUsuarioSubio;
+    private OffsetDateTime    fechaSubida;
 
     public String altTextoEfectivo() {
         return (altTexto != null && !altTexto.isBlank())

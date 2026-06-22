@@ -6,11 +6,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
 
-public interface SeccionWebJpaRepository extends JpaRepository<SeccionWebEntity, Long> {
+public interface SeccionWebJpaRepository extends JpaRepository<SeccionWebEntity, String> {
 
     Optional<SeccionWebEntity> findByCodigo(String codigo);
 
-    List<SeccionWebEntity> findByVisibleTrueOrderByOrdenVisualizacionAsc();
+    List<SeccionWebEntity> findByActivoTrueOrderByOrdenAsc();
 
     boolean existsByCodigo(String codigo);
 }

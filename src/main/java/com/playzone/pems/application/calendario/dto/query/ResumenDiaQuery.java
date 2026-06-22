@@ -18,6 +18,8 @@ public class ResumenDiaQuery {
     private BigDecimal   pagosPendientes;
     private int          aforoPublicoActual;
     private int          aforoMaximo;
+    private String       tipoOcupacion;
+    private boolean      bloqueadoManualmente;
     private ResumenTurno turnoT1;
     private ResumenTurno turnoT2;
     private List<ResumenReservaQuery>  reservas;

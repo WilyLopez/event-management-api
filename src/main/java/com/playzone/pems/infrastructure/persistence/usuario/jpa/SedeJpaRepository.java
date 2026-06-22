@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface SedeJpaRepository extends JpaRepository<SedeEntity, Long> {
 
-    List<SedeEntity> findByActivoTrue();
+    List<SedeEntity> findByDeletedAtIsNull();
 
     boolean existsByRuc(String ruc);
 }

@@ -4,7 +4,7 @@ import com.playzone.pems.domain.cms.model.ContenidoLegal;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder
@@ -16,7 +16,7 @@ public class ContenidoLegalQuery {
     private String        contenido;
     private int           version;
     private boolean       activo;
-    private LocalDateTime fechaActualizacion;
+    private OffsetDateTime fechaActualizacion;
 
     public static ContenidoLegalQuery from(ContenidoLegal c) {
         return ContenidoLegalQuery.builder()

@@ -5,6 +5,7 @@ import com.playzone.pems.application.promocion.dto.query.PromocionQuery;
 import com.playzone.pems.application.promocion.port.in.CrearPromocionUseCase;
 import com.playzone.pems.application.promocion.port.in.DesactivarPromocionUseCase;
 import com.playzone.pems.application.promocion.port.in.ListarPromocionesUseCase;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.interfaces.rest.promocion.request.CrearPromocionRequest;
 import com.playzone.pems.interfaces.rest.promocion.response.PromocionResponse;
 import com.playzone.pems.shared.response.ApiResponse;
@@ -20,12 +21,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/promociones")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class PromocionController {
 
     private final CrearPromocionUseCase      crearUseCase;
     private final ListarPromocionesUseCase   listarUseCase;
     private final DesactivarPromocionUseCase desactivarUseCase;
+    private final SupabaseAuthFacade         supabaseAuthFacade;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<PromocionResponse>>> listar() {
@@ -36,34 +37,74 @@ public class PromocionController {
         return ResponseEntity.ok(ApiResponse.ok(lista));
     }
 
+    @GetMapping("/publicas")
+    public ResponseEntity<ApiResponse<List<PromocionResponse>>> listarPublicas() {
+        List<PromocionResponse> lista = listarUseCase.listar()
+                .stream()
+                .filter(PromocionQuery::isActivo)
+                .map(this::toResponse)
+                .toList();
+        return ResponseEntity.ok(ApiResponse.ok(lista));
+    }
+
     @PostMapping
+    @PreAuthorize("hasAuthority('promocion.gestionar')")
     public ResponseEntity<ApiResponse<PromocionResponse>> crear(
-            @Valid @RequestBody CrearPromocionRequest request,
-            @RequestAttribute Long idUsuarioAdmin) {
+            @Valid @RequestBody CrearPromocionRequest request) {
 
-        PromocionQuery query = crearUseCase.ejecutar(CrearPromocionCommand.builder()
-                .tipoPromocion(request.getTipoPromocion())
-                .idSede(request.getIdSede())
-                .nombre(request.getNombre())
-                .descripcion(request.getDescripcion())
-                .valorDescuento(request.getValorDescuento())
-                .condicion(request.getCondicion())
-                .minimoPersonas(request.getMinimoPersonas())
-                .soloTipoDia(request.getSoloTipoDia())
-                .fechaInicio(request.getFechaInicio())
-                .fechaFin(request.getFechaFin())
-                .esAutomatica(request.getEsAutomatica())
-                .idUsuarioCreador(idUsuarioAdmin)
-                .build());
-
+        PromocionQuery query = crearUseCase.ejecutar(buildCommand(null, request));
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(toResponse(query)));
     }
 
+    @PutMapping("/{idPromocion}")
+    @PreAuthorize("hasAuthority('promocion.gestionar')")
+    public ResponseEntity<ApiResponse<PromocionResponse>> actualizar(
+            @PathVariable Long idPromocion,
+            @Valid @RequestBody CrearPromocionRequest request) {
+
+        PromocionQuery query = crearUseCase.ejecutar(buildCommand(idPromocion, request));
+        return ResponseEntity.ok(ApiResponse.ok(toResponse(query)));
+    }
+
     @DeleteMapping("/{idPromocion}")
+    @PreAuthorize("hasAuthority('promocion.gestionar')")
     public ResponseEntity<ApiResponse<Void>> desactivar(@PathVariable Long idPromocion) {
         desactivarUseCase.ejecutar(idPromocion);
         return ResponseEntity.ok(ApiResponse.noContent());
+    }
+
+    private CrearPromocionCommand buildCommand(Long id, CrearPromocionRequest r) {
+        return CrearPromocionCommand.builder()
+                .id(id)
+                .tipoPromocion(r.getTipoPromocion())
+                .idSede(r.getIdSede())
+                .nombre(r.getNombre())
+                .descripcion(r.getDescripcion())
+                .valorDescuento(r.getValorDescuento())
+                .minimoPersonas(r.getMinimoPersonas())
+                .soloTipoDia(r.getSoloTipoDia())
+                .fechaInicio(r.getFechaInicio())
+                .fechaFin(r.getFechaFin())
+                .esAutomatica(r.getEsAutomatica())
+                .idUsuarioCreador(supabaseAuthFacade.usuarioActualId()
+                        .orElseThrow(() -> new IllegalStateException("Sin usuario autenticado en contexto")))
+                .prioridad(r.getPrioridad())
+                .limiteUsos(r.getLimiteUsos())
+                .limitePorCliente(r.getLimitePorCliente())
+                .montoMinimo(r.getMontoMinimo())
+                .imagenUrl(r.getImagenUrl())
+                .bannerUrl(r.getBannerUrl())
+                .colorDestacado(r.getColorDestacado())
+                .textoPublicitario(r.getTextoPublicitario())
+                .textoBoton(r.getTextoBoton())
+                .urlBoton(r.getUrlBoton())
+                .mostrarEnInicio(r.getMostrarEnInicio())
+                .mostrarEnCarrusel(r.getMostrarEnCarrusel())
+                .mostrarEnPaginaPromociones(r.getMostrarEnPaginaPromociones())
+                .mostrarEnCheckout(r.getMostrarEnCheckout())
+                .soloMovil(r.getSoloMovil())
+                .build();
     }
 
     private PromocionResponse toResponse(PromocionQuery q) {
@@ -74,7 +115,6 @@ public class PromocionController {
                 .nombre(q.getNombre())
                 .descripcion(q.getDescripcion())
                 .valorDescuento(q.getValorDescuento())
-                .condicion(q.getCondicion())
                 .minimoPersonas(q.getMinimoPersonas())
                 .soloTipoDia(q.getSoloTipoDia())
                 .fechaInicio(q.getFechaInicio())
@@ -82,6 +122,24 @@ public class PromocionController {
                 .activo(q.isActivo())
                 .esAutomatica(q.isEsAutomatica())
                 .fechaCreacion(q.getFechaCreacion())
+                .prioridad(q.getPrioridad())
+                .limiteUsos(q.getLimiteUsos())
+                .limitePorCliente(q.getLimitePorCliente())
+                .montoMinimo(q.getMontoMinimo())
+                .imagenUrl(q.getImagenUrl())
+                .bannerUrl(q.getBannerUrl())
+                .colorDestacado(q.getColorDestacado())
+                .textoPublicitario(q.getTextoPublicitario())
+                .textoBoton(q.getTextoBoton())
+                .urlBoton(q.getUrlBoton())
+                .mostrarEnInicio(q.isMostrarEnInicio())
+                .mostrarEnCarrusel(q.isMostrarEnCarrusel())
+                .mostrarEnPaginaPromociones(q.isMostrarEnPaginaPromociones())
+                .mostrarEnCheckout(q.isMostrarEnCheckout())
+                .soloMovil(q.isSoloMovil())
+                .vecesUsado(q.getVecesUsado())
+                .montoAhorrado(q.getMontoAhorrado())
+                .clientesAtraidos(q.getClientesAtraidos())
                 .build();
     }
 }

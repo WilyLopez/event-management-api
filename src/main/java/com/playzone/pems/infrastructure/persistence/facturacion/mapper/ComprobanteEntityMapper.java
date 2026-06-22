@@ -4,7 +4,6 @@ import com.playzone.pems.domain.facturacion.model.Comprobante;
 import com.playzone.pems.domain.facturacion.model.SerieComprobante;
 import com.playzone.pems.infrastructure.persistence.facturacion.entity.ComprobanteEntity;
 import com.playzone.pems.infrastructure.persistence.facturacion.entity.SerieComprobanteEntity;
-import com.playzone.pems.infrastructure.persistence.pago.entity.PagoEntity;
 import com.playzone.pems.infrastructure.persistence.usuario.entity.SedeEntity;
 import org.springframework.stereotype.Component;
 
@@ -39,7 +38,7 @@ public class ComprobanteEntityMapper {
         if (e == null) return null;
         return Comprobante.builder()
                 .id(e.getId())
-                .idPago(e.getPago().getId())
+                .idPago(e.getIdPago())
                 .tipoComprobante(e.getTipoComprobante())
                 .estadoComprobante(e.getEstadoComprobante())
                 .idSerie(e.getSerie().getId())
@@ -68,13 +67,12 @@ public class ComprobanteEntityMapper {
     }
 
     public ComprobanteEntity toEntity(Comprobante d,
-                                      PagoEntity pago,
                                       SerieComprobanteEntity serie,
                                       ComprobanteEntity nota) {
         if (d == null) return null;
         return ComprobanteEntity.builder()
                 .id(d.getId())
-                .pago(pago)
+                .idPago(d.getIdPago())
                 .tipoComprobante(d.getTipoComprobante())
                 .estadoComprobante(d.getEstadoComprobante())
                 .serie(serie)

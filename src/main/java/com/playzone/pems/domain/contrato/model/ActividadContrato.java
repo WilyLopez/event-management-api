@@ -5,7 +5,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder(toBuilder = true)
@@ -17,7 +18,7 @@ public class ActividadContrato {
     private Long          idContrato;
     private String        accion;
     private String        descripcion;
-    private Long          idUsuario;
+    private UUID          idUsuario;
     private String        nombreUsuario;
-    private LocalDateTime fechaAccion;
+    private OffsetDateTime fechaAccion;
 }

@@ -2,18 +2,18 @@ package com.playzone.pems.application.calendario.service;
 
 import com.playzone.pems.application.calendario.dto.query.ResumenDiaQuery;
 import com.playzone.pems.application.calendario.port.in.ConsultarResumenDiaUseCase;
-import com.playzone.pems.domain.calendario.model.DisponibilidadDiaria;
-import com.playzone.pems.domain.calendario.model.Turno;
-import com.playzone.pems.domain.calendario.repository.DisponibilidadDiariaRepository;
-import com.playzone.pems.domain.calendario.repository.TurnoRepository;
+import com.playzone.pems.domain.calendario.model.ConfiguracionCalendario;
+import com.playzone.pems.domain.calendario.repository.ConfiguracionCalendarioRepository;
 import com.playzone.pems.domain.evento.model.EventoPrivado;
 import com.playzone.pems.domain.evento.model.ReservaPublica;
+import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
 import com.playzone.pems.domain.evento.repository.EventoPrivadoRepository;
 import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
-import com.playzone.pems.domain.usuario.model.Cliente;
-import com.playzone.pems.domain.usuario.repository.ClienteRepository;
+import com.playzone.pems.domain.calendario.repository.BloqueCalendarioRepository;
+import com.playzone.pems.domain.calendario.repository.FeriadoRepository;
+import com.playzone.pems.domain.usuario.model.ClientePerfil;
+import com.playzone.pems.domain.usuario.repository.ClientePerfilRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,113 +21,148 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ResumenDiaService implements ConsultarResumenDiaUseCase {
 
-    private final DisponibilidadDiariaRepository disponibilidadRepository;
-    private final ReservaPublicaRepository        reservaRepository;
-    private final EventoPrivadoRepository         eventoRepository;
-    private final ClienteRepository               clienteRepository;
-    private final TurnoRepository                 turnoRepository;
-
-    @Value("${playzone.negocio.aforo-maximo:60}")
-    private int aforoMaximo;
+    private final ReservaPublicaRepository         reservaRepository;
+    private final EventoPrivadoRepository          eventoRepository;
+    private final ConfiguracionCalendarioRepository configRepository;
+    private final ClientePerfilRepository          clientePerfilRepository;
+    private final BloqueCalendarioRepository       bloqueRepository;
+    private final FeriadoRepository                feriadoRepository;
 
     @Override
     @Transactional(readOnly = true)
     public ResumenDiaQuery ejecutar(Long idSede, LocalDate fecha) {
-        DisponibilidadDiaria disp = disponibilidadRepository
-                .findBySedeAndFecha(idSede, fecha)
-                .orElse(DisponibilidadDiaria.builder()
-                        .idSede(idSede)
-                        .fecha(fecha)
-                        .accesoPublicoActivo(true)
-                        .turnoT1Disponible(true)
-                        .turnoT2Disponible(true)
-                        .aforoPublicoActual(0)
-                        .build());
-
+        ConfiguracionCalendario cfg = configRepository.obtener(idSede);
         List<ReservaPublica> reservas = reservaRepository.findBySedeAndFecha(idSede, fecha);
-        List<EventoPrivado>  eventos  = eventoRepository.findBySedeAndFecha(idSede, fecha);
-        List<Turno>          turnos   = turnoRepository.findAll();
-        Map<Long, Turno>     turnoMap = turnos.stream().collect(Collectors.toMap(Turno::getId, t -> t));
+        List<EventoPrivado> eventos = eventoRepository.findActivosBySedeAndFecha(idSede, fecha);
 
-        BigDecimal ingresoTotal = reservas.stream()
-                .map(r -> r.getTotalPagado() != null ? r.getTotalPagado() : BigDecimal.ZERO)
+        boolean esFeriado = feriadoRepository.existsByFecha(fecha);
+        boolean bloqueado = bloqueRepository.existsBloqueActivoEnFecha(idSede, fecha);
+
+        String tipoOcupacion = "LIBRE";
+        if (esFeriado) tipoOcupacion = "FERIADO";
+        else if (bloqueado) {
+             var b = bloqueRepository.findActivosBySede(idSede).stream()
+                     .filter(x -> x.comprendeFecha(fecha))
+                     .findFirst().orElse(null);
+             if (b != null && "PLANIFICACION_SEMANAL".equals(b.getTipoBloqueo())) {
+                 tipoOcupacion = "LIBRE";
+             } else {
+                 tipoOcupacion = "BLOQUEADO";
+             }
+        } else if (eventos.size() >= 2) tipoOcupacion = "PRIVADO_LLENO";
+        else if (eventos.size() == 1) tipoOcupacion = "PRIVADO_PARCIAL";
+        else if (reservas.size() > 0) tipoOcupacion = "PUBLICO";
+
+        BigDecimal ingresoEstimado = reservas.stream()
+                .filter(r -> r.getEstado() == EstadoReservaPublica.CONFIRMADA
+                          || r.getEstado() == EstadoReservaPublica.COMPLETADA)
+                .map(ReservaPublica::getTotalPagado)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal adelantosEventos = eventos.stream()
-                .map(e -> e.getMontoAdelanto() != null ? e.getMontoAdelanto() : BigDecimal.ZERO)
+        BigDecimal pagosPendientes = reservas.stream()
+                .filter(r -> r.getEstado() == EstadoReservaPublica.PENDIENTE)
+                .map(r -> r.getPrecioHistorico().subtract(
+                        r.getDescuentoAplicado() != null ? r.getDescuentoAplicado() : BigDecimal.ZERO))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal saldoPendiente = eventos.stream()
-                .map(e -> e.calcularMontoSaldo() != null ? e.calcularMontoSaldo() : BigDecimal.ZERO)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        int aforoActual = (int) reservas.stream()
+                .filter(r -> r.getEstado().ocupaAforo())
+                .count();
+        int aforoMax = cfg.getAforoMaximo();
 
-        List<ResumenDiaQuery.ResumenReservaQuery> resReservas = reservas.stream()
-                .map(r -> {
-                    Cliente c = clienteRepository.findById(r.getIdCliente()).orElse(null);
-                    return ResumenDiaQuery.ResumenReservaQuery.builder()
-                            .id(r.getId())
-                            .numeroTicket(r.getNumeroTicket())
-                            .nombreNino(r.getNombreNino())
-                            .nombreCliente(c != null ? c.nombreParaMostrar() : "Anonimo")
-                            .estado(r.getEstado().name())
-                            .totalPagado(r.getTotalPagado())
-                            .build();
-                }).toList();
+        EventoPrivado evT1 = eventos.stream()
+                .filter(e -> "T1".equals(e.getCodigoTurno())).findFirst().orElse(null);
+        EventoPrivado evT2 = eventos.stream()
+                .filter(e -> "T2".equals(e.getCodigoTurno())).findFirst().orElse(null);
 
-        List<ResumenDiaQuery.ResumenEventoQuery> resEventos = eventos.stream()
-                .map(e -> toEventoQuery(e, turnoMap.get(e.getIdTurno())))
-                .toList();
+        ResumenDiaQuery.ResumenTurno turnoT1 = ResumenDiaQuery.ResumenTurno.builder()
+                .disponible(evT1 == null)
+                .totalReservas(0)
+                .eventoPrivado(evT1 != null ? toResumenEvento(evT1, cfg) : null)
+                .build();
 
-        Turno t1 = turnos.stream().filter(t -> "T1".equals(t.getCodigo())).findFirst().orElse(null);
-        Turno t2 = turnos.stream().filter(t -> "T2".equals(t.getCodigo())).findFirst().orElse(null);
+        ResumenDiaQuery.ResumenTurno turnoT2 = ResumenDiaQuery.ResumenTurno.builder()
+                .disponible(evT2 == null)
+                .totalReservas(0)
+                .eventoPrivado(evT2 != null ? toResumenEvento(evT2, cfg) : null)
+                .build();
+
+        List<ResumenDiaQuery.AlertaDiaQuery> alertas = new ArrayList<>();
+        if (aforoMax > 0 && aforoActual * 100 / aforoMax >= 80) {
+            alertas.add(ResumenDiaQuery.AlertaDiaQuery.builder()
+                    .tipo("AFORO_ALTO")
+                    .mensaje("El aforo supera el 80%")
+                    .nivel("ADVERTENCIA")
+                    .build());
+        }
+        long pendientes = reservas.stream()
+                .filter(r -> r.getEstado() == EstadoReservaPublica.PENDIENTE)
+                .count();
+        if (pendientes > 0) {
+            alertas.add(ResumenDiaQuery.AlertaDiaQuery.builder()
+                    .tipo("PAGOS_PENDIENTES")
+                    .mensaje(pendientes + " reserva(s) con pago pendiente")
+                    .nivel("INFO")
+                    .build());
+        }
 
         return ResumenDiaQuery.builder()
                 .fecha(fecha)
                 .totalReservas(reservas.size())
                 .totalEventos(eventos.size())
-                .ingresoEstimado(ingresoTotal.add(adelantosEventos))
-                .pagosPendientes(saldoPendiente)
-                .aforoPublicoActual(disp.getAforoPublicoActual())
-                .aforoMaximo(aforoMaximo)
-                .turnoT1(buildResumenTurno(disp.isTurnoT1Disponible(), t1, eventos))
-                .turnoT2(buildResumenTurno(disp.isTurnoT2Disponible(), t2, eventos))
-                .reservas(resReservas)
-                .eventos(resEventos)
-                .alertas(new ArrayList<>()) // Se puede implementar logica de alertas
+                .ingresoEstimado(ingresoEstimado)
+                .pagosPendientes(pagosPendientes)
+                .aforoPublicoActual(aforoActual)
+                .aforoMaximo(aforoMax)
+                .tipoOcupacion(tipoOcupacion)
+                .bloqueadoManualmente(bloqueado)
+                .turnoT1(turnoT1)
+                .turnoT2(turnoT2)
+                .reservas(reservas.stream().map(this::toResumenReserva).toList())
+                .eventos(eventos.stream().map(e -> toResumenEvento(e, cfg)).toList())
+                .alertas(alertas)
                 .build();
     }
 
-    private ResumenDiaQuery.ResumenTurno buildResumenTurno(
-            boolean disponible, Turno turno, List<EventoPrivado> eventos) {
-        
-        EventoPrivado ev = (turno == null) ? null : eventos.stream()
-                .filter(e -> e.getIdTurno().equals(turno.getId()))
-                .filter(e -> !e.getEstado().name().equals("CANCELADA"))
-                .findFirst().orElse(null);
-
-        return ResumenDiaQuery.ResumenTurno.builder()
-                .disponible(disponible)
-                .totalReservas(0) // No aplica a turnos especificos segun modelo actual
-                .eventoPrivado(ev != null ? toEventoQuery(ev, turno) : null)
+    private ResumenDiaQuery.ResumenReservaQuery toResumenReserva(ReservaPublica r) {
+        String nombreCliente = clientePerfilRepository.buscarPorId(r.getIdCliente())
+                .map(ClientePerfil::nombreCompleto)
+                .orElse(null);
+        return ResumenDiaQuery.ResumenReservaQuery.builder()
+                .id(r.getId())
+                .numeroTicket(r.getNumeroTicket())
+                .nombreNino(r.getNombreNino())
+                .nombreCliente(nombreCliente)
+                .estado(r.getEstado().name())
+                .totalPagado(r.getTotalPagado())
                 .build();
     }
 
-    private ResumenDiaQuery.ResumenEventoQuery toEventoQuery(EventoPrivado e, Turno t) {
-        Cliente c = clienteRepository.findById(e.getIdCliente()).orElse(null);
+    private ResumenDiaQuery.ResumenEventoQuery toResumenEvento(EventoPrivado e, ConfiguracionCalendario cfg) {
+        String nombreCliente = clientePerfilRepository.buscarPorId(e.getIdCliente())
+                .map(ClientePerfil::nombreCompleto)
+                .orElse(null);
+        String horaInicio = null;
+        String horaFin = null;
+        if ("T1".equals(e.getCodigoTurno()) && cfg.getTurnoT1Inicio() != null) {
+            horaInicio = cfg.getTurnoT1Inicio().toString();
+            horaFin = cfg.getTurnoT1Fin() != null ? cfg.getTurnoT1Fin().toString() : null;
+        } else if ("T2".equals(e.getCodigoTurno()) && cfg.getTurnoT2Inicio() != null) {
+            horaInicio = cfg.getTurnoT2Inicio().toString();
+            horaFin = cfg.getTurnoT2Fin() != null ? cfg.getTurnoT2Fin().toString() : null;
+        }
         return ResumenDiaQuery.ResumenEventoQuery.builder()
                 .id(e.getId())
                 .tipoEvento(e.getTipoEvento())
-                .turno(t != null ? t.getCodigo() : "N/A")
-                .horaInicio(t != null ? t.getHoraInicio().toString() : "")
-                .horaFin(t != null ? t.getHoraFin().toString() : "")
-                .nombreCliente(c != null ? c.nombreParaMostrar() : "Anonimo")
+                .turno(e.getCodigoTurno())
+                .horaInicio(horaInicio)
+                .horaFin(horaFin)
+                .nombreCliente(nombreCliente)
                 .estado(e.getEstado().name())
                 .aforoDeclarado(e.getAforoDeclarado())
                 .build();

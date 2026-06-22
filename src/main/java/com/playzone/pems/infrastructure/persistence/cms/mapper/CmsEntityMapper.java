@@ -2,102 +2,11 @@ package com.playzone.pems.infrastructure.persistence.cms.mapper;
 
 import com.playzone.pems.domain.cms.model.*;
 import com.playzone.pems.infrastructure.persistence.cms.entity.*;
-import com.playzone.pems.infrastructure.persistence.evento.entity.EventoPrivadoEntity;
-import com.playzone.pems.infrastructure.persistence.usuario.entity.ClienteEntity;
 import com.playzone.pems.infrastructure.persistence.usuario.entity.SedeEntity;
-import com.playzone.pems.infrastructure.persistence.usuario.entity.UsuarioAdminEntity;
 import org.springframework.stereotype.Component;
 
 @Component
 public class CmsEntityMapper {
-
-    // ── ContenidoWeb ─────────────────────────────────────────────────────────
-
-    public ContenidoWeb toDomain(ContenidoWebEntity e) {
-        if (e == null) return null;
-        return ContenidoWeb.builder()
-                .id(e.getId())
-                .idSeccion(e.getIdSeccion() != null ? e.getIdSeccion().longValue() : null)
-                .idTipoContenido(e.getIdTipoContenido() != null ? e.getIdTipoContenido().longValue() : null)
-                .clave(e.getClave())
-                .valorEs(e.getValorEs())
-                .valorEn(e.getValorEn())
-                .imagenUrl(e.getImagenUrl())
-                .descripcion(e.getDescripcion())
-                .ordenVisualizacion(e.getOrdenVisualizacion())
-                .visible(e.isVisible())
-                .version(e.getVersion())
-                .metadatos(e.getMetadatos())
-                .activo(e.isActivo())
-                .idUsuarioEditor(e.getUsuarioEditor() != null ? e.getUsuarioEditor().getId() : null)
-                .fechaActualizacion(e.getFechaActualizacion())
-                .build();
-    }
-
-    public ContenidoWebEntity toEntity(ContenidoWeb d, UsuarioAdminEntity editor) {
-        if (d == null) return null;
-        return ContenidoWebEntity.builder()
-                .id(d.getId())
-                .idSeccion(d.getIdSeccion() != null ? d.getIdSeccion().intValue() : null)
-                .idTipoContenido(d.getIdTipoContenido() != null ? d.getIdTipoContenido().intValue() : null)
-                .clave(d.getClave())
-                .valorEs(d.getValorEs())
-                .valorEn(d.getValorEn())
-                .imagenUrl(d.getImagenUrl())
-                .descripcion(d.getDescripcion())
-                .ordenVisualizacion(d.getOrdenVisualizacion())
-                .visible(d.isVisible())
-                .version(d.getVersion())
-                .metadatos(d.getMetadatos())
-                .activo(d.isActivo())
-                .usuarioEditor(editor)
-                .build();
-    }
-
-    // ── ImagenGaleria ────────────────────────────────────────────────────────
-
-    public ImagenGaleria toDomain(ImagenGaleriaEntity e) {
-        if (e == null) return null;
-        return ImagenGaleria.builder()
-                .id(e.getId())
-                .idSede(e.getSede().getId())
-                .urlImagen(e.getUrlImagen())
-                .altTexto(e.getAltTexto())
-                .titulo(e.getTitulo())
-                .descripcion(e.getDescripcion())
-                .categoriaImagen(e.getCategoriaImagen())
-                .tipoMime(e.getTipoMime())
-                .tamanioBytes(e.getTamanioBytes())
-                .ordenVisualizacion(e.getOrdenVisualizacion())
-                .activo(e.isActivo())
-                .destacada(e.isDestacada())
-                .eliminada(e.isEliminada())
-                .idUsuarioSubio(e.getUsuarioSubio() != null ? e.getUsuarioSubio().getId() : null)
-                .fechaSubida(e.getFechaSubida())
-                .build();
-    }
-
-    public ImagenGaleriaEntity toEntity(ImagenGaleria d, SedeEntity sede, UsuarioAdminEntity usuario) {
-        if (d == null) return null;
-        return ImagenGaleriaEntity.builder()
-                .id(d.getId())
-                .sede(sede)
-                .urlImagen(d.getUrlImagen())
-                .altTexto(d.getAltTexto())
-                .titulo(d.getTitulo())
-                .descripcion(d.getDescripcion())
-                .categoriaImagen(d.getCategoriaImagen())
-                .tipoMime(d.getTipoMime())
-                .tamanioBytes(d.getTamanioBytes())
-                .ordenVisualizacion(d.getOrdenVisualizacion())
-                .activo(d.isActivo())
-                .destacada(d.isDestacada())
-                .eliminada(d.isEliminada())
-                .usuarioSubio(usuario)
-                .build();
-    }
-
-    // ── Banner ───────────────────────────────────────────────────────────────
 
     public Banner toDomain(BannerEntity e) {
         if (e == null) return null;
@@ -119,12 +28,11 @@ public class CmsEntityMapper {
                 .prioridad(e.getPrioridad())
                 .soloMovil(e.isSoloMovil())
                 .soloDesktop(e.isSoloDesktop())
-                .idUsuarioCreador(e.getUsuarioCreador() != null ? e.getUsuarioCreador().getId() : null)
-                .fechaCreacion(e.getFechaCreacion())
+                .fechaCreacion(e.getCreatedAt())
                 .build();
     }
 
-    public BannerEntity toEntity(Banner d, SedeEntity sede, UsuarioAdminEntity creador) {
+    public BannerEntity toEntity(Banner d, SedeEntity sede) {
         if (d == null) return null;
         return BannerEntity.builder()
                 .id(d.getId())
@@ -136,7 +44,7 @@ public class CmsEntityMapper {
                 .enlaceDestino(d.getEnlaceDestino())
                 .textoBoton(d.getTextoBoton())
                 .colorOverlay(d.getColorOverlay())
-                .tipoBanner(d.getTipoBanner() != null ? d.getTipoBanner() : "HOME")
+                .tipoBanner(d.getTipoBanner())
                 .fechaInicio(d.getFechaInicio())
                 .fechaFin(d.getFechaFin())
                 .activo(d.isActivo())
@@ -144,18 +52,104 @@ public class CmsEntityMapper {
                 .prioridad(d.getPrioridad())
                 .soloMovil(d.isSoloMovil())
                 .soloDesktop(d.isSoloDesktop())
-                .usuarioCreador(creador)
                 .build();
     }
 
-    // ── Resena ───────────────────────────────────────────────────────────────
+    public ContenidoLegal toDomain(ContenidoLegalEntity e) {
+        if (e == null) return null;
+        return ContenidoLegal.builder()
+                .id(e.getId())
+                .tipo(e.getTipo())
+                .titulo(e.getTitulo())
+                .contenido(e.getContenido())
+                .version(e.getVersion())
+                .activo(e.isActivo())
+                .fechaActualizacion(e.getUpdatedAt())
+                .build();
+    }
+
+    public ContenidoLegalEntity toEntity(ContenidoLegal d) {
+        if (d == null) return null;
+        return ContenidoLegalEntity.builder()
+                .id(d.getId())
+                .tipo(d.getTipo())
+                .titulo(d.getTitulo())
+                .contenido(d.getContenido())
+                .version(d.getVersion())
+                .activo(d.isActivo())
+                .build();
+    }
+
+    public ContenidoWeb toDomain(ContenidoWebEntity e) {
+        if (e == null) return null;
+        return ContenidoWeb.builder()
+                .id(e.getId())
+                .seccionCodigo(e.getSeccionCodigo())
+                .tipoContenidoCodigo(e.getTipoContenidoCodigo())
+                .clave(e.getClave())
+                .valorEs(e.getValorEs())
+                .valorEn(e.getValorEn())
+                .imagenUrl(e.getImagenUrl())
+                .descripcion(e.getDescripcion())
+                .ordenVisualizacion(e.getOrden())
+                .visible(e.isVisible())
+                .version(e.getVersion())
+                .metadatos(e.getMetadatos())
+                .idUsuarioEditor(e.getUpdatedBy())
+                .fechaActualizacion(e.getUpdatedAt())
+                .build();
+    }
+
+    public ContenidoWebEntity toEntity(ContenidoWeb d) {
+        if (d == null) return null;
+        return ContenidoWebEntity.builder()
+                .id(d.getId())
+                .seccionCodigo(d.getSeccionCodigo())
+                .tipoContenidoCodigo(d.getTipoContenidoCodigo())
+                .clave(d.getClave())
+                .valorEs(d.getValorEs())
+                .valorEn(d.getValorEn())
+                .imagenUrl(d.getImagenUrl())
+                .descripcion(d.getDescripcion())
+                .orden(d.getOrdenVisualizacion())
+                .visible(d.isVisible())
+                .version(d.getVersion())
+                .metadatos(d.getMetadatos())
+                .updatedBy(d.getIdUsuarioEditor())
+                .build();
+    }
+
+    public Faq toDomain(FaqEntity e) {
+        if (e == null) return null;
+        return Faq.builder()
+                .id(e.getId())
+                .pregunta(e.getPregunta())
+                .respuesta(e.getRespuesta())
+                .ordenVisualizacion(e.getOrden())
+                .visible(e.isVisible())
+                .idUsuarioEditor(e.getUpdatedBy())
+                .fechaActualizacion(e.getUpdatedAt())
+                .build();
+    }
+
+    public FaqEntity toEntity(Faq d) {
+        if (d == null) return null;
+        return FaqEntity.builder()
+                .id(d.getId())
+                .pregunta(d.getPregunta())
+                .respuesta(d.getRespuesta())
+                .orden(d.getOrdenVisualizacion())
+                .visible(d.isVisible())
+                .updatedBy(d.getIdUsuarioEditor())
+                .build();
+    }
 
     public Resena toDomain(ResenaEntity e) {
         if (e == null) return null;
         return Resena.builder()
                 .id(e.getId())
-                .idCliente(e.getCliente() != null ? e.getCliente().getId() : null)
-                .idEventoPrivado(e.getEventoPrivado() != null ? e.getEventoPrivado().getId() : null)
+                .idCliente(e.getClienteId())
+                .idEventoPrivado(e.getEventoId())
                 .nombreAutor(e.getNombreAutor())
                 .contenido(e.getContenido())
                 .calificacion(e.getCalificacion())
@@ -165,18 +159,17 @@ public class CmsEntityMapper {
                 .fechaRespuesta(e.getFechaRespuesta())
                 .destacada(e.isDestacada())
                 .mostrarHome(e.isMostrarHome())
-                .idUsuarioAprueba(e.getUsuarioAprueba() != null ? e.getUsuarioAprueba().getId() : null)
-                .fechaCreacion(e.getFechaCreacion())
+                .idUsuarioAprueba(e.getAprobadaPor())
+                .fechaCreacion(e.getCreatedAt())
                 .build();
     }
 
-    public ResenaEntity toEntity(Resena d, ClienteEntity cliente, UsuarioAdminEntity aprueba,
-                                 EventoPrivadoEntity evento) {
+    public ResenaEntity toEntity(Resena d) {
         if (d == null) return null;
         return ResenaEntity.builder()
                 .id(d.getId())
-                .cliente(cliente)
-                .eventoPrivado(evento)
+                .clienteId(d.getIdCliente())
+                .eventoId(d.getIdEventoPrivado())
                 .nombreAutor(d.getNombreAutor())
                 .contenido(d.getContenido())
                 .calificacion(d.getCalificacion())
@@ -186,48 +179,101 @@ public class CmsEntityMapper {
                 .fechaRespuesta(d.getFechaRespuesta())
                 .destacada(d.isDestacada())
                 .mostrarHome(d.isMostrarHome())
-                .usuarioAprueba(aprueba)
+                .aprobadaPor(d.getIdUsuarioAprueba())
                 .build();
     }
 
-    // ── SeccionWeb ───────────────────────────────────────────────────────────
+    public ImagenGaleria toDomain(ImagenGaleriaEntity e) {
+        if (e == null) return null;
+        return ImagenGaleria.builder()
+                .id(e.getId())
+                .idSede(e.getSede() != null ? e.getSede().getId() : null)
+                .urlImagen(e.getUrlImagen())
+                .altTexto(e.getAltTexto())
+                .titulo(e.getTitulo())
+                .descripcion(e.getDescripcion())
+                .categoriaImagen(e.getCategoriaImagen())
+                .tipoMime(e.getTipoMime())
+                .tamanioBytes(e.getTamanioBytes())
+                .ordenVisualizacion(e.getOrdenVisualizacion())
+                .activo(e.isActivo())
+                .destacada(e.isDestacada())
+                .eliminada(e.getDeletedAt() != null)
+                .idUsuarioSubio(e.getSubidaPor())
+                .fechaSubida(e.getFechaSubida())
+                .build();
+    }
+
+    public ImagenGaleriaEntity toEntity(ImagenGaleria d, SedeEntity sede) {
+        if (d == null) return null;
+        return ImagenGaleriaEntity.builder()
+                .id(d.getId())
+                .sede(sede)
+                .urlImagen(d.getUrlImagen())
+                .altTexto(d.getAltTexto())
+                .titulo(d.getTitulo())
+                .descripcion(d.getDescripcion())
+                .categoriaImagen(d.getCategoriaImagen())
+                .tipoMime(d.getTipoMime())
+                .tamanioBytes(d.getTamanioBytes())
+                .ordenVisualizacion(d.getOrdenVisualizacion())
+                .activo(d.isActivo())
+                .destacada(d.isDestacada())
+                .subidaPor(d.getIdUsuarioSubio())
+                .build();
+    }
 
     public SeccionWeb toDomain(SeccionWebEntity e) {
         if (e == null) return null;
         return SeccionWeb.builder()
-                .id(e.getId())
                 .codigo(e.getCodigo())
                 .nombre(e.getNombre())
                 .descripcion(e.getDescripcion())
-                .ordenVisualizacion(e.getOrdenVisualizacion())
-                .visible(e.isVisible())
+                .esSistema(e.isEsSistema())
+                .activo(e.isActivo())
+                .orden(e.getOrden())
+                .createdAt(e.getCreatedAt())
+                .updatedAt(e.getUpdatedAt())
                 .build();
     }
 
     public SeccionWebEntity toEntity(SeccionWeb d) {
         if (d == null) return null;
         return SeccionWebEntity.builder()
-                .id(d.getId())
                 .codigo(d.getCodigo())
                 .nombre(d.getNombre())
                 .descripcion(d.getDescripcion())
-                .ordenVisualizacion(d.getOrdenVisualizacion())
-                .visible(d.isVisible())
+                .esSistema(d.isEsSistema())
+                .activo(d.isActivo())
+                .orden(d.getOrden())
                 .build();
     }
-
-    // ── TipoContenido ────────────────────────────────────────────────────────
 
     public TipoContenido toDomain(TipoContenidoEntity e) {
         if (e == null) return null;
         return TipoContenido.builder()
-                .id(e.getId())
                 .codigo(e.getCodigo())
+                .nombre(e.getNombre())
                 .descripcion(e.getDescripcion())
+                .esSistema(e.isEsSistema())
+                .activo(e.isActivo())
+                .orden(e.getOrden())
+                .createdAt(e.getCreatedAt())
+                .updatedAt(e.getUpdatedAt())
                 .build();
     }
 
-    // ── ConfiguracionPublica ─────────────────────────────────────────────────
+    public TipoContenidoEntity toEntity(TipoContenido d) {
+        if (d == null) return null;
+        return TipoContenidoEntity.builder()
+                .codigo(d.getCodigo())
+                .nombre(d.getNombre())
+                .descripcion(d.getDescripcion())
+                .esSistema(d.isEsSistema())
+                .activo(d.isActivo())
+                .orden(d.getOrden())
+                .build();
+    }
 
     public ConfiguracionPublica toDomain(ConfiguracionPublicaEntity e) {
         if (e == null) return null;
@@ -235,8 +281,8 @@ public class CmsEntityMapper {
                 .id(e.getId())
                 .nombreNegocio(e.getNombreNegocio())
                 .slogan(e.getSlogan())
-                .logoUrl(e.getLogoUrl())
-                .faviconUrl(e.getFaviconUrl())
+                .logoPath(e.getLogoPath())
+                .faviconPath(e.getFaviconPath())
                 .telefono(e.getTelefono())
                 .telefonoSecundario(e.getTelefonoSecundario())
                 .whatsapp(e.getWhatsapp())
@@ -249,21 +295,25 @@ public class CmsEntityMapper {
                 .youtubeUrl(e.getYoutubeUrl())
                 .googleMapsUrl(e.getGoogleMapsUrl())
                 .horarioSemana(e.getHorarioSemana())
-                .horarioFinDeSemana(e.getHorarioFinDeSemana())
+                .horarioFinSemana(e.getHorarioFinSemana())
                 .copyrightTexto(e.getCopyrightTexto())
                 .metaTitle(e.getMetaTitle())
                 .metaDescription(e.getMetaDescription())
                 .metaKeywords(e.getMetaKeywords())
                 .openGraphTitle(e.getOpenGraphTitle())
                 .openGraphDescription(e.getOpenGraphDescription())
-                .openGraphImageUrl(e.getOpenGraphImageUrl())
+                .openGraphImagePath(e.getOpenGraphImagePath())
                 .googleAnalyticsId(e.getGoogleAnalyticsId())
                 .metaPixelId(e.getMetaPixelId())
                 .colorTema(e.getColorTema())
                 .colorSecundario(e.getColorSecundario())
-                .mantenimientoActivo(e.isMantenimientoActivo())
+                .metricasNegocio(e.getMetricasNegocio())
+                .reglasLocal(e.getReglasLocal())
+                .esMantenimientoActivo(e.isEsMantenimientoActivo())
                 .mensajeMantenimiento(e.getMensajeMantenimiento())
-                .fechaActualizacion(e.getFechaActualizacion())
+                .createdAt(e.getCreatedAt())
+                .updatedAt(e.getUpdatedAt())
+                .updatedBy(e.getUpdatedBy())
                 .build();
     }
 
@@ -273,8 +323,8 @@ public class CmsEntityMapper {
                 .id(d.getId())
                 .nombreNegocio(d.getNombreNegocio())
                 .slogan(d.getSlogan())
-                .logoUrl(d.getLogoUrl())
-                .faviconUrl(d.getFaviconUrl())
+                .logoPath(d.getLogoPath())
+                .faviconPath(d.getFaviconPath())
                 .telefono(d.getTelefono())
                 .telefonoSecundario(d.getTelefonoSecundario())
                 .whatsapp(d.getWhatsapp())
@@ -287,76 +337,61 @@ public class CmsEntityMapper {
                 .youtubeUrl(d.getYoutubeUrl())
                 .googleMapsUrl(d.getGoogleMapsUrl())
                 .horarioSemana(d.getHorarioSemana())
-                .horarioFinDeSemana(d.getHorarioFinDeSemana())
+                .horarioFinSemana(d.getHorarioFinSemana())
                 .copyrightTexto(d.getCopyrightTexto())
                 .metaTitle(d.getMetaTitle())
                 .metaDescription(d.getMetaDescription())
                 .metaKeywords(d.getMetaKeywords())
                 .openGraphTitle(d.getOpenGraphTitle())
                 .openGraphDescription(d.getOpenGraphDescription())
-                .openGraphImageUrl(d.getOpenGraphImageUrl())
+                .openGraphImagePath(d.getOpenGraphImagePath())
                 .googleAnalyticsId(d.getGoogleAnalyticsId())
                 .metaPixelId(d.getMetaPixelId())
                 .colorTema(d.getColorTema())
                 .colorSecundario(d.getColorSecundario())
-                .mantenimientoActivo(d.isMantenimientoActivo())
+                .metricasNegocio(d.getMetricasNegocio())
+                .reglasLocal(d.getReglasLocal())
+                .esMantenimientoActivo(d.isEsMantenimientoActivo())
                 .mensajeMantenimiento(d.getMensajeMantenimiento())
+                .updatedBy(d.getUpdatedBy())
                 .build();
     }
 
-    // ── Faq ──────────────────────────────────────────────────────────────────
-
-    public Faq toDomain(FaqEntity e) {
+    public MensajeContacto toDomain(MensajeContactoEntity e) {
         if (e == null) return null;
-        return Faq.builder()
+        return MensajeContacto.builder()
                 .id(e.getId())
-                .pregunta(e.getPregunta())
+                .nombre(e.getNombre())
+                .correo(e.getCorreo())
+                .telefono(e.getTelefono())
+                .asunto(e.getAsunto())
+                .mensaje(e.getMensaje())
+                .estado(e.getEstado())
                 .respuesta(e.getRespuesta())
-                .ordenVisualizacion(e.getOrdenVisualizacion())
-                .visible(e.isVisible())
-                .idUsuarioEditor(e.getUsuarioEditor() != null ? e.getUsuarioEditor().getId() : null)
-                .fechaActualizacion(e.getFechaActualizacion())
+                .respondidoPor(e.getRespondidoPor())
+                .respondidoAt(e.getRespondidoAt())
+                .ipOrigen(e.getIpOrigen())
+                .userAgent(e.getUserAgent())
+                .createdAt(e.getCreatedAt())
+                .updatedAt(e.getUpdatedAt())
                 .build();
     }
 
-    public FaqEntity toEntity(Faq d, UsuarioAdminEntity editor) {
+    public MensajeContactoEntity toEntity(MensajeContacto d) {
         if (d == null) return null;
-        return FaqEntity.builder()
+        return MensajeContactoEntity.builder()
                 .id(d.getId())
-                .pregunta(d.getPregunta())
+                .nombre(d.getNombre())
+                .correo(d.getCorreo())
+                .telefono(d.getTelefono())
+                .asunto(d.getAsunto())
+                .mensaje(d.getMensaje())
+                .estado(d.getEstado())
                 .respuesta(d.getRespuesta())
-                .ordenVisualizacion(d.getOrdenVisualizacion())
-                .visible(d.isVisible())
-                .usuarioEditor(editor)
-                .build();
-    }
-
-    // ── ContenidoLegal ───────────────────────────────────────────────────────
-
-    public ContenidoLegal toDomain(ContenidoLegalEntity e) {
-        if (e == null) return null;
-        return ContenidoLegal.builder()
-                .id(e.getId())
-                .tipo(e.getTipo())
-                .titulo(e.getTitulo())
-                .contenido(e.getContenido())
-                .version(e.getVersion())
-                .activo(e.isActivo())
-                .idUsuarioEditor(e.getUsuarioEditor() != null ? e.getUsuarioEditor().getId() : null)
-                .fechaActualizacion(e.getFechaActualizacion())
-                .build();
-    }
-
-    public ContenidoLegalEntity toEntity(ContenidoLegal d, UsuarioAdminEntity editor) {
-        if (d == null) return null;
-        return ContenidoLegalEntity.builder()
-                .id(d.getId())
-                .tipo(d.getTipo())
-                .titulo(d.getTitulo())
-                .contenido(d.getContenido())
-                .version(d.getVersion())
-                .activo(d.isActivo())
-                .usuarioEditor(editor)
+                .respondidoPor(d.getRespondidoPor())
+                .respondidoAt(d.getRespondidoAt())
+                .ipOrigen(d.getIpOrigen())
+                .userAgent(d.getUserAgent())
                 .build();
     }
 }

@@ -1,13 +1,13 @@
 package com.playzone.pems.infrastructure.persistence.cms.entity;
 
 import com.playzone.pems.infrastructure.persistence.usuario.entity.SedeEntity;
-import com.playzone.pems.infrastructure.persistence.usuario.entity.UsuarioAdminEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "banner")
@@ -20,11 +20,11 @@ public class BannerEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idbanner")
+    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "idsede")
+    @JoinColumn(name = "sede_id")
     private SedeEntity sede;
 
     @Column(nullable = false, length = 200)
@@ -33,31 +33,31 @@ public class BannerEntity {
     @Column(length = 400)
     private String descripcion;
 
-    @Column(name = "imagenurl", nullable = false, length = 500)
+    @Column(name = "imagen_path", nullable = false, length = 500)
     private String imagenUrl;
 
-    @Column(name = "imagemovilurl", length = 500)
+    @Column(name = "imagen_movil_path", length = 500)
     private String imagenMovilUrl;
 
-    @Column(name = "enlacedestino", length = 500)
+    @Column(name = "enlace_destino", length = 500)
     private String enlaceDestino;
 
-    @Column(name = "textoboton", length = 80)
+    @Column(name = "texto_boton", length = 80)
     private String textoBoton;
 
-    @Column(name = "coloroverlay", length = 20)
+    @Column(name = "color_overlay", length = 20)
     private String colorOverlay;
 
-    @Column(name = "tipobanner", nullable = false, length = 40)
+    @Column(name = "tipo", nullable = false, length = 40)
     private String tipoBanner = "HOME";
 
-    @Column(name = "fechainicio", nullable = false)
+    @Column(name = "fecha_inicio", nullable = false)
     private LocalDate fechaInicio;
 
-    @Column(name = "fechafin")
+    @Column(name = "fecha_fin")
     private LocalDate fechaFin;
 
-    @Column(nullable = false)
+    @Column(name = "es_activo", nullable = false)
     private boolean activo = true;
 
     @Column(nullable = false)
@@ -66,17 +66,16 @@ public class BannerEntity {
     @Column(nullable = false)
     private int prioridad = 0;
 
-    @Column(name = "solomovil", nullable = false)
+    @Column(name = "solo_movil", nullable = false)
     private boolean soloMovil = false;
 
-    @Column(name = "solodesktop", nullable = false)
+    @Column(name = "solo_desktop", nullable = false)
     private boolean soloDesktop = false;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "idusuariocreador")
-    private UsuarioAdminEntity usuarioCreador;
+    @Column(name = "created_by", columnDefinition = "uuid")
+    private UUID createdBy;
 
     @CreationTimestamp
-    @Column(name = "fechacreacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
 }

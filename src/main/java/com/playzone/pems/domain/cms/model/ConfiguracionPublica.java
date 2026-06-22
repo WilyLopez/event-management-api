@@ -2,7 +2,8 @@ package com.playzone.pems.domain.cms.model;
 
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder(toBuilder = true)
@@ -15,8 +16,8 @@ public class ConfiguracionPublica {
     private String        nombreNegocio;
     private String        slogan;
 
-    private String        logoUrl;
-    private String        faviconUrl;
+    private String        logoPath;
+    private String        faviconPath;
 
     private String        telefono;
     private String        telefonoSecundario;
@@ -36,7 +37,7 @@ public class ConfiguracionPublica {
     private String        googleMapsUrl;
 
     private String        horarioSemana;
-    private String        horarioFinDeSemana;
+    private String        horarioFinSemana;
 
     private String        copyrightTexto;
 
@@ -46,7 +47,7 @@ public class ConfiguracionPublica {
 
     private String        openGraphTitle;
     private String        openGraphDescription;
-    private String        openGraphImageUrl;
+    private String        openGraphImagePath;
 
     private String        googleAnalyticsId;
     private String        metaPixelId;
@@ -54,8 +55,13 @@ public class ConfiguracionPublica {
     private String        colorTema;
     private String        colorSecundario;
 
-    private boolean       mantenimientoActivo;
+    private String        metricasNegocio;
+    private String        reglasLocal;
+
+    private boolean       esMantenimientoActivo;
     private String        mensajeMantenimiento;
 
-    private LocalDateTime fechaActualizacion;
+    private OffsetDateTime createdAt;
+    private OffsetDateTime updatedAt;
+    private UUID          updatedBy;
 }

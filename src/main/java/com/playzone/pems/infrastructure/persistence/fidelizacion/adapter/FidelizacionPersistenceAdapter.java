@@ -5,8 +5,6 @@ import com.playzone.pems.domain.fidelizacion.repository.HistorialFidelizacionRep
 import com.playzone.pems.infrastructure.persistence.evento.jpa.ReservaPublicaJpaRepository;
 import com.playzone.pems.infrastructure.persistence.fidelizacion.jpa.HistorialFidelizacionJpaRepository;
 import com.playzone.pems.infrastructure.persistence.fidelizacion.mapper.HistorialFidelizacionEntityMapper;
-import com.playzone.pems.infrastructure.persistence.usuario.jpa.ClienteJpaRepository;
-import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,7 +18,6 @@ import java.util.Optional;
 public class FidelizacionPersistenceAdapter implements HistorialFidelizacionRepository {
 
     private final HistorialFidelizacionJpaRepository historialJpa;
-    private final ClienteJpaRepository               clienteJpa;
     private final ReservaPublicaJpaRepository        reservaJpa;
     private final HistorialFidelizacionEntityMapper  mapper;
 
@@ -33,7 +30,7 @@ public class FidelizacionPersistenceAdapter implements HistorialFidelizacionRepo
     }
 
     @Override public Page<HistorialFidelizacion> findByCliente(Long idCliente, Pageable pageable) {
-        return historialJpa.findByCliente_IdOrderByVisitaNumeroDesc(idCliente, pageable).map(mapper::toDomain);
+        return historialJpa.findByClienteIdOrderByVisitaNumeroDesc(idCliente, pageable).map(mapper::toDomain);
     }
 
     @Override public int countVisitasByCliente(Long idCliente) {
@@ -47,10 +44,8 @@ public class FidelizacionPersistenceAdapter implements HistorialFidelizacionRepo
     @Override
     @Transactional
     public HistorialFidelizacion save(HistorialFidelizacion h) {
-        var cliente  = clienteJpa.findById(h.getIdCliente())
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente", h.getIdCliente()));
-        var reserva  = h.getIdReservaPublica() != null
+        var reserva = h.getIdReservaPublica() != null
                 ? reservaJpa.findById(h.getIdReservaPublica()).orElse(null) : null;
-        return mapper.toDomain(historialJpa.save(mapper.toEntity(h, cliente, reserva)));
+        return mapper.toDomain(historialJpa.save(mapper.toEntity(h, reserva)));
     }
 }

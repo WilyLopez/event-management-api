@@ -2,9 +2,13 @@ package com.playzone.pems.infrastructure.persistence.cms.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "seccionweb")
+@Table(name = "seccion_web")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -13,22 +17,30 @@ import lombok.*;
 public class SeccionWebEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idseccion")
-    private Long id;
-
-    @Column(unique = true, nullable = false, length = 50)
+    @Column(name = "codigo", nullable = false, length = 50)
     private String codigo;
 
-    @Column(nullable = false, length = 120)
+    @Column(name = "nombre", nullable = false, length = 120)
     private String nombre;
 
-    @Column(length = 300)
+    @Column(name = "descripcion", length = 300)
     private String descripcion;
 
-    @Column(name = "ordenvisualizacion", nullable = false)
-    private int ordenVisualizacion = 0;
+    @Column(name = "es_sistema", nullable = false)
+    private boolean esSistema;
 
-    @Column(nullable = false)
-    private boolean visible = true;
+    @Column(name = "activo", nullable = false)
+    @Builder.Default
+    private boolean activo = true;
+
+    @Column(name = "orden", nullable = false)
+    private int orden;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt;
 }

@@ -2,9 +2,9 @@ package com.playzone.pems.infrastructure.persistence.evento.entity;
 
 import com.playzone.pems.domain.evento.model.enums.EstadoEventoPrivado;
 import com.playzone.pems.infrastructure.persistence.calendario.entity.TurnoEntity;
-import com.playzone.pems.infrastructure.persistence.usuario.entity.ClienteEntity;
 import com.playzone.pems.infrastructure.persistence.usuario.entity.SedeEntity;
-import com.playzone.pems.infrastructure.persistence.usuario.entity.UsuarioAdminEntity;
+
+import java.util.UUID;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -12,11 +12,11 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "eventoprivado",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"idsede", "fechaevento", "idturno"}))
+@Table(name = "evento",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"sede_id", "fecha_evento", "turno_codigo"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,72 +26,98 @@ public class EventoPrivadoEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ideventoprivado")
+    @Column(name = "id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "idcliente", nullable = false)
-    private ClienteEntity cliente;
+    @Column(name = "cliente_id")
+    private Long clienteId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "idsede", nullable = false)
+    @JoinColumn(name = "sede_id", nullable = false)
     private SedeEntity sede;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "idestado", nullable = false, length = 40)
+    @Column(name = "estado_codigo", nullable = false, length = 40)
     private EstadoEventoPrivado estado;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "idturno", nullable = false)
+    @JoinColumn(name = "turno_codigo", referencedColumnName = "codigo", nullable = false)
     private TurnoEntity turno;
 
-    @Column(name = "fechaevento", nullable = false)
+    @Column(name = "fecha_evento", nullable = false)
     private LocalDate fechaEvento;
 
-    @Column(name = "tipoevento", nullable = false, length = 200)
+    @Column(name = "tipo_evento_codigo", nullable = false, length = 200)
     private String tipoEvento;
 
-    @Column(name = "contactoadicional", length = 200)
+    @Column(name = "contacto_adicional", length = 200)
     private String contactoAdicional;
 
-    @Column(name = "aforodeclarado")
+    @Column(name = "aforo_declarado")
     private Integer aforoDeclarado;
 
-    @Column(name = "preciototalcontrato", precision = 10, scale = 2)
-    private BigDecimal precioTotalContrato;
+    @Column(name = "precio_contrato", precision = 10, scale = 2)
+    private BigDecimal precioContrato;
 
-    @Column(name = "montoadelanto", precision = 10, scale = 2)
+    @Column(name = "monto_adelanto", precision = 10, scale = 2)
     @Builder.Default
     private BigDecimal montoAdelanto = BigDecimal.ZERO;
 
-    @Column(name = "motivocancelacion", length = 500)
+    @Column(name = "motivo_cancelacion", length = 500)
     private String motivoCancelacion;
 
-    @Column(name = "notasinternas", columnDefinition = "TEXT")
+    @Column(name = "notas_internas", columnDefinition = "TEXT")
     private String notasInternas;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "idusuariogestor")
-    private UsuarioAdminEntity usuarioGestor;
+    @Column(name = "nombre_nino", length = 120)
+    private String nombreNino;
 
-    @Column(name = "estadooperativo", length = 40)
+    @Column(name = "edad_cumple")
+    private Integer edadCumple;
+
+    @Column(name = "paquete_id")
+    private Long paqueteId;
+
+    @Column(name = "descripcion_personalizada", columnDefinition = "TEXT")
+    private String descripcionPersonalizada;
+
+    @Column(name = "presupuesto_estimado", precision = 10, scale = 2)
+    private BigDecimal presupuestoEstimado;
+
+    @Column(name = "es_cotizacion_personalizada", nullable = false)
+    @Builder.Default
+    private boolean esCotizacionPersonalizada = false;
+
+    @Column(name = "usuario_gestor_id", columnDefinition = "uuid")
+    private UUID usuarioGestorId;
+
+    @Column(name = "estado_operativo", length = 40)
     private String estadoOperativo;
 
-    @Column(name = "checklistcompleto", nullable = false)
+    @Column(name = "checklist_completo", nullable = false)
     @Builder.Default
     private boolean checklistCompleto = false;
 
-    @Column(name = "horainicioreal")
-    private LocalDateTime horaInicioReal;
+    @Column(name = "hora_inicio_real")
+    private OffsetDateTime horaInicioReal;
 
-    @Column(name = "horafinreal")
-    private LocalDateTime horaFinReal;
+    @Column(name = "hora_fin_real")
+    private OffsetDateTime horaFinReal;
 
     @CreationTimestamp
-    @Column(name = "fechacreacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "fechaactualizacion", nullable = false)
-    private LocalDateTime fechaActualizacion;
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt;
+
+    @Column(name = "created_by", columnDefinition = "uuid")
+    private UUID createdBy;
+
+    @Column(name = "updated_by", columnDefinition = "uuid")
+    private UUID updatedBy;
+
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
 }

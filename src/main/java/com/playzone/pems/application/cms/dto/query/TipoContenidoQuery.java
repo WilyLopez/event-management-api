@@ -8,15 +8,21 @@ import lombok.Getter;
 @Builder
 public class TipoContenidoQuery {
 
-    private Long   id;
-    private String codigo;
-    private String descripcion;
+    private String  codigo;
+    private String  nombre;
+    private String  descripcion;
+    private boolean esSistema;
+    private boolean activo;
+    private int     orden;
 
     public static TipoContenidoQuery from(TipoContenido t) {
         return TipoContenidoQuery.builder()
-                .id(t.getId())
                 .codigo(t.getCodigo())
+                .nombre(t.getNombre())
                 .descripcion(t.getDescripcion())
+                .esSistema(t.isEsSistema())
+                .activo(t.isActivo())
+                .orden(t.getOrden())
                 .build();
     }
 }

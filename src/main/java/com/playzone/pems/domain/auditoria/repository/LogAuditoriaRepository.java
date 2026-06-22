@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface LogAuditoriaRepository {
 
@@ -13,7 +14,7 @@ public interface LogAuditoriaRepository {
 
     Optional<LogAuditoria> findById(Long id);
 
-    Page<LogAuditoria> findByUsuario(Long idUsuarioAdmin, Pageable pageable);
+    Page<LogAuditoria> findByUsuario(UUID idUsuarioAdmin, Pageable pageable);
 
     Page<LogAuditoria> findByModuloAndEntidad(
             String modulo, String entidad, Pageable pageable);
@@ -23,6 +24,6 @@ public interface LogAuditoriaRepository {
 
     Page<LogAuditoria> findByFiltros(
             LocalDateTime desde, LocalDateTime hasta,
-            Long idUsuario, String modulo, String accion, String entidad,
+            UUID idUsuario, String modulo, String accion, String entidad,
             Pageable pageable);
 }

@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface FaqJpaRepository extends JpaRepository<FaqEntity, Long> {
 
-    List<FaqEntity> findByVisibleTrueOrderByOrdenVisualizacionAsc();
+    List<FaqEntity> findByVisibleTrueOrderByOrdenAsc();
 }

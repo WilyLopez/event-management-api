@@ -2,9 +2,10 @@ package com.playzone.pems.infrastructure.persistence.evento.mapper;
 
 import com.playzone.pems.domain.evento.model.ReservaPublica;
 import com.playzone.pems.infrastructure.persistence.evento.entity.ReservaPublicaEntity;
-import com.playzone.pems.infrastructure.persistence.usuario.entity.ClienteEntity;
 import com.playzone.pems.infrastructure.persistence.usuario.entity.SedeEntity;
 import org.springframework.stereotype.Component;
+
+import java.time.ZoneOffset;
 
 @Component
 public class ReservaPublicaEntityMapper {
@@ -13,7 +14,8 @@ public class ReservaPublicaEntityMapper {
         if (e == null) return null;
         return ReservaPublica.builder()
                 .id(e.getId())
-                .idCliente(e.getCliente().getId())
+                .ventaId(e.getVentaId())
+                .idCliente(e.getClienteId())
                 .idSede(e.getSede().getId())
                 .estado(e.getEstado())
                 .canalReserva(e.getCanalReserva())
@@ -33,23 +35,24 @@ public class ReservaPublicaEntityMapper {
                 .firmoConsentimiento(e.isFirmoConsentimiento())
                 .motivoCancelacion(e.getMotivoCancelacion())
                 .ingresado(e.isIngresado())
-                .fechaIngreso(e.getFechaIngreso())
+                .ingresoAt(e.getIngresoAt())
                 .codigoQr(e.getCodigoQr())
-                .medioPago(e.getMedioPago())
-                .referenciaPago(e.getReferenciaPago())
-                .fechaCreacion(e.getFechaCreacion())
-                .fechaActualizacion(e.getFechaActualizacion())
+                .createdAt(e.getCreatedAt())
+                .updatedAt(e.getUpdatedAt())
+                .createdBy(e.getCreatedBy())
+                .updatedBy(e.getUpdatedBy())
+                .deletedAt(e.getDeletedAt())
                 .build();
     }
 
     public ReservaPublicaEntity toEntity(ReservaPublica d,
-                                          ClienteEntity cliente,
                                           SedeEntity sede,
                                           ReservaPublicaEntity reservaOriginal) {
         if (d == null) return null;
         return ReservaPublicaEntity.builder()
                 .id(d.getId())
-                .cliente(cliente)
+                .ventaId(d.getVentaId())
+                .clienteId(d.getIdCliente())
                 .sede(sede)
                 .estado(d.getEstado())
                 .canalReserva(d.getCanalReserva())
@@ -58,7 +61,6 @@ public class ReservaPublicaEntityMapper {
                 .esReprogramacion(d.isEsReprogramacion())
                 .vecesReprogramada(d.getVecesReprogramada())
                 .fechaEvento(d.getFechaEvento())
-                .numeroTicket(d.getNumeroTicket())
                 .precioHistorico(d.getPrecioHistorico())
                 .descuentoAplicado(d.getDescuentoAplicado())
                 .totalPagado(d.getTotalPagado())
@@ -69,10 +71,11 @@ public class ReservaPublicaEntityMapper {
                 .firmoConsentimiento(d.isFirmoConsentimiento())
                 .motivoCancelacion(d.getMotivoCancelacion())
                 .ingresado(d.isIngresado())
-                .fechaIngreso(d.getFechaIngreso())
+                .ingresoAt(d.getIngresoAt())
                 .codigoQr(d.getCodigoQr())
-                .medioPago(d.getMedioPago())
-                .referenciaPago(d.getReferenciaPago())
+                .createdBy(d.getCreatedBy())
+                .updatedBy(d.getUpdatedBy())
+                .deletedAt(d.getDeletedAt())
                 .build();
     }
 }

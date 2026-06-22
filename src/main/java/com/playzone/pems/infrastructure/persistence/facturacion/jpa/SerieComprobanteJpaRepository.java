@@ -20,4 +20,7 @@ public interface SerieComprobanteJpaRepository extends JpaRepository<SerieCompro
 
     @Query("SELECT s.correlativoActual FROM SerieComprobanteEntity s WHERE s.id = :id")
     int findCorrelativoActual(@Param("id") Long id);
+
+    @Query(value = "SELECT app.obtener_siguiente_correlativo(:sedeId, :tipoComp)", nativeQuery = true)
+    Long obtenerSiguienteCorrelativo(@Param("sedeId") Long sedeId, @Param("tipoComp") String tipoComp);
 }

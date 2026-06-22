@@ -3,7 +3,7 @@ package com.playzone.pems.interfaces.rest.cms.response;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder
@@ -15,8 +15,8 @@ public class ResenaResponse {
     private final boolean       aprobada;
     private final String        fotoUrl;
     private final String        respuestaAdmin;
-    private final LocalDateTime fechaRespuesta;
+    private final OffsetDateTime fechaRespuesta;
     private final boolean       destacada;
     private final boolean       mostrarHome;
-    private final LocalDateTime fechaCreacion;
+    private final OffsetDateTime fechaCreacion;
 }

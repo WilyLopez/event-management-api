@@ -18,8 +18,8 @@ public class SeccionWebPersistenceAdapter implements SeccionWebRepository {
     private final CmsEntityMapper         mapper;
 
     @Override
-    public Optional<SeccionWeb> findById(Long id) {
-        return seccionWebJpa.findById(id).map(mapper::toDomain);
+    public Optional<SeccionWeb> findById(String codigo) {
+        return seccionWebJpa.findById(codigo).map(mapper::toDomain);
     }
 
     @Override
@@ -33,8 +33,8 @@ public class SeccionWebPersistenceAdapter implements SeccionWebRepository {
     }
 
     @Override
-    public List<SeccionWeb> findVisibles() {
-        return seccionWebJpa.findByVisibleTrueOrderByOrdenVisualizacionAsc()
+    public List<SeccionWeb> findActivas() {
+        return seccionWebJpa.findByActivoTrueOrderByOrdenAsc()
                 .stream().map(mapper::toDomain).toList();
     }
 
@@ -44,8 +44,8 @@ public class SeccionWebPersistenceAdapter implements SeccionWebRepository {
     }
 
     @Override
-    public void deleteById(Long id) {
-        seccionWebJpa.deleteById(id);
+    public void deleteById(String codigo) {
+        seccionWebJpa.deleteById(codigo);
     }
 
     @Override

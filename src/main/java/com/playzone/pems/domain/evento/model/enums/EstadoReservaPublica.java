@@ -1,13 +1,8 @@
 package com.playzone.pems.domain.evento.model.enums;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-
 import java.util.Arrays;
 import java.util.Set;
 
-@Getter
-@RequiredArgsConstructor
 public enum EstadoReservaPublica {
 
     PENDIENTE(
@@ -33,6 +28,14 @@ public enum EstadoReservaPublica {
 
     private final String codigo;
     private final String descripcion;
+
+    EstadoReservaPublica(String codigo, String descripcion) {
+        this.codigo = codigo;
+        this.descripcion = descripcion;
+    }
+
+    public String getCodigo() { return codigo; }
+    public String getDescripcion() { return descripcion; }
 
     private static final Set<EstadoReservaPublica> ESTADOS_TERMINALES =
             Set.of(COMPLETADA, CANCELADA);

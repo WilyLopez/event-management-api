@@ -12,7 +12,11 @@ public interface BloqueCalendarioRepository {
 
     List<BloqueCalendario> findActivosBySede(Long idSede);
 
+    List<BloqueCalendario> findActivosBySedeAndRango(Long idSede, LocalDate inicio, LocalDate fin);
+
     boolean existsBloqueActivoEnFecha(Long idSede, LocalDate fecha);
+
+    boolean existsBloqueEfectivoEnFecha(Long idSede, LocalDate fecha);
 
     boolean existsSolapamientoEnRango(Long idSede, LocalDate inicio, LocalDate fin);
 

@@ -4,15 +4,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -22,7 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtFilter;
+    private final SupabaseJwtFilter supabaseJwtFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -31,55 +27,59 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(supabaseJwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
-
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        .requestMatchers(
-                                "/error",
-                                "/api/v1/auth/**",
-                                "/api/v1/clientes/registro",
-                                "/api/v1/clientes/verificar",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**"
-                        ).permitAll()
-
                         .requestMatchers(HttpMethod.GET,
-                                "/api/v1/public/**",
+                                "/api/v1/sedes/**",
                                 "/api/v1/calendario/**",
-                                "/api/v1/contenido/**",
-                                "/api/v1/galeria/**",
+                                "/api/v1/feriados",
+                                "/api/v1/tarifas",
+                                "/api/v1/tarifas/sedes/*/precios",
                                 "/api/v1/banners/**",
-                                "/api/v1/resenas/**"
+                                "/api/v1/galeria/**",
+                                "/api/v1/cms/**",
+                                "/api/v1/contenido/**",
+                                "/api/v1/resenas/**",
+                                "/api/v1/promociones/**",
+                                "/api/v1/actividades/**",
+                                "/api/v1/novedades/**",
+                                "/api/v1/paquetes/**",
+                                "/api/v1/tipos-evento",
+                                "/api/v1/zonas/**",
+                                "/api/v1/servicios-cotizacion/**",
+                                "/api/v1/health/ping"
                         ).permitAll()
-
-                        .requestMatchers(
-                                "/api/v1/admin/**",
-                                "/api/v1/usuarios-admin/**",
-                                "/api/v1/auditoria/**"
-                        ).hasRole("ADMIN")
-
-                        .requestMatchers(
-                                "/api/v1/clientes/**",
-                                "/api/v1/reservas/**",
-                                "/api/v1/eventos-privados/**"
-                        ).hasAnyRole("CLIENTE", "ADMIN")
-
-                        .anyRequest().hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, 
+                                "/api/v1/resenas",
+                                "/api/v1/clientes/registro",
+                                "/api/v1/auth/**"
+                        ).permitAll()
+                        .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((req, res, e) -> {
+                            res.setStatus(401);
+                            res.setContentType("application/json");
+                            res.setCharacterEncoding("UTF-8");
+                            res.getWriter().write(jsonError("unauthorized", e.getMessage()));
+                        })
+                        .accessDeniedHandler((req, res, e) -> {
+                            res.setStatus(403);
+                            res.setContentType("application/json");
+                            res.setCharacterEncoding("UTF-8");
+                            res.getWriter().write(jsonError("forbidden", e.getMessage()));
+                        })
+                );
 
         return http.build();
     }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(12);
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
+    private static String jsonError(String error, String message) {
+        String safeMsg = message == null ? "" : message
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "");
+        return "{\"error\":\"" + error + "\",\"message\":\"" + safeMsg + "\"}";
     }
 }

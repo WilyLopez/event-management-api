@@ -3,7 +3,8 @@ package com.playzone.pems.domain.calendario.model;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder(toBuilder = true)
@@ -15,10 +16,11 @@ public class BloqueCalendario {
     private Long          idSede;
     private LocalDate     fechaInicio;
     private LocalDate     fechaFin;
+    private String        tipoBloqueo;
     private String        motivo;
     private boolean       activo;
-    private Long          idUsuarioCreador;
-    private LocalDateTime fechaCreacion;
+    private UUID          idUsuarioCreador;
+    private OffsetDateTime createdAt;
 
     public boolean comprendeFecha(LocalDate fecha) {
         return activo

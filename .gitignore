@@ -6,6 +6,7 @@ logs/
 *.log
 hs_err_pid*
 replay_pid*
+uploads*
 
 ### Variables de entorno (NUNCA subir al repositorio) ###
 .env
@@ -29,6 +30,7 @@ replay_pid*
 *.iws
 *.iml
 *.ipr
+*.md
 
 ### NetBeans ###
 /nbproject/private/

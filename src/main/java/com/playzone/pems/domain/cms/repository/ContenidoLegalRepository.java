@@ -9,9 +9,13 @@ public interface ContenidoLegalRepository {
 
     Optional<ContenidoLegal> findById(Long id);
 
+    Optional<ContenidoLegal> findByTipo(String tipo);
+
     Optional<ContenidoLegal> findActivoByTipo(String tipo);
 
     List<ContenidoLegal> findAll();
 
     ContenidoLegal save(ContenidoLegal contenidoLegal);
+
+    void deleteByTipo(String tipo);
 }

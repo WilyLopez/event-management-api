@@ -10,9 +10,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +30,7 @@ public class ChecklistEventoService implements GestionarChecklistUseCase {
 
     @Override
     @Transactional
-    public ChecklistEventoQuery completar(Long idChecklist, Long idUsuarioAdmin) {
+    public ChecklistEventoQuery completar(Long idChecklist, UUID idUsuarioAdmin) {
         ChecklistEvento item = checklistRepository.findById(idChecklist)
                 .orElseThrow(() -> new ResourceNotFoundException("ChecklistEvento", idChecklist));
 
@@ -40,7 +41,7 @@ public class ChecklistEventoService implements GestionarChecklistUseCase {
         return toQuery(checklistRepository.save(item.toBuilder()
                 .completada(true)
                 .idUsuarioCompleto(idUsuarioAdmin)
-                .fechaCompletado(LocalDateTime.now(ZoneId.of("America/Lima")))
+                .fechaCompletado(OffsetDateTime.now(ZoneId.of("America/Lima")))
                 .build()));
     }
 

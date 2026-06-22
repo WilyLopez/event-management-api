@@ -6,7 +6,7 @@ import com.playzone.pems.domain.facturacion.model.enums.TipoDocReceptor;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder(toBuilder = true)
@@ -38,8 +38,8 @@ public class Comprobante {
     private String            cdrDescripcion;
     private String            motivoAnulacion;
     private Long              idComprobanteNota;
-    private LocalDateTime     fechaEmision;
-    private LocalDateTime     fechaActualizacion;
+    private OffsetDateTime     fechaEmision;
+    private OffsetDateTime     fechaActualizacion;
 
     public boolean tieneValidezFiscal() {
         return estadoComprobante.tieneValidezFiscal();

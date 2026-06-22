@@ -2,8 +2,10 @@ package com.playzone.pems.interfaces.rest.cms;
 
 import com.playzone.pems.application.cms.port.in.ModerarResenaUseCase;
 import com.playzone.pems.domain.cms.model.Resena;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.interfaces.rest.cms.response.ResenaResponse;
 import com.playzone.pems.shared.response.ApiResponse;
+import com.playzone.pems.shared.response.PagedResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -12,13 +14,13 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/v1/resenas")
@@ -26,13 +28,16 @@ import java.util.List;
 public class ResenaController {
 
     private final ModerarResenaUseCase moderarUseCase;
+    private final SupabaseAuthFacade   supabaseAuthFacade;
 
     // ── Público ──────────────────────────────────────────────────────────
 
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<ResenaResponse>> submit(
-            @Valid @RequestBody SubmitResenaRequest request,
-            @RequestAttribute(required = false) Long idCliente) {
+            @Valid @RequestBody SubmitResenaRequest request) {
+        Long idCliente = supabaseAuthFacade.clientePerfilId()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Cliente sin perfil asociado"));
         Resena resena = moderarUseCase.submit(new ModerarResenaUseCase.SubmitCommand(
                 idCliente,
                 request.getIdEventoPrivado(),
@@ -43,54 +48,68 @@ public class ResenaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(resena)));
     }
 
+    @GetMapping("/publicas")
+    public ResponseEntity<ApiResponse<PagedResponse<ResenaResponse>>> listarPublicas(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        var pageable = PageRequest.of(page, size);
+        PagedResponse<ResenaResponse> response = PagedResponse.of(
+                moderarUseCase.listar(false, pageable).map(this::toResponse));
+        return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
     // ── Admin ─────────────────────────────────────────────────────────────
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<List<ResenaResponse>>> listar(
+    @PreAuthorize("hasAuthority('sitio.resena')")
+    public ResponseEntity<ApiResponse<PagedResponse<ResenaResponse>>> listar(
             @RequestParam(defaultValue = "false") boolean pendientes,
-            Pageable pageable) {
-        var responses = moderarUseCase.listar(pendientes, pageable)
-                .getContent().stream().map(this::toResponse).toList();
-        return ResponseEntity.ok(ApiResponse.ok(responses));
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "fechaCreacion") String sort,
+            @RequestParam(defaultValue = "desc") String dir) {
+        String sortField = "fechaCreacion".equals(sort) ? "createdAt" : sort;
+        var pageable = PageRequest.of(page, size,
+                "asc".equalsIgnoreCase(dir) ? Sort.Direction.ASC : Sort.Direction.DESC, sortField);
+        PagedResponse<ResenaResponse> response = PagedResponse.of(
+                moderarUseCase.listar(pendientes, pageable).map(this::toResponse));
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     @PostMapping("/{idResena}/aprobar")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.resena')")
     public ResponseEntity<ApiResponse<ResenaResponse>> aprobar(
-            @PathVariable Long idResena,
-            @RequestAttribute Long idUsuarioAdmin) {
+            @PathVariable Long idResena) {
         return ResponseEntity.ok(ApiResponse.ok(
-                toResponse(moderarUseCase.aprobar(idResena, idUsuarioAdmin))));
+                toResponse(moderarUseCase.aprobar(idResena, supabaseAuthFacade.usuarioActualId().orElseThrow()))));
     }
 
     @PostMapping("/{idResena}/responder")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.resena')")
     public ResponseEntity<ApiResponse<ResenaResponse>> responder(
             @PathVariable Long idResena,
-            @Valid @RequestBody ResponderRequest request,
-            @RequestAttribute Long idUsuarioAdmin) {
+            @Valid @RequestBody ResponderRequest request) {
         return ResponseEntity.ok(ApiResponse.ok(
                 toResponse(moderarUseCase.responder(new ModerarResenaUseCase.ResponderCommand(
-                        idResena, request.getRespuesta(), idUsuarioAdmin)))));
+                        idResena, request.getRespuesta(), supabaseAuthFacade.usuarioActualId().orElseThrow())))));
     }
 
     @PatchMapping("/{idResena}/destacar")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.resena')")
     public ResponseEntity<ApiResponse<Void>> destacar(@PathVariable Long idResena) {
         moderarUseCase.destacar(idResena);
         return ResponseEntity.ok(ApiResponse.noContent());
     }
 
     @PatchMapping("/{idResena}/quitar-destacado")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.resena')")
     public ResponseEntity<ApiResponse<Void>> quitarDestacado(@PathVariable Long idResena) {
         moderarUseCase.quitarDestacado(idResena);
         return ResponseEntity.ok(ApiResponse.noContent());
     }
 
     @PatchMapping("/{idResena}/home")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.resena')")
     public ResponseEntity<ApiResponse<Void>> toggleHome(
             @PathVariable Long idResena,
             @RequestParam boolean mostrar) {
@@ -99,7 +118,7 @@ public class ResenaController {
     }
 
     @DeleteMapping("/{idResena}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('sitio.resena')")
     public ResponseEntity<ApiResponse<Void>> rechazar(@PathVariable Long idResena) {
         moderarUseCase.rechazar(idResena);
         return ResponseEntity.ok(ApiResponse.noContent());

@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.UUID;
+
 @Getter
 @Builder
 public class AnularComprobanteCommand {
@@ -17,6 +19,5 @@ public class AnularComprobanteCommand {
     @Size(max = 300)
     private final String motivoAnulacion;
 
-    @NotNull
-    private final Long idUsuario;
+    private final UUID idUsuario;
 }

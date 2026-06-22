@@ -4,7 +4,6 @@ import com.playzone.pems.domain.cms.model.Faq;
 import com.playzone.pems.domain.cms.repository.FaqRepository;
 import com.playzone.pems.infrastructure.persistence.cms.jpa.FaqJpaRepository;
 import com.playzone.pems.infrastructure.persistence.cms.mapper.CmsEntityMapper;
-import com.playzone.pems.infrastructure.persistence.usuario.jpa.UsuarioAdminJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,9 +17,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class FaqPersistenceAdapter implements FaqRepository {
 
-    private final FaqJpaRepository          faqJpa;
-    private final UsuarioAdminJpaRepository adminJpa;
-    private final CmsEntityMapper           mapper;
+    private final FaqJpaRepository faqJpa;
+    private final CmsEntityMapper  mapper;
 
     @Override
     public Optional<Faq> findById(Long id) {
@@ -34,16 +32,14 @@ public class FaqPersistenceAdapter implements FaqRepository {
 
     @Override
     public List<Faq> findVisibles() {
-        return faqJpa.findByVisibleTrueOrderByOrdenVisualizacionAsc()
+        return faqJpa.findByVisibleTrueOrderByOrdenAsc()
                 .stream().map(mapper::toDomain).toList();
     }
 
     @Override
     @Transactional
     public Faq save(Faq faq) {
-        var editor = faq.getIdUsuarioEditor() != null
-                ? adminJpa.findById(faq.getIdUsuarioEditor()).orElse(null) : null;
-        return mapper.toDomain(faqJpa.save(mapper.toEntity(faq, editor)));
+        return mapper.toDomain(faqJpa.save(mapper.toEntity(faq)));
     }
 
     @Override

@@ -1,11 +1,11 @@
 package com.playzone.pems.infrastructure.persistence.cms.entity;
 
-import com.playzone.pems.infrastructure.persistence.usuario.entity.UsuarioAdminEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "faq")
@@ -18,7 +18,6 @@ public class FaqEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idfaq")
     private Long id;
 
     @Column(nullable = false, length = 300)
@@ -27,17 +26,16 @@ public class FaqEntity {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String respuesta;
 
-    @Column(name = "ordenvisualizacion", nullable = false)
-    private int ordenVisualizacion = 0;
-
     @Column(nullable = false)
-    private boolean visible = true;
+    private int orden;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "idusuarioeditor")
-    private UsuarioAdminEntity usuarioEditor;
+    @Column(name = "es_visible", nullable = false)
+    private boolean visible;
+
+    @Column(name = "updated_by", columnDefinition = "uuid")
+    private UUID updatedBy;
 
     @UpdateTimestamp
-    @Column(name = "fechaactualizacion", nullable = false)
-    private LocalDateTime fechaActualizacion;
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt;
 }

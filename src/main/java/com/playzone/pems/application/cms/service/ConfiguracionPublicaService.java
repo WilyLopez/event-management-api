@@ -4,7 +4,7 @@ import com.playzone.pems.application.cms.dto.query.ConfiguracionPublicaQuery;
 import com.playzone.pems.application.cms.port.in.GestionarConfiguracionPublicaUseCase;
 import com.playzone.pems.domain.cms.model.ConfiguracionPublica;
 import com.playzone.pems.domain.cms.repository.ConfiguracionPublicaRepository;
-import com.playzone.pems.shared.exception.ResourceNotFoundException;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,26 +14,24 @@ import org.springframework.transaction.annotation.Transactional;
 public class ConfiguracionPublicaService implements GestionarConfiguracionPublicaUseCase {
 
     private final ConfiguracionPublicaRepository configRepository;
+    private final SupabaseAuthFacade             supabaseAuthFacade;
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public ConfiguracionPublicaQuery obtener() {
-        return ConfiguracionPublicaQuery.from(
-                configRepository.findFirst()
-                        .orElseThrow(() -> new ResourceNotFoundException("ConfiguracionPublica", 1L)));
+        return ConfiguracionPublicaQuery.from(obtenerOAutocrear());
     }
 
     @Override
     @Transactional
     public ConfiguracionPublicaQuery actualizar(ActualizarCommand cmd) {
-        ConfiguracionPublica existente = configRepository.findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("ConfiguracionPublica", 1L));
+        ConfiguracionPublica existente = obtenerOAutocrear();
 
         ConfiguracionPublica actualizado = existente.toBuilder()
                 .nombreNegocio(cmd.nombreNegocio())
                 .slogan(cmd.slogan())
-                .logoUrl(cmd.logoUrl())
-                .faviconUrl(cmd.faviconUrl())
+                .logoPath(cmd.logoUrl())
+                .faviconPath(cmd.faviconUrl())
                 .telefono(cmd.telefono())
                 .telefonoSecundario(cmd.telefonoSecundario())
                 .whatsapp(cmd.whatsapp())
@@ -46,22 +44,37 @@ public class ConfiguracionPublicaService implements GestionarConfiguracionPublic
                 .youtubeUrl(cmd.youtubeUrl())
                 .googleMapsUrl(cmd.googleMapsUrl())
                 .horarioSemana(cmd.horarioSemana())
-                .horarioFinDeSemana(cmd.horarioFinDeSemana())
+                .horarioFinSemana(cmd.horarioFinDeSemana())
                 .copyrightTexto(cmd.copyrightTexto())
                 .metaTitle(cmd.metaTitle())
                 .metaDescription(cmd.metaDescription())
                 .metaKeywords(cmd.metaKeywords())
                 .openGraphTitle(cmd.openGraphTitle())
                 .openGraphDescription(cmd.openGraphDescription())
-                .openGraphImageUrl(cmd.openGraphImageUrl())
+                .openGraphImagePath(cmd.openGraphImageUrl())
                 .googleAnalyticsId(cmd.googleAnalyticsId())
                 .metaPixelId(cmd.metaPixelId())
                 .colorTema(cmd.colorTema())
                 .colorSecundario(cmd.colorSecundario())
-                .mantenimientoActivo(cmd.mantenimientoActivo())
+                .metricasNegocio(cmd.metricasNegocio())
+                .reglasLocal(cmd.reglasLocal())
+                .esMantenimientoActivo(cmd.mantenimientoActivo())
                 .mensajeMantenimiento(cmd.mensajeMantenimiento())
+                .updatedBy(supabaseAuthFacade.usuarioActualId().orElse(null))
                 .build();
 
         return ConfiguracionPublicaQuery.from(configRepository.save(actualizado));
+    }
+
+    private ConfiguracionPublica obtenerOAutocrear() {
+        return configRepository.findFirst()
+                .orElseGet(() -> configRepository.save(ConfiguracionPublica.builder()
+                        .nombreNegocio("Mi Negocio")
+                        .slogan("Slogan por defecto")
+                        .esMantenimientoActivo(false)
+                        .mensajeMantenimiento("Estamos en mantenimiento, por favor regrese más tarde.")
+                        .colorTema("#000000")
+                        .colorSecundario("#FFFFFF")
+                        .build()));
     }
 }

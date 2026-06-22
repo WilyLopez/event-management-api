@@ -8,21 +8,21 @@ import lombok.Getter;
 @Builder
 public class SeccionWebQuery {
 
-    private Long    id;
     private String  codigo;
     private String  nombre;
     private String  descripcion;
-    private int     ordenVisualizacion;
-    private boolean visible;
+    private boolean esSistema;
+    private boolean activo;
+    private int     orden;
 
     public static SeccionWebQuery from(SeccionWeb s) {
         return SeccionWebQuery.builder()
-                .id(s.getId())
                 .codigo(s.getCodigo())
                 .nombre(s.getNombre())
                 .descripcion(s.getDescripcion())
-                .ordenVisualizacion(s.getOrdenVisualizacion())
-                .visible(s.isVisible())
+                .esSistema(s.isEsSistema())
+                .activo(s.isActivo())
+                .orden(s.getOrden())
                 .build();
     }
 }

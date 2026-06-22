@@ -1,15 +1,25 @@
 package com.playzone.pems.interfaces.rest.usuario;
 
-import com.playzone.pems.application.usuario.port.in.GestionarUsuarioAdminUseCase;
-import com.playzone.pems.domain.usuario.model.UsuarioAdmin;
-import com.playzone.pems.interfaces.rest.usuario.response.UsuarioAdminResponse;
+import com.playzone.pems.application.usuario.dto.command.RegistrarUsuarioAdminCommand;
+import com.playzone.pems.application.usuario.dto.response.UsuarioAdminResponse;
+import com.playzone.pems.application.usuario.port.in.ActivarUsuarioAdminUseCase;
+import com.playzone.pems.application.usuario.port.in.ActualizarUsuarioAdminUseCase;
+import com.playzone.pems.application.usuario.port.in.CambiarPasswordMeUseCase;
+import com.playzone.pems.application.usuario.port.in.CambiarRolUsuarioAdminUseCase;
+import com.playzone.pems.application.usuario.port.in.DesactivarUsuarioAdminUseCase;
+import com.playzone.pems.application.usuario.port.in.ListarUsuariosAdminUseCase;
+import com.playzone.pems.application.usuario.port.in.ObtenerUsuarioAdminUseCase;
+import com.playzone.pems.application.usuario.port.in.RegistrarUsuarioAdminUseCase;
+import com.playzone.pems.application.usuario.port.in.ResetPasswordAdminUseCase;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
+import com.playzone.pems.interfaces.rest.usuario.request.ActualizarUsuarioAdminRequest;
+import com.playzone.pems.interfaces.rest.usuario.request.CambiarContrasenaAdminRequest;
+import com.playzone.pems.interfaces.rest.usuario.request.CambiarRolRequest;
+import com.playzone.pems.interfaces.rest.usuario.request.RegistrarUsuarioAdminRequest;
+import com.playzone.pems.shared.exception.ValidationException;
 import com.playzone.pems.shared.response.ApiResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,118 +27,110 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/usuarios-admin")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class UsuarioAdminController {
 
-    private final GestionarUsuarioAdminUseCase gestionarUseCase;
+    private final ListarUsuariosAdminUseCase    listarUseCase;
+    private final ObtenerUsuarioAdminUseCase    obtenerUseCase;
+    private final RegistrarUsuarioAdminUseCase  registrarUseCase;
+    private final ActualizarUsuarioAdminUseCase actualizarUseCase;
+    private final CambiarRolUsuarioAdminUseCase cambiarRolUseCase;
+    private final ResetPasswordAdminUseCase     resetPasswordUseCase;
+    private final ActivarUsuarioAdminUseCase    activarUseCase;
+    private final DesactivarUsuarioAdminUseCase desactivarUseCase;
+    private final CambiarPasswordMeUseCase      cambiarPasswordMeUseCase;
+    private final SupabaseAuthFacade            authFacade;
 
     @GetMapping
+    @PreAuthorize("hasAuthority('usuarios.ver')")
     public ResponseEntity<ApiResponse<List<UsuarioAdminResponse>>> listar() {
-        List<UsuarioAdminResponse> lista = gestionarUseCase.listar().stream()
-                .map(this::toResponse)
-                .toList();
-        return ResponseEntity.ok(ApiResponse.ok(lista));
+        return ResponseEntity.ok(ApiResponse.ok(listarUseCase.ejecutar()));
     }
 
-    @GetMapping("/{idAdmin}")
-    public ResponseEntity<ApiResponse<UsuarioAdminResponse>> obtener(@PathVariable Long idAdmin) {
-        return ResponseEntity.ok(ApiResponse.ok(toResponse(gestionarUseCase.obtener(idAdmin))));
+    @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<UsuarioAdminResponse>> obtener(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.ok(obtenerUseCase.ejecutar(id)));
     }
 
-    @PostMapping("/sedes/{idSede}")
-    public ResponseEntity<ApiResponse<Void>> crear(
-            @PathVariable Long idSede,
-            @RequestBody CrearAdminRequest request) {
+    @PostMapping("/sedes/{sedeId}")
+    @PreAuthorize("hasAuthority('usuarios.crear')")
+    public ResponseEntity<ApiResponse<UsuarioAdminResponse>> registrar(
+            @PathVariable Long sedeId,
+            @Valid @RequestBody RegistrarUsuarioAdminRequest request) {
 
-        gestionarUseCase.crear(new GestionarUsuarioAdminUseCase.CrearCommand(
-                idSede,
-                request.getNombre(),
-                request.getCorreo(),
-                request.getContrasena(),
-                request.getRol(),
-                request.getTelefono()));
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.noContent());
+        UsuarioAdminResponse response = registrarUseCase.ejecutar(
+                RegistrarUsuarioAdminCommand.builder()
+                        .nombre(request.getNombre())
+                        .correo(request.getCorreo())
+                        .password(request.getPassword())
+                        .rolCodigo(request.getRol())
+                        .sedeId(sedeId)
+                        .generarPassword(request.isGenerarPassword())
+                        .build()
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(response));
     }
 
-    @PutMapping("/{idAdmin}")
-    public ResponseEntity<ApiResponse<UsuarioAdminResponse>> actualizarPerfil(
-            @PathVariable Long idAdmin,
-            @Valid @RequestBody ActualizarPerfilRequest request) {
+    @PutMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<UsuarioAdminResponse>> actualizar(
+            @PathVariable Long id,
+            @Valid @RequestBody ActualizarUsuarioAdminRequest request) {
 
-        UsuarioAdmin updated = gestionarUseCase.actualizarPerfil(idAdmin,
-                new GestionarUsuarioAdminUseCase.ActualizarPerfilCommand(
-                        request.getNombre(), request.getTelefono()));
-
-        return ResponseEntity.ok(ApiResponse.ok(toResponse(updated)));
+        UsuarioAdminResponse response = actualizarUseCase.ejecutar(id, request.getNombre(), request.getTelefono());
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
-    @PutMapping("/{idAdmin}/contrasena")
+    @PutMapping("/{id}/contrasena")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Void>> cambiarContrasena(
-            @PathVariable Long idAdmin,
-            @Valid @RequestBody CambiarContrasenaRequest request) {
+            @PathVariable Long id,
+            @Valid @RequestBody CambiarContrasenaAdminRequest request,
+            HttpServletRequest servletRequest) {
 
-        gestionarUseCase.cambiarContrasena(idAdmin,
-                new GestionarUsuarioAdminUseCase.CambiarContrasenaCommand(
-                        request.getContrasenaActual(), request.getContrasenaNueva()));
-
+        String authHeader = servletRequest.getHeader("Authorization");
+        String accessToken = authHeader.substring(7);
+        cambiarPasswordMeUseCase.ejecutar(accessToken, request.getContrasenaActual(), request.getContrasenaNueva());
         return ResponseEntity.ok(ApiResponse.noContent());
     }
 
-    @PostMapping("/{idAdmin}/desactivar")
-    public ResponseEntity<ApiResponse<Void>> desactivar(@PathVariable Long idAdmin) {
-        gestionarUseCase.desactivar(idAdmin);
+    @PatchMapping("/{id}/rol")
+    @PreAuthorize("hasAuthority('usuarios.editar')")
+    public ResponseEntity<ApiResponse<UsuarioAdminResponse>> cambiarRol(
+            @PathVariable Long id,
+            @Valid @RequestBody CambiarRolRequest request) {
+
+        UUID solicitanteId = authFacade.usuarioActualId()
+                .orElseThrow(() -> new ValidationException("auth", "No se pudo identificar al solicitante."));
+
+        UsuarioAdminResponse response = cambiarRolUseCase.ejecutar(id, request.getNuevoRol(), solicitanteId);
+        return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
+    @PostMapping("/{id}/reset-password")
+    @PreAuthorize("hasAuthority('usuarios.editar')")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@PathVariable Long id) {
+        resetPasswordUseCase.resetear(id);
         return ResponseEntity.ok(ApiResponse.noContent());
     }
 
-    @PostMapping("/{idAdmin}/activar")
-    public ResponseEntity<ApiResponse<Void>> activar(@PathVariable Long idAdmin) {
-        gestionarUseCase.activar(idAdmin);
+    @PatchMapping("/{id}/activar")
+    @PreAuthorize("hasAuthority('usuarios.editar')")
+    public ResponseEntity<ApiResponse<Void>> activar(@PathVariable Long id) {
+        activarUseCase.activar(id);
         return ResponseEntity.ok(ApiResponse.noContent());
     }
 
-    private UsuarioAdminResponse toResponse(UsuarioAdmin a) {
-        return UsuarioAdminResponse.builder()
-                .id(a.getId())
-                .idSede(a.getIdSede())
-                .nombre(a.getNombre())
-                .correo(a.getCorreo())
-                .rol(a.getRol())
-                .telefono(a.getTelefono())
-                .fotoPerfilUrl(a.getFotoPerfilUrl())
-                .activo(a.isActivo())
-                .debeCambiarContrasena(a.isDebeCambiarContrasena())
-                .intentosFallidos(a.getIntentosFallidos())
-                .bloqueadoHasta(a.getBloqueadoHasta())
-                .ultimoAcceso(a.getUltimoAcceso())
-                .fechaCreacion(a.getFechaCreacion())
-                .build();
-    }
-
-    /* ─── Request DTOs ──────────────────────────────────────────────────────── */
-
-    @Getter @NoArgsConstructor
-    public static class CrearAdminRequest {
-        @NotBlank @Size(max = 120) private String nombre;
-        @NotBlank @Email           private String correo;
-        @NotBlank @Size(min = 8)   private String contrasena;
-        private String rol;
-        private String telefono;
-    }
-
-    @Getter @NoArgsConstructor
-    public static class ActualizarPerfilRequest {
-        @NotBlank @Size(max = 120) private String nombre;
-        private String telefono;
-    }
-
-    @Getter @NoArgsConstructor
-    public static class CambiarContrasenaRequest {
-        @NotBlank private String contrasenaActual;
-        @NotBlank @Size(min = 8) private String contrasenaNueva;
+    @PatchMapping("/{id}/desactivar")
+    @PreAuthorize("hasAuthority('usuarios.editar')")
+    public ResponseEntity<ApiResponse<Void>> desactivar(@PathVariable Long id) {
+        // Protección SUPERADMIN: no se puede desactivar a sí mismo si es SUPERADMIN
+        desactivarUseCase.desactivar(id);
+        return ResponseEntity.ok(ApiResponse.noContent());
     }
 }

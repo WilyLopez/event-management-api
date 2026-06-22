@@ -2,7 +2,7 @@ package com.playzone.pems.domain.usuario.model;
 
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder(toBuilder = true)
@@ -20,8 +20,8 @@ public class Sede {
 
     private String        ruc;
 
-    private boolean       activo;
-    private LocalDateTime fechaCreacion;
+    private OffsetDateTime fechaCreacion;
+    private OffsetDateTime deletedAt;
 
     public boolean tieneRucConfigurado() {
         return ruc != null && !ruc.isBlank();

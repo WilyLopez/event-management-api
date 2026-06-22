@@ -3,7 +3,7 @@ package com.playzone.pems.application.contrato.dto.query;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder
@@ -14,5 +14,5 @@ public class DocumentoContratoQuery {
     private String        tipoArchivo;
     private Long          tamanobytes;
     private String        usuarioCarga;
-    private LocalDateTime fechaCarga;
+    private OffsetDateTime fechaCarga;
 }

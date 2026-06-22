@@ -1,0 +1,1 @@
+ALTER TABLE reserva ALTER COLUMN venta_id DROP NOT NULL;

@@ -1,16 +1,17 @@
 package com.playzone.pems.infrastructure.persistence.calendario.entity;
 
 import com.playzone.pems.infrastructure.persistence.usuario.entity.SedeEntity;
-import com.playzone.pems.infrastructure.persistence.usuario.entity.UsuarioAdminEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "bloquecalendario")
+@Table(name = "bloque_calendario")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,30 +21,37 @@ public class BloqueCalendarioEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idbloquecalendario")
+    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "idsede", nullable = false)
+    @JoinColumn(name = "sede_id", nullable = false)
     private SedeEntity sede;
 
-    @Column(name = "fechainicio", nullable = false)
+    @Column(name = "fecha_inicio", nullable = false)
     private LocalDate fechaInicio;
 
-    @Column(name = "fechafin", nullable = false)
+    @Column(name = "fecha_fin", nullable = false)
     private LocalDate fechaFin;
 
-    @Column(nullable = false, length = 300)
+    @Column(name = "tipo_bloqueo", length = 30)
+    private String tipoBloqueo;
+
+    @Column(name = "motivo", nullable = false, length = 300)
     private String motivo;
 
-    @Column(nullable = false)
+    @Column(name = "es_activo", nullable = false)
+    @Builder.Default
     private boolean activo = true;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "idusuariocreador", nullable = false)
-    private UsuarioAdminEntity usuarioCreador;
+    @Column(name = "created_by", columnDefinition = "uuid")
+    private UUID createdBy;
 
     @CreationTimestamp
-    @Column(name = "fechacreacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private OffsetDateTime updatedAt;
 }

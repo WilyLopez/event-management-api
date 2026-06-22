@@ -4,8 +4,9 @@ import com.playzone.pems.domain.cms.model.ContenidoWeb;
 import com.playzone.pems.domain.cms.repository.ContenidoWebRepository;
 import com.playzone.pems.infrastructure.persistence.cms.jpa.ContenidoWebJpaRepository;
 import com.playzone.pems.infrastructure.persistence.cms.mapper.CmsEntityMapper;
-import com.playzone.pems.infrastructure.persistence.usuario.jpa.UsuarioAdminJpaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,9 +17,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ContenidoWebPersistenceAdapter implements ContenidoWebRepository {
 
-    private final ContenidoWebJpaRepository  contenidoJpa;
-    private final UsuarioAdminJpaRepository  adminJpa;
-    private final CmsEntityMapper            mapper;
+    private final ContenidoWebJpaRepository contenidoJpa;
+    private final CmsEntityMapper           mapper;
 
     @Override
     public Optional<ContenidoWeb> findById(Long id) {
@@ -26,30 +26,37 @@ public class ContenidoWebPersistenceAdapter implements ContenidoWebRepository {
     }
 
     @Override
-    public Optional<ContenidoWeb> findBySeccionAndClave(Long idSeccion, String clave) {
-        return contenidoJpa.findByIdSeccionAndClave(idSeccion, clave).map(mapper::toDomain);
+    public Optional<ContenidoWeb> findBySeccionAndClave(String seccionCodigo, String clave) {
+        return contenidoJpa.findBySeccionCodigoAndClave(seccionCodigo, clave).map(mapper::toDomain);
     }
 
     @Override
-    public List<ContenidoWeb> findActivosBySeccion(Long idSeccion) {
-        return contenidoJpa.findByIdSeccionAndActivoTrue(idSeccion).stream().map(mapper::toDomain).toList();
+    public List<ContenidoWeb> findActivosBySeccion(String seccionCodigo) {
+        return contenidoJpa.findBySeccionCodigoAndDeletedAtIsNull(seccionCodigo)
+                .stream().map(mapper::toDomain).toList();
     }
 
     @Override
     public List<ContenidoWeb> findAllActivos() {
-        return contenidoJpa.findByActivoTrue().stream().map(mapper::toDomain).toList();
+        return contenidoJpa.findByDeletedAtIsNull().stream().map(mapper::toDomain).toList();
+    }
+
+    @Override
+    public Page<ContenidoWeb> findAll(String seccionCodigo, String clave, Pageable pageable) {
+        String clavePattern = (clave != null && !clave.isBlank())
+                ? "%" + clave.toLowerCase() + "%"
+                : null;
+        return contenidoJpa.findByFilters(seccionCodigo, clavePattern, pageable).map(mapper::toDomain);
     }
 
     @Override
     @Transactional
     public ContenidoWeb save(ContenidoWeb c) {
-        var editor = c.getIdUsuarioEditor() != null
-                ? adminJpa.findById(c.getIdUsuarioEditor()).orElse(null) : null;
-        return mapper.toDomain(contenidoJpa.save(mapper.toEntity(c, editor)));
+        return mapper.toDomain(contenidoJpa.save(mapper.toEntity(c)));
     }
 
     @Override
-    public boolean existsBySeccionAndClave(Long idSeccion, String clave) {
-        return contenidoJpa.existsByIdSeccionAndClave(idSeccion, clave);
+    public boolean existsBySeccionAndClave(String seccionCodigo, String clave) {
+        return contenidoJpa.existsBySeccionCodigoAndClave(seccionCodigo, clave);
     }
 }

@@ -2,7 +2,8 @@ package com.playzone.pems.domain.cms.model;
 
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder(toBuilder = true)
@@ -16,6 +17,6 @@ public class ContenidoLegal {
     private String        contenido;
     private int           version;
     private boolean       activo;
-    private Long          idUsuarioEditor;
-    private LocalDateTime fechaActualizacion;
+    private UUID          idUsuarioEditor;
+    private OffsetDateTime fechaActualizacion;
 }

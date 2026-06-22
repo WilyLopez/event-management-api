@@ -3,7 +3,7 @@ package com.playzone.pems.interfaces.rest.usuario.response;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder
@@ -17,5 +17,5 @@ public class SedeResponse {
     private String        correo;
     private String        ruc;
     private boolean       activo;
-    private LocalDateTime fechaCreacion;
+    private OffsetDateTime fechaCreacion;
 }

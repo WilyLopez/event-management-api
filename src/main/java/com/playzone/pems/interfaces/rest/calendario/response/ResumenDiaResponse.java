@@ -20,6 +20,8 @@ public class ResumenDiaResponse {
     private BigDecimal pagosPendientes;
     private int        aforoPublicoActual;
     private int        aforoMaximo;
+    private String     tipoOcupacion;
+    private boolean    bloqueadoManualmente;
     private TurnoResponse turnoT1;
     private TurnoResponse turnoT2;
     private List<ReservaResumen>  reservas;

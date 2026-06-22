@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/sedes")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class SedeController {
 
     private final GestionarSedeUseCase gestionarSedeUseCase;
@@ -28,6 +27,7 @@ public class SedeController {
     }
 
     @PutMapping("/{idSede}")
+    @PreAuthorize("hasAuthority('configuracion.editar')")
     public ResponseEntity<ApiResponse<SedeResponse>> actualizar(
             @PathVariable Long idSede,
             @Valid @RequestBody ActualizarSedeRequest request) {
@@ -55,7 +55,7 @@ public class SedeController {
                 .telefono(s.getTelefono())
                 .correo(s.getCorreo())
                 .ruc(s.getRuc())
-                .activo(s.isActivo())
+                .activo(s.getDeletedAt() == null)
                 .fechaCreacion(s.getFechaCreacion())
                 .build();
     }

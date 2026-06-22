@@ -23,6 +23,7 @@ public class DisponibilidadQuery {
     private int       plazasDisponibles;
     private boolean   aforoCompleto;
     private boolean   bloqueadoManualmente;
+    private Long      idBloqueo;
     private String    tipoBloqueo;
     private String    motivoBloqueo;
     private int       totalReservas;
@@ -30,4 +31,15 @@ public class DisponibilidadQuery {
     private BigDecimal ingresoEstimado;
     private boolean   tieneNotas;
     private int       ocupacionPorcentaje;
+    private String    tipoOcupacion;
+    private boolean   disponiblePublico;
+    private boolean   disponiblePrivado;
+    private boolean   turnoT1Ocupado;
+    private boolean   turnoT2Ocupado;
+    private String    tituloEvento;
+    private Long      idEvento;
+    private String    tituloEventoT1;
+    private Long      idEventoT1;
+    private String    tituloEventoT2;
+    private Long      idEventoT2;
 }

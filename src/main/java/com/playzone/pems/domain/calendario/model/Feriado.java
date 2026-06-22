@@ -4,7 +4,7 @@ import com.playzone.pems.domain.calendario.model.enums.TipoFeriado;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder(toBuilder = true)
@@ -17,8 +17,7 @@ public class Feriado {
     private LocalDate     fecha;
     private String        descripcion;
     private int           anio;
-    private LocalDateTime fechaCreacion;
-    private Long          idUsuarioCreador;
+    private OffsetDateTime createdAt;
     public boolean esNacional() {
         return TipoFeriado.NACIONAL == tipoFeriado;
     }

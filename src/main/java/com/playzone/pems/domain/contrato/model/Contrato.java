@@ -4,7 +4,8 @@ import com.playzone.pems.domain.contrato.model.enums.EstadoContrato;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Getter
 @Builder(toBuilder = true)
@@ -18,7 +19,7 @@ public class Contrato {
     private String         contenidoTexto;
     private String         archivoPdfUrl;
     private LocalDate      fechaFirma;
-    private Long           idUsuarioRedactor;
+    private UUID           idUsuarioRedactor;
     private String         usuarioRedactor;
     private String         plantilla;
     private String         observaciones;
@@ -34,8 +35,8 @@ public class Contrato {
     private java.math.BigDecimal montoAdelanto;
     private java.math.BigDecimal saldoPendiente;
 
-    private LocalDateTime  fechaCreacion;
-    private LocalDateTime  fechaActualizacion;
+    private OffsetDateTime  fechaCreacion;
+    private OffsetDateTime  fechaActualizacion;
 
     public boolean esEditable() {
         return estado.esEditable();

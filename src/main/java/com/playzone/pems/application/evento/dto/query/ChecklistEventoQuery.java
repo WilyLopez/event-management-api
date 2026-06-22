@@ -3,7 +3,7 @@ package com.playzone.pems.application.evento.dto.query;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Builder
@@ -15,5 +15,5 @@ public class ChecklistEventoQuery {
     private boolean       completada;
     private int           orden;
     private String        usuarioCompleto;
-    private LocalDateTime fechaCompletado;
+    private OffsetDateTime fechaCompletado;
 }
