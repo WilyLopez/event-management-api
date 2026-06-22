@@ -157,11 +157,14 @@ public class ClientePerfilService
                 .nombres(command.getNombres() != null ? command.getNombres() : existente.getNombres())
                 .apellidoPaterno(command.getApellidoPaterno() != null ? command.getApellidoPaterno() : existente.getApellidoPaterno())
                 .apellidoMaterno(command.getApellidoMaterno() != null ? command.getApellidoMaterno() : existente.getApellidoMaterno())
-                .telefono(command.getTelefono())
+                .telefono(command.getTelefono() != null ? command.getTelefono() : existente.getTelefono())
                 .correo(command.getCorreo() != null ? command.getCorreo() : existente.getCorreo())
                 .aceptaComunicaciones(command.getAceptaComunicaciones() != null
                         ? command.getAceptaComunicaciones()
                         : existente.isAceptaComunicaciones())
+                .fotoPerfilPath(command.isActualizarFotoPerfil()
+                        ? command.getFotoPerfilPath()
+                        : existente.getFotoPerfilPath())
                 .build();
 
         return clientePerfilRepository.guardar(actualizado);

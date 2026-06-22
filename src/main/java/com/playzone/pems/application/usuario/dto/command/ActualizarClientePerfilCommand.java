@@ -13,4 +13,6 @@ public class ActualizarClientePerfilCommand {
     private String  telefono;
     private String  correo;
     private Boolean aceptaComunicaciones;
+    private String  fotoPerfilPath;
+    private boolean actualizarFotoPerfil;
 }

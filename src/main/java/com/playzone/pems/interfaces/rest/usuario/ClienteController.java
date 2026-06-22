@@ -1,6 +1,7 @@
 package com.playzone.pems.interfaces.rest.usuario;
 
 import com.playzone.pems.application.usuario.dto.command.ActualizarClientePerfilCommand;
+import com.playzone.pems.domain.storage.StoragePort;
 import com.playzone.pems.application.usuario.dto.command.RegistrarClientePerfilCommand;
 import com.playzone.pems.application.usuario.dto.command.RegistrarClientePublicoCommand;
 import com.playzone.pems.application.usuario.dto.query.ClientePerfilQuery;
@@ -24,7 +25,7 @@ import com.playzone.pems.interfaces.rest.usuario.response.ClientePerfilResponse;
 import com.playzone.pems.shared.response.ApiResponse;
 import com.playzone.pems.shared.response.PagedResponse;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -39,13 +40,15 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/clientes")
-@RequiredArgsConstructor
 public class ClienteController {
 
     private final RegistrarClientePerfilUseCase  registrarUseCase;
@@ -59,6 +62,37 @@ public class ClienteController {
     private final QuitarVipPerfilUseCase         quitarVipUseCase;
     private final RegistrarVisitaPerfilUseCase   visitaUseCase;
     private final ActualizarSegmentoPerfilUseCase segmentoUseCase;
+    private final StoragePort storagePort;
+    private final String bucketPublico;
+
+    public ClienteController(
+            RegistrarClientePerfilUseCase registrarUseCase,
+            RegistrarClientePublicoUseCase registrarPublicoUseCase,
+            ActualizarClientePerfilUseCase actualizarUseCase,
+            ListarClientesPerfilUseCase listarUseCase,
+            ObtenerClientePerfilUseCase obtenerUseCase,
+            ActivarClientePerfilUseCase activarUseCase,
+            DesactivarClientePerfilUseCase desactivarUseCase,
+            HacerVipPerfilUseCase hacerVipUseCase,
+            QuitarVipPerfilUseCase quitarVipUseCase,
+            RegistrarVisitaPerfilUseCase visitaUseCase,
+            ActualizarSegmentoPerfilUseCase segmentoUseCase,
+            StoragePort storagePort,
+            @Value("${supabase.storage.bucket-publico}") String bucketPublico) {
+        this.registrarUseCase = registrarUseCase;
+        this.registrarPublicoUseCase = registrarPublicoUseCase;
+        this.actualizarUseCase = actualizarUseCase;
+        this.listarUseCase = listarUseCase;
+        this.obtenerUseCase = obtenerUseCase;
+        this.activarUseCase = activarUseCase;
+        this.desactivarUseCase = desactivarUseCase;
+        this.hacerVipUseCase = hacerVipUseCase;
+        this.quitarVipUseCase = quitarVipUseCase;
+        this.visitaUseCase = visitaUseCase;
+        this.segmentoUseCase = segmentoUseCase;
+        this.storagePort = storagePort;
+        this.bucketPublico = bucketPublico;
+    }
 
     @PostMapping("/registro")
     public ResponseEntity<ApiResponse<ClientePerfilResponse>> registrarPublico(
@@ -213,6 +247,60 @@ public class ClienteController {
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
+    @PutMapping("/{id}/foto")
+    @PreAuthorize("hasAuthority('cliente.editar') and (#id == @supabaseAuthFacade.clientePerfilId().orElse(-1L) or hasAuthority('usuario.gestionar'))")
+    public ResponseEntity<ApiResponse<ClientePerfilResponse>> subirFoto(
+            @PathVariable Long id,
+            @RequestPart("foto") MultipartFile foto) {
+
+        if (foto.isEmpty()) {
+            throw new IllegalArgumentException("El archivo no puede estar vacío");
+        }
+
+        ClientePerfil perfil = obtenerUseCase.ejecutar(id);
+
+        try {
+            byte[] bytes = foto.getBytes();
+            String tipoMime = foto.getContentType();
+            String nombreOriginal = foto.getOriginalFilename();
+            String key = "clientes/fotos/" + UUID.randomUUID() + "_" + (nombreOriginal != null ? nombreOriginal.replaceAll("[^a-zA-Z0-9.\\-]", "_") : "foto");
+            String path = storagePort.upload(bucketPublico, key, bytes, tipoMime);
+
+            ClientePerfil actualizado = actualizarUseCase.ejecutar(id,
+                    ActualizarClientePerfilCommand.builder()
+                            .fotoPerfilPath(path)
+                            .actualizarFotoPerfil(true)
+                            .build());
+
+            // Eliminar foto anterior si existía
+            if (perfil.getFotoPerfilPath() != null) {
+                storagePort.deleteByUrl(perfil.getFotoPerfilPath());
+            }
+
+            return ResponseEntity.ok(ApiResponse.ok(toResponse(actualizado)));
+        } catch (Exception e) {
+            throw new RuntimeException("Error al subir la foto de perfil", e);
+        }
+    }
+
+    @DeleteMapping("/{id}/foto")
+    @PreAuthorize("hasAuthority('cliente.editar') and (#id == @supabaseAuthFacade.clientePerfilId().orElse(-1L) or hasAuthority('usuario.gestionar'))")
+    public ResponseEntity<ApiResponse<ClientePerfilResponse>> eliminarFoto(@PathVariable Long id) {
+        ClientePerfil perfil = obtenerUseCase.ejecutar(id);
+
+        if (perfil.getFotoPerfilPath() != null) {
+            storagePort.deleteByUrl(perfil.getFotoPerfilPath());
+        }
+
+        ClientePerfil actualizado = actualizarUseCase.ejecutar(id,
+                ActualizarClientePerfilCommand.builder()
+                        .fotoPerfilPath(null)
+                        .actualizarFotoPerfil(true)
+                        .build());
+
+        return ResponseEntity.ok(ApiResponse.ok(toResponse(actualizado)));
+    }
+
     private ClientePerfilResponse toResponse(ClientePerfil p) {
         return ClientePerfilResponse.builder()
                 .id(p.getId())
@@ -233,6 +321,7 @@ public class ClienteController {
                 .origen(p.getOrigen())
                 .aceptaComunicaciones(p.isAceptaComunicaciones())
                 .creadoEn(p.getCreatedAt())
+                .fotoPerfilPath(p.getFotoPerfilPath())
                 .build();
     }
 }

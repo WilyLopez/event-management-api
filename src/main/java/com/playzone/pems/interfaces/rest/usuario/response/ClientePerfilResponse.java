@@ -30,4 +30,5 @@ public class ClientePerfilResponse {
     private String         origen;
     private boolean        aceptaComunicaciones;
     private OffsetDateTime creadoEn;
+    private String         fotoPerfilPath;
 }
