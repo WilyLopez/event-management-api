@@ -23,6 +23,12 @@ logging:
     name: /var/log/playzone/pems.log
 
 server:
+  port: ${SERVER_PORT:8080}
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json,application/xml
+    min-response-size: 2048
+    
   error:
     include-message: never
     include-binding-errors: never
