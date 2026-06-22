@@ -19,7 +19,9 @@ public class TurnoPersistenceAdapter implements TurnoRepository {
 
     @Override
     public Optional<Turno> findById(Long id) {
-        return turnoJpa.findById(id).map(mapper::toDomain);
+        if (id == null) return Optional.empty();
+        String codigo = id == 1L ? "T1" : id == 2L ? "T2" : String.valueOf(id);
+        return turnoJpa.findById(codigo).map(mapper::toDomain);
     }
 
     @Override

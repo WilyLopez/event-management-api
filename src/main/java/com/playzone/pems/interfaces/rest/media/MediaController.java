@@ -4,8 +4,8 @@ import com.playzone.pems.domain.storage.StoragePort;
 import com.playzone.pems.shared.response.ApiResponse;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +18,6 @@ import java.util.UUID;
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/media")
-@RequiredArgsConstructor
 public class MediaController {
 
     private static final long MAX_BYTES = 10L * 1024 * 1024;
@@ -28,6 +27,13 @@ public class MediaController {
     );
 
     private final StoragePort storagePort;
+    private final String bucketPublico;
+
+    public MediaController(StoragePort storagePort,
+                           @Value("${supabase.storage.bucket-publico}") String bucketPublico) {
+        this.storagePort = storagePort;
+        this.bucketPublico = bucketPublico;
+    }
 
     @PostMapping("/upload")
     @PreAuthorize("hasAuthority('catalogo.editar')")
@@ -52,7 +58,7 @@ public class MediaController {
         try {
             byte[] bytes = archivo.getBytes();
             String key = carpeta + "/" + UUID.randomUUID() + "_" + sanitizarNombre(archivo.getOriginalFilename());
-            String url = storagePort.upload("publico", key, bytes, tipoMime);
+            String url = storagePort.upload(bucketPublico, key, bytes, tipoMime);
             log.debug("Archivo subido con exito. URL: {}", url);
 
             MediaResponse response = MediaResponse.builder()

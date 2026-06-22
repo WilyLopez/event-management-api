@@ -56,10 +56,11 @@ public class ContratoController {
         String[]       parts = sort.split(",");
         Sort.Direction dir   = parts.length > 1 && "asc".equalsIgnoreCase(parts[1])
                                ? Sort.Direction.ASC : Sort.Direction.DESC;
+        String sortProperty = "fechaCreacion".equals(parts[0]) ? "createdAt" : parts[0];
 
         ContratoPageQuery resultado = listarUseCase.ejecutar(
                 search, estado, idSede,
-                PageRequest.of(page, size, Sort.by(dir, parts[0])));
+                PageRequest.of(page, size, Sort.by(dir, sortProperty)));
 
         PagedResponse<ContratoResponse> paginado = PagedResponse.<ContratoResponse>builder()
                 .content(resultado.getContent().stream().map(this::toResponse).toList())

@@ -26,7 +26,7 @@ import com.playzone.pems.domain.contrato.repository.DocumentoContratoRepository;
 import com.playzone.pems.domain.storage.StoragePort;
 import com.playzone.pems.shared.exception.ValidationException;
 import com.playzone.pems.shared.util.FechaUtil;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -39,7 +39,6 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 public class ContratoService
         implements GenerarContratoUseCase,
                    FirmarContratoUseCase,
@@ -55,6 +54,19 @@ public class ContratoService
     private final DocumentoContratoRepository documentoRepository;
     private final ActividadContratoRepository actividadRepository;
     private final StoragePort                 storagePort;
+    private final String                      bucketPrivado;
+
+    public ContratoService(ContratoRepository contratoRepository,
+                           DocumentoContratoRepository documentoRepository,
+                           ActividadContratoRepository actividadRepository,
+                           StoragePort storagePort,
+                           @Value("${supabase.storage.bucket-privado}") String bucketPrivado) {
+        this.contratoRepository = contratoRepository;
+        this.documentoRepository = documentoRepository;
+        this.actividadRepository = actividadRepository;
+        this.storagePort = storagePort;
+        this.bucketPrivado = bucketPrivado;
+    }
 
     @Override
     @Transactional
@@ -93,7 +105,7 @@ public class ContratoService
 
         byte[] pdf = contrato.getContenidoTexto().getBytes(StandardCharsets.UTF_8);
         String key = "contratos/contrato_" + idContrato + "_" + LocalDateTime.now().format(FMT) + ".pdf";
-        String pdfUrl = storagePort.upload("privado", key, pdf, "application/pdf");
+        String pdfUrl = storagePort.upload(bucketPrivado, key, pdf, "application/pdf");
 
         Contrato firmado = contratoRepository.save(contrato.toBuilder()
                 .estado(EstadoContrato.FIRMADO)

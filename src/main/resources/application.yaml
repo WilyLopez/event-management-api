@@ -133,9 +133,9 @@ supabase:
     access-key: ${SUPABASE_STORAGE_ACCESS_KEY:}
     secret-key: ${SUPABASE_STORAGE_SECRET_KEY:}
     region: ${SUPABASE_STORAGE_REGION:us-east-2}
-    bucket-publico: publico
-    bucket-privado: privado
-    bucket-comprobantes: comprobantes
+    bucket-publico: ${SUPABASE_STORAGE_BUCKET_PUBLICO:kiki-publico}
+    bucket-privado: ${SUPABASE_STORAGE_BUCKET_PRIVADO:kiki-privado}
+    bucket-comprobantes: ${SUPABASE_STORAGE_BUCKET_COMPROBANTES:comprobantes}
     url-publica: ${SUPABASE_STORAGE_URL_PUBLICA:https://divljjsnorvkrgcznwlh.supabase.co/storage/v1/object/public}
     max-tamanio-mb: 10
 

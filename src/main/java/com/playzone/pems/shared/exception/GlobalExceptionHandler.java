@@ -87,9 +87,18 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleValidationException(
             ValidationException ex, HttpServletRequest request) {
 
-        List<ErrorResponse.CampoError> errores = ex.getErrores().stream()
-                .map(msg -> ErrorResponse.CampoError.builder().mensaje(msg).build())
-                .toList();
+        List<ErrorResponse.CampoError> errores;
+        if (ex.getCampo() != null) {
+            String mensajeLimpio = ex.getMessage().replace("Campo '" + ex.getCampo() + "': ", "");
+            errores = List.of(ErrorResponse.CampoError.builder()
+                    .campo(ex.getCampo())
+                    .mensaje(mensajeLimpio)
+                    .build());
+        } else {
+            errores = ex.getErrores().stream()
+                    .map(msg -> ErrorResponse.CampoError.builder().mensaje(msg).build())
+                    .toList();
+        }
 
         ErrorResponse error = ErrorResponse.builder()
                 .status(HttpStatus.BAD_REQUEST.value())

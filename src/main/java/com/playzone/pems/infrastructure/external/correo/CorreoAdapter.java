@@ -4,8 +4,12 @@ import com.playzone.pems.application.evento.dto.query.EventoPrivadoQuery;
 import com.playzone.pems.application.evento.dto.query.ReservaPublicaQuery;
 import com.playzone.pems.application.evento.port.out.EnviarNotificacionEventoPort;
 import com.playzone.pems.application.evento.port.out.EnviarTicketPorCorreoPort;
+import com.playzone.pems.application.venta.dto.query.VentaDetalleQuery;
+import com.playzone.pems.application.venta.dto.query.VentaQuery;
+import com.playzone.pems.application.venta.port.out.EnviarDocumentosVentaPort;
 import com.playzone.pems.domain.usuario.repository.SedeRepository;
-import com.playzone.pems.infrastructure.pdf.PdfTicketService;
+import com.playzone.pems.infrastructure.pdf.NotaVentaPdfService;
+import com.playzone.pems.infrastructure.pdf.TicketIngresoPdfService;
 import com.playzone.pems.application.usuario.port.out.EnviarCorreoBienvenidaPort;
 import com.playzone.pems.infrastructure.template.TemplateService;
 import jakarta.mail.internet.MimeMessage;
@@ -28,11 +32,13 @@ import java.util.Map;
 public class CorreoAdapter
         implements EnviarTicketPorCorreoPort,
         EnviarNotificacionEventoPort,
-        EnviarCorreoBienvenidaPort {
+        EnviarCorreoBienvenidaPort,
+        EnviarDocumentosVentaPort {
 
     private final JavaMailCorreoClient correoClient;
     private final JavaMailSender       mailSender;
-    private final PdfTicketService     pdfTicketService;
+    private final TicketIngresoPdfService ticketIngresoPdfService;
+    private final NotaVentaPdfService  notaVentaPdfService;
     private final SedeRepository       sedeRepository;
     private final TemplateService      templateService;
 
@@ -72,7 +78,7 @@ public class CorreoAdapter
                 .map(s -> s.getNombre())
                 .orElse("Sede Principal");
 
-        byte[] pdfBytes = pdfTicketService.generarTicketPdf(reserva, nombreSede);
+        byte[] pdfTicket = ticketIngresoPdfService.generarTicketPdf(reserva, nombreSede);
 
         try {
             MimeMessage mensaje = mailSender.createMimeMessage();
@@ -104,7 +110,7 @@ public class CorreoAdapter
             helper.setText(cuerpoHtml, true);
             helper.addAttachment(
                 "Ticket-" + reserva.getNumeroTicket() + ".pdf",
-                new ByteArrayResource(pdfBytes),
+                new ByteArrayResource(pdfTicket),
                 "application/pdf"
             );
 
@@ -208,6 +214,88 @@ public class CorreoAdapter
             return new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
             throw new RuntimeException("No se pudo cargar el template de correo: " + nombre, e);
+        }
+    }
+
+    @Override
+    public void enviarDocumentos(String destinatario, VentaDetalleQuery ventaDetalle) {
+        String nombreSede = sedeRepository.findById(ventaDetalle.getIdSede())
+                .map(s -> s.getNombre())
+                .orElse("Sede Principal");
+
+        VentaQuery ventaQuery = VentaQuery.builder()
+                .id(ventaDetalle.getId())
+                .idSede(ventaDetalle.getIdSede())
+                .clienteId(ventaDetalle.getClienteId())
+                .eventoId(ventaDetalle.getEventoId())
+                .tipo(ventaDetalle.getTipo())
+                .canalCodigo(ventaDetalle.getCanalCodigo())
+                .fechaVisita(ventaDetalle.getFechaVisita())
+                .subtotal(ventaDetalle.getSubtotal())
+                .descuento(ventaDetalle.getDescuento())
+                .total(ventaDetalle.getTotal())
+                .nombreAcompanante(ventaDetalle.getNombreAcompanante())
+                .dniAcompanante(ventaDetalle.getDniAcompanante())
+                .nombreCliente(ventaDetalle.getNombreCliente())
+                .notas(ventaDetalle.getNotas())
+                .impreso(ventaDetalle.isImpreso())
+                .enviadoCorreo(ventaDetalle.isEnviadoCorreo())
+                .descargado(ventaDetalle.isDescargado())
+                .efectivoRecibido(ventaDetalle.getEfectivoRecibido())
+                .vuelto(ventaDetalle.getVuelto())
+                .createdAt(ventaDetalle.getCreatedAt())
+                .build();
+
+        byte[] pdfNota = notaVentaPdfService.generarNotaVentaPdf(ventaQuery, nombreSede);
+
+        try {
+            MimeMessage mensaje = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+            helper.setFrom(remitente, nombreRemitente);
+            helper.setTo(destinatario);
+            helper.setSubject("Tus comprobantes Kiki y Lala — Venta #" + ventaDetalle.getId());
+
+            String cuerpoHtml =
+                "<div style='font-family:Arial,sans-serif;max-width:500px;margin:0 auto;'>" +
+                "<div style='background:#F64B8A;padding:20px;border-radius:12px 12px 0 0;text-align:center;'>" +
+                "<h2 style='color:white;margin:0;'>Gracias por tu compra</h2>" +
+                "</div>" +
+                "<div style='background:#f8fafc;padding:20px;border:1px solid #e2e8f0;border-radius:0 0 12px 12px;'>" +
+                "<p style='color:#1A1A2E;font-size:15px;'>Hola <strong>" + (ventaDetalle.getNombreCliente() != null ? ventaDetalle.getNombreCliente() : "Cliente") + "</strong>,</p>" +
+                "<p style='color:#475569;'>Adjuntamos los documentos y tickets correspondientes a tu visita.</p>" +
+                "<div style='background:white;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:16px 0;'>" +
+                "<p style='margin:4px 0;font-size:13px;color:#64748b;'>Numero de venta</p>" +
+                "<p style='margin:4px 0;font-size:16px;font-weight:900;color:#F64B8A;'>#" + ventaDetalle.getId() + "</p>" +
+                "<p style='margin:12px 0 4px;font-size:13px;color:#64748b;'>Fecha de visita</p>" +
+                "<p style='margin:4px 0;font-size:15px;font-weight:700;color:#1A1A2E;'>" + ventaDetalle.getFechaVisita().toString() + "</p>" +
+                "<p style='margin:12px 0 4px;font-size:13px;color:#64748b;'>Total pagado</p>" +
+                "<p style='margin:4px 0;font-size:15px;font-weight:700;color:#15803d;'>S/ " + ventaDetalle.getTotal() + "</p>" +
+                "</div>" +
+                "<p style='color:#f59e0b;font-size:13px;'>Encontraras adjunta tu Nota de Venta y cada uno de los tickets de ingreso en PDF.</p>" +
+                "<p style='color:#64748b;font-size:12px;margin-top:16px;'>Kiki y Lala &mdash; El local mas divertido de Chiclayo</p>" +
+                "</div></div>";
+
+            helper.setText(cuerpoHtml, true);
+            helper.addAttachment(
+                "NotaVenta-" + ventaDetalle.getId() + ".pdf",
+                new ByteArrayResource(pdfNota),
+                "application/pdf"
+            );
+
+            for (var t : ventaDetalle.getTickets()) {
+                byte[] pdfTicket = ticketIngresoPdfService.generarTicketPdf(t, nombreSede);
+                helper.addAttachment(
+                    "Ticket-" + t.getNumeroTicket() + ".pdf",
+                    new ByteArrayResource(pdfTicket),
+                    "application/pdf"
+                );
+            }
+
+            mailSender.send(mensaje);
+            log.info("Documentos de venta consolidada enviados por correo a {}: Venta #{}", destinatario, ventaDetalle.getId());
+        } catch (Exception e) {
+            log.error("Error al enviar documentos de venta consolidada a {}: {}", destinatario, e.getMessage(), e);
+            throw new RuntimeException("Error al enviar los documentos por correo.", e);
         }
     }
 }
