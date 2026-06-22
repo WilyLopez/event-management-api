@@ -3,6 +3,7 @@ package com.playzone.pems.application.cms.port.in;
 import com.playzone.pems.application.cms.dto.query.ConfiguracionPublicaQuery;
 
 public interface GestionarConfiguracionPublicaUseCase {
+    // Port for managing public website configuration
 
     record ActualizarCommand(
             String nombreNegocio,
@@ -33,6 +34,8 @@ public interface GestionarConfiguracionPublicaUseCase {
             String metaPixelId,
             String colorTema,
             String colorSecundario,
+            String metricasNegocio,
+            String reglasLocal,
             boolean mantenimientoActivo,
             String mensajeMantenimiento
     ) {}

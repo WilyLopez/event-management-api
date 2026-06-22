@@ -47,7 +47,7 @@ public class FaqController {
             @RequestParam(defaultValue = "0")  int page,
             @RequestParam(defaultValue = "20") int size) {
         PagedResponse<FaqResponse> respuesta = PagedResponse.of(
-                faqUseCase.listar(PageRequest.of(page, size, Sort.by("ordenVisualizacion").ascending()))
+                faqUseCase.listar(PageRequest.of(page, size, Sort.by("orden").ascending()))
                         .map(FaqResponse::from));
         return ResponseEntity.ok(ApiResponse.ok(respuesta));
     }

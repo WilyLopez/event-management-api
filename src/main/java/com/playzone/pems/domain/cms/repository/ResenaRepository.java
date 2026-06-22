@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import java.util.Optional;
 
 public interface ResenaRepository {
+    // Port for Resena persistence operations
 
     Optional<Resena> findById(Long id);
 
@@ -19,4 +20,6 @@ public interface ResenaRepository {
     Resena save(Resena resena);
 
     void deleteById(Long id);
+
+    boolean existsByIdEventoPrivado(Long idEventoPrivado);
 }

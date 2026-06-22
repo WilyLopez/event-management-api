@@ -38,6 +38,8 @@ public class ConfiguracionPublicaQuery {
     private String        metaPixelId;
     private String        colorTema;
     private String        colorSecundario;
+    private String        metricasNegocio;
+    private String        reglasLocal;
     private boolean       esMantenimientoActivo;
     private String        mensajeMantenimiento;
     private OffsetDateTime updatedAt;
@@ -72,6 +74,8 @@ public class ConfiguracionPublicaQuery {
                 .metaPixelId(c.getMetaPixelId())
                 .colorTema(c.getColorTema())
                 .colorSecundario(c.getColorSecundario())
+                .metricasNegocio(c.getMetricasNegocio())
+                .reglasLocal(c.getReglasLocal())
                 .esMantenimientoActivo(c.isEsMantenimientoActivo())
                 .mensajeMantenimiento(c.getMensajeMantenimiento())
                 .updatedAt(c.getUpdatedAt())

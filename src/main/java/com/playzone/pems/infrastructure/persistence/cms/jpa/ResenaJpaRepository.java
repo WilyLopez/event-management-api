@@ -15,4 +15,6 @@ public interface ResenaJpaRepository extends JpaRepository<ResenaEntity, Long> {
 
     @Query("SELECT r FROM ResenaEntity r WHERE r.aprobada = false AND r.aprobadaPor IS NULL ORDER BY r.createdAt ASC")
     Page<ResenaEntity> findPendientes(Pageable pageable);
+
+    boolean existsByEventoId(Long eventoId);
 }

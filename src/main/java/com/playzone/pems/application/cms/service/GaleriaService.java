@@ -6,7 +6,7 @@ import com.playzone.pems.domain.cms.model.enums.CategoriaImagen;
 import com.playzone.pems.domain.cms.repository.ImagenGaleriaRepository;
 import com.playzone.pems.domain.storage.StoragePort;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -17,13 +17,21 @@ import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 public class GaleriaService implements GestionarGaleriaUseCase {
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
     private final ImagenGaleriaRepository galeriaRepository;
     private final StoragePort             storagePort;
+    private final String                  bucketPublico;
+
+    public GaleriaService(ImagenGaleriaRepository galeriaRepository,
+                          StoragePort storagePort,
+                          @Value("${supabase.storage.bucket-publico}") String bucketPublico) {
+        this.galeriaRepository = galeriaRepository;
+        this.storagePort = storagePort;
+        this.bucketPublico = bucketPublico;
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -42,7 +50,7 @@ public class GaleriaService implements GestionarGaleriaUseCase {
                                int orden, UUID idUsuario) {
 
         String key = "galeria/" + LocalDateTime.now().format(FMT) + "_" + nombreArchivo;
-        String url = storagePort.upload("publico", key, contenido, contentType);
+        String url = storagePort.upload(bucketPublico, key, contenido, contentType);
 
         ImagenGaleria imagen = ImagenGaleria.builder()
                 .idSede(idSede)

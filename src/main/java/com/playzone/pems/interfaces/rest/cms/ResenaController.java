@@ -20,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/v1/resenas")
@@ -32,9 +33,11 @@ public class ResenaController {
     // ── Público ──────────────────────────────────────────────────────────
 
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<ResenaResponse>> submit(
-            @Valid @RequestBody SubmitResenaRequest request,
-            @RequestAttribute(required = false) Long idCliente) {
+            @Valid @RequestBody SubmitResenaRequest request) {
+        Long idCliente = supabaseAuthFacade.clientePerfilId()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Cliente sin perfil asociado"));
         Resena resena = moderarUseCase.submit(new ModerarResenaUseCase.SubmitCommand(
                 idCliente,
                 request.getIdEventoPrivado(),
@@ -43,6 +46,16 @@ public class ResenaController {
                 request.getCalificacion(),
                 request.getFotoUrl()));
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(resena)));
+    }
+
+    @GetMapping("/publicas")
+    public ResponseEntity<ApiResponse<PagedResponse<ResenaResponse>>> listarPublicas(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        var pageable = PageRequest.of(page, size);
+        PagedResponse<ResenaResponse> response = PagedResponse.of(
+                moderarUseCase.listar(false, pageable).map(this::toResponse));
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     // ── Admin ─────────────────────────────────────────────────────────────
@@ -55,8 +68,9 @@ public class ResenaController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "fechaCreacion") String sort,
             @RequestParam(defaultValue = "desc") String dir) {
+        String sortField = "fechaCreacion".equals(sort) ? "createdAt" : sort;
         var pageable = PageRequest.of(page, size,
-                "asc".equalsIgnoreCase(dir) ? Sort.Direction.ASC : Sort.Direction.DESC, sort);
+                "asc".equalsIgnoreCase(dir) ? Sort.Direction.ASC : Sort.Direction.DESC, sortField);
         PagedResponse<ResenaResponse> response = PagedResponse.of(
                 moderarUseCase.listar(pendientes, pageable).map(this::toResponse));
         return ResponseEntity.ok(ApiResponse.ok(response));

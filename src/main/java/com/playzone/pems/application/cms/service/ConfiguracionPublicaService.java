@@ -56,6 +56,8 @@ public class ConfiguracionPublicaService implements GestionarConfiguracionPublic
                 .metaPixelId(cmd.metaPixelId())
                 .colorTema(cmd.colorTema())
                 .colorSecundario(cmd.colorSecundario())
+                .metricasNegocio(cmd.metricasNegocio())
+                .reglasLocal(cmd.reglasLocal())
                 .esMantenimientoActivo(cmd.mantenimientoActivo())
                 .mensajeMantenimiento(cmd.mensajeMantenimiento())
                 .updatedBy(supabaseAuthFacade.usuarioActualId().orElse(null))

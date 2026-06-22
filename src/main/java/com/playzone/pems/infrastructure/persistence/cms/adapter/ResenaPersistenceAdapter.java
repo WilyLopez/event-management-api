@@ -15,6 +15,7 @@ import java.util.Optional;
 @Component
 @RequiredArgsConstructor
 public class ResenaPersistenceAdapter implements ResenaRepository {
+    // Adapter implementation for Resena persistence
 
     private final ResenaJpaRepository resenaJpa;
     private final CmsEntityMapper     mapper;
@@ -48,5 +49,10 @@ public class ResenaPersistenceAdapter implements ResenaRepository {
     @Override
     public void deleteById(Long id) {
         resenaJpa.deleteById(id);
+    }
+
+    @Override
+    public boolean existsByIdEventoPrivado(Long idEventoPrivado) {
+        return resenaJpa.existsByEventoId(idEventoPrivado);
     }
 }

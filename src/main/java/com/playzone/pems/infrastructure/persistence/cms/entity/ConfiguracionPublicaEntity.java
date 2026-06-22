@@ -103,6 +103,12 @@ public class ConfiguracionPublicaEntity {
     @Column(name = "color_secundario")
     private String colorSecundario;
 
+    @Column(name = "metricas_negocio", columnDefinition = "jsonb")
+    private String metricasNegocio;
+
+    @Column(name = "reglas_local", columnDefinition = "jsonb")
+    private String reglasLocal;
+
     @Column(name = "es_mantenimiento_activo", nullable = false)
     private boolean esMantenimientoActivo;
 

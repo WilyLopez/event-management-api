@@ -3,6 +3,9 @@ package com.playzone.pems.application.cms.service;
 import com.playzone.pems.application.cms.port.in.ModerarResenaUseCase;
 import com.playzone.pems.domain.cms.model.Resena;
 import com.playzone.pems.domain.cms.repository.ResenaRepository;
+import com.playzone.pems.domain.evento.model.EventoPrivado;
+import com.playzone.pems.domain.evento.model.enums.EstadoEventoPrivado;
+import com.playzone.pems.domain.evento.repository.EventoPrivadoRepository;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import com.playzone.pems.shared.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +21,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ResenaService implements ModerarResenaUseCase {
 
-    private final ResenaRepository resenaRepository;
+    private final ResenaRepository         resenaRepository;
+    private final EventoPrivadoRepository eventoPrivadoRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -39,6 +43,32 @@ public class ResenaService implements ModerarResenaUseCase {
         if (command.calificacion() < 1 || command.calificacion() > 5) {
             throw new ValidationException("calificacion", "La calificación debe estar entre 1 y 5.");
         }
+        if (command.idCliente() == null) {
+            throw new ValidationException("idCliente", "Debes estar autenticado para enviar una opinión.");
+        }
+        if (command.idEventoPrivado() == null) {
+            throw new ValidationException("idEventoPrivado", "El ID del evento privado es obligatorio.");
+        }
+
+        // Evitar duplicidad por evento
+        if (resenaRepository.existsByIdEventoPrivado(command.idEventoPrivado())) {
+            throw new ValidationException("idEventoPrivado", "Ya has enviado una opinión para este evento.");
+        }
+
+        // Obtener el evento
+        EventoPrivado evento = eventoPrivadoRepository.findById(command.idEventoPrivado())
+                .orElseThrow(() -> new ResourceNotFoundException("EventoPrivado", command.idEventoPrivado()));
+
+        // Verificar que el evento pertenezca al cliente
+        if (!evento.getIdCliente().equals(command.idCliente())) {
+            throw new ValidationException("idEventoPrivado", "No puedes calificar un evento que no te pertenece.");
+        }
+
+        // Verificar que el evento esté COMPLETADO
+        if (evento.getEstado() != EstadoEventoPrivado.COMPLETADA) {
+            throw new ValidationException("idEventoPrivado", "Solo puedes calificar eventos que hayan finalizado exitosamente.");
+        }
+
         Resena nueva = Resena.builder()
                 .idCliente(command.idCliente())
                 .idEventoPrivado(command.idEventoPrivado())

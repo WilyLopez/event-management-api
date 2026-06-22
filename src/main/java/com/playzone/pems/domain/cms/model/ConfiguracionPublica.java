@@ -55,6 +55,9 @@ public class ConfiguracionPublica {
     private String        colorTema;
     private String        colorSecundario;
 
+    private String        metricasNegocio;
+    private String        reglasLocal;
+
     private boolean       esMantenimientoActivo;
     private String        mensajeMantenimiento;
 

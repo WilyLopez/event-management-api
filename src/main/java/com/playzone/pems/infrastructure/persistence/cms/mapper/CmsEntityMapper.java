@@ -307,6 +307,8 @@ public class CmsEntityMapper {
                 .metaPixelId(e.getMetaPixelId())
                 .colorTema(e.getColorTema())
                 .colorSecundario(e.getColorSecundario())
+                .metricasNegocio(e.getMetricasNegocio())
+                .reglasLocal(e.getReglasLocal())
                 .esMantenimientoActivo(e.isEsMantenimientoActivo())
                 .mensajeMantenimiento(e.getMensajeMantenimiento())
                 .createdAt(e.getCreatedAt())
@@ -347,9 +349,49 @@ public class CmsEntityMapper {
                 .metaPixelId(d.getMetaPixelId())
                 .colorTema(d.getColorTema())
                 .colorSecundario(d.getColorSecundario())
+                .metricasNegocio(d.getMetricasNegocio())
+                .reglasLocal(d.getReglasLocal())
                 .esMantenimientoActivo(d.isEsMantenimientoActivo())
                 .mensajeMantenimiento(d.getMensajeMantenimiento())
                 .updatedBy(d.getUpdatedBy())
+                .build();
+    }
+
+    public MensajeContacto toDomain(MensajeContactoEntity e) {
+        if (e == null) return null;
+        return MensajeContacto.builder()
+                .id(e.getId())
+                .nombre(e.getNombre())
+                .correo(e.getCorreo())
+                .telefono(e.getTelefono())
+                .asunto(e.getAsunto())
+                .mensaje(e.getMensaje())
+                .estado(e.getEstado())
+                .respuesta(e.getRespuesta())
+                .respondidoPor(e.getRespondidoPor())
+                .respondidoAt(e.getRespondidoAt())
+                .ipOrigen(e.getIpOrigen())
+                .userAgent(e.getUserAgent())
+                .createdAt(e.getCreatedAt())
+                .updatedAt(e.getUpdatedAt())
+                .build();
+    }
+
+    public MensajeContactoEntity toEntity(MensajeContacto d) {
+        if (d == null) return null;
+        return MensajeContactoEntity.builder()
+                .id(d.getId())
+                .nombre(d.getNombre())
+                .correo(d.getCorreo())
+                .telefono(d.getTelefono())
+                .asunto(d.getAsunto())
+                .mensaje(d.getMensaje())
+                .estado(d.getEstado())
+                .respuesta(d.getRespuesta())
+                .respondidoPor(d.getRespondidoPor())
+                .respondidoAt(d.getRespondidoAt())
+                .ipOrigen(d.getIpOrigen())
+                .userAgent(d.getUserAgent())
                 .build();
     }
 }

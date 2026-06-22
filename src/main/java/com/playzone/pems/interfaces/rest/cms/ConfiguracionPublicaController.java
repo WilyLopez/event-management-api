@@ -43,6 +43,7 @@ public class ConfiguracionPublicaController {
     @PreAuthorize("hasAuthority('configuracion.editar')")
     public ResponseEntity<ApiResponse<ConfiguracionPublicaResponse>> actualizar(
             @Valid @RequestBody ActualizarConfiguracionRequest request) {
+        // Actualizar la configuración pública del sitio web
         ConfiguracionPublicaResponse response = ConfiguracionPublicaResponse.from(
                 configUseCase.actualizar(new GestionarConfiguracionPublicaUseCase.ActualizarCommand(
                         request.getNombreNegocio(),
@@ -73,6 +74,8 @@ public class ConfiguracionPublicaController {
                         request.getMetaPixelId(),
                         request.getColorTema(),
                         request.getColorSecundario(),
+                        request.getMetricasNegocio(),
+                        request.getReglasLocal(),
                         request.isMantenimientoActivo(),
                         request.getMensajeMantenimiento())));
         return ResponseEntity.ok(ApiResponse.ok(response));
@@ -111,6 +114,8 @@ public class ConfiguracionPublicaController {
         private String  metaPixelId;
         private String  colorTema;
         private String  colorSecundario;
+        private String  metricasNegocio;
+        private String  reglasLocal;
         private boolean mantenimientoActivo;
         private String  mensajeMantenimiento;
     }
@@ -146,6 +151,8 @@ public class ConfiguracionPublicaController {
         private String        metaPixelId;
         private String        colorTema;
         private String        colorSecundario;
+        private String        metricasNegocio;
+        private String        reglasLocal;
         private boolean       mantenimientoActivo;
         private String        mensajeMantenimiento;
         private OffsetDateTime updatedAt;
@@ -180,6 +187,8 @@ public class ConfiguracionPublicaController {
                     .metaPixelId(q.getMetaPixelId())
                     .colorTema(q.getColorTema())
                     .colorSecundario(q.getColorSecundario())
+                    .metricasNegocio(q.getMetricasNegocio())
+                    .reglasLocal(q.getReglasLocal())
                     .mantenimientoActivo(q.isEsMantenimientoActivo())
                     .mensajeMantenimiento(q.getMensajeMantenimiento())
                     .updatedAt(q.getUpdatedAt())
