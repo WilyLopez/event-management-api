@@ -8,6 +8,7 @@ import com.playzone.pems.domain.calendario.model.Tarifa;
 import com.playzone.pems.domain.calendario.model.enums.TipoDia;
 import com.playzone.pems.domain.calendario.repository.FeriadoRepository;
 import com.playzone.pems.domain.calendario.repository.TarifaRepository;
+import com.playzone.pems.domain.calendario.repository.ConfiguracionCalendarioRepository;
 import com.playzone.pems.domain.evento.model.ReservaPublica;
 import com.playzone.pems.domain.evento.model.enums.CanalReserva;
 import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
@@ -48,6 +49,7 @@ public class VentaMostradorService {
     private final FeriadoRepository        feriadoRepository;
     private final PromocionRepository      promocionRepository;
     private final SupabaseAuthFacade       authFacade;
+    private final ConfiguracionCalendarioRepository configRepository;
 
     @Transactional
     public VentaMostradorQuery registrar(RegistrarVentaMostradorCommand cmd) {
@@ -55,6 +57,27 @@ public class VentaMostradorService {
         aperturaCajaRepository.findActivaBySede(cmd.getSedeId())
                 .orElseThrow(() -> new ValidationException(
                         "No hay caja abierta para esta sede. Abrir caja antes de registrar ventas."));
+
+        java.time.ZoneId zoneId = java.time.ZoneId.of("America/Lima");
+        java.time.LocalTime horaActual = java.time.LocalTime.now(zoneId);
+        java.time.LocalTime apertura = java.time.LocalTime.of(10, 0);
+        java.time.LocalTime cierre = java.time.LocalTime.of(20, 0);
+
+        try {
+            var config = configRepository.obtener(cmd.getSedeId());
+            if (config != null) {
+                if (config.getHoraApertura() != null) apertura = config.getHoraApertura();
+                if (config.getHoraCierre() != null) cierre = config.getHoraCierre();
+            }
+        } catch (Exception ignored) {}
+
+        boolean esHoy = cmd.getFechaVisita().equals(LocalDate.now(zoneId));
+
+        if (esHoy && horaActual.isAfter(cierre)) {
+            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("hh:mm a", java.util.Locale.ENGLISH);
+            throw new ValidationException(String.format("El local ya cerró por hoy. No se permiten registrar visitas para el día de hoy después de la hora de cierre: %s.",
+                    cierre.format(formatter)));
+        }
 
         boolean esFeriado = feriadoRepository.existsByFecha(cmd.getFechaVisita());
         TipoDia tipoDia = (FechaUtil.esFindeSemana(cmd.getFechaVisita()) || esFeriado)
@@ -86,28 +109,8 @@ public class VentaMostradorService {
 
         BigDecimal total = subtotal.subtract(descuento).max(BigDecimal.ZERO);
 
-        BigDecimal sumaPagos = cmd.getPagos().stream()
-                .map(PagoMostradorCommand::getMonto)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        if (sumaPagos.compareTo(total) != 0) {
-            throw new ValidationException(
-                    "La suma de pagos (" + sumaPagos + ") no coincide con el total (" + total + ").");
-        }
-
-        BigDecimal efectivoEnPagos = cmd.getPagos().stream()
-                .filter(p -> "EFECTIVO".equals(p.getMedioPago()))
-                .map(PagoMostradorCommand::getMonto)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal efectivoRecibido = cmd.getEfectivoRecibido() != null
-                ? cmd.getEfectivoRecibido() : BigDecimal.ZERO;
-
-        if (efectivoEnPagos.compareTo(BigDecimal.ZERO) > 0
-                && efectivoRecibido.compareTo(efectivoEnPagos) < 0) {
-            throw new ValidationException("Efectivo recibido insuficiente.");
-        }
-
-        BigDecimal vuelto = efectivoRecibido.subtract(efectivoEnPagos).max(BigDecimal.ZERO);
+        BigDecimal efectivoRecibido = cmd.getEfectivoRecibido() != null ? cmd.getEfectivoRecibido() : BigDecimal.ZERO;
+        BigDecimal vuelto = VentaPagoValidator.validarYCalcularVuelto(cmd.getPagos(), total, efectivoRecibido);
 
         UUID usuarioActual = authFacade.usuarioActualId()
                 .orElseThrow(() -> new ValidationException(
@@ -141,6 +144,20 @@ public class VentaMostradorService {
                 : BigDecimal.ZERO;
         BigDecimal totalPorNino = precioBase.subtract(descuentoPorNino).max(BigDecimal.ZERO);
 
+        EstadoReservaPublica estadoInicial = EstadoReservaPublica.CONFIRMADA;
+        boolean ingresado = false;
+        OffsetDateTime ingresoAt = null;
+
+        if (esHoy) {
+            if (horaActual.isBefore(apertura)) {
+                estadoInicial = EstadoReservaPublica.CONFIRMADA;
+            } else {
+                estadoInicial = EstadoReservaPublica.COMPLETADA;
+                ingresado = true;
+                ingresoAt = OffsetDateTime.now(zoneId);
+            }
+        }
+
         List<ReservaPublica> reservas = new ArrayList<>();
         for (NinoMostradorCommand nino : cmd.getNinos()) {
             ReservaPublica reserva = reservaRepository.save(ReservaPublica.builder()
@@ -150,7 +167,7 @@ public class VentaMostradorService {
                     .canalReserva(CanalReserva.MOSTRADOR)
                     .tipoDia(tipoDia)
                     .fechaEvento(cmd.getFechaVisita())
-                    .estado(EstadoReservaPublica.CONFIRMADA)
+                    .estado(estadoInicial)
                     .precioHistorico(precioBase)
                     .descuentoAplicado(descuentoPorNino)
                     .totalPagado(totalPorNino)
@@ -159,7 +176,8 @@ public class VentaMostradorService {
                     .nombreAcompanante(cmd.getNombreAcompanante())
                     .dniAcompanante(cmd.getDniAcompanante())
                     .firmoConsentimiento(cmd.isActaFirmada())
-                    .ingresado(false)
+                    .ingresado(ingresado)
+                    .ingresoAt(ingresoAt)
                     .esReprogramacion(false)
                     .vecesReprogramada(0)
                     .createdBy(usuarioActual)

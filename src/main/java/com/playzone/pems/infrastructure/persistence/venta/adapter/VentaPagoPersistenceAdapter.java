@@ -28,6 +28,11 @@ public class VentaPagoPersistenceAdapter implements VentaPagoRepository {
     }
 
     @Override
+    public void deleteByVentaId(Long ventaId) {
+        jpaRepository.deleteByVentaId(ventaId);
+    }
+
+    @Override
     public BigDecimal sumValidadosBySedeAndPeriodoAndMedioPago(
             Long idSede, int anio, int mes, String medioPago) {
         BigDecimal result = jpaRepository.sumBySedeAndPeriodoAndMedioPago(idSede, anio, mes, medioPago);

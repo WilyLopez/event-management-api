@@ -21,6 +21,14 @@ public class VentaQuery {
     private final BigDecimal    subtotal;
     private final BigDecimal    descuento;
     private final BigDecimal    total;
+    private final String        nombreAcompanante;
+    private final String        dniAcompanante;
+    private final String        nombreCliente;
     private final String        notas;
+    private final boolean       impreso;
+    private final boolean       enviadoCorreo;
+    private final boolean       descargado;
+    private final BigDecimal    efectivoRecibido;
+    private final BigDecimal    vuelto;
     private final OffsetDateTime createdAt;
 }

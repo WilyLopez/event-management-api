@@ -22,7 +22,16 @@ public interface VentaRepository {
             OffsetDateTime hasta,
             Pageable pageable);
 
+    Page<Venta> findBySedeAndFechasBetweenAndSearch(
+            Long idSede,
+            OffsetDateTime desde,
+            OffsetDateTime hasta,
+            String search,
+            Pageable pageable);
+
     Page<Venta> findByUsuario(UUID idUsuario, Pageable pageable);
 
     Venta save(Venta venta);
+
+    void deleteById(Long id);
 }

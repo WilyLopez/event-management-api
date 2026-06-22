@@ -4,6 +4,7 @@ import com.playzone.pems.application.venta.dto.query.VentaMostradorQuery;
 import com.playzone.pems.application.venta.service.VentaMostradorService;
 import com.playzone.pems.interfaces.rest.venta.request.RegistrarVentaMostradorRequest;
 import com.playzone.pems.interfaces.rest.venta.response.VentaMostradorResponse;
+import com.playzone.pems.shared.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,9 +21,9 @@ public class VentaMostradorController {
     @PostMapping
     @PreAuthorize("hasAuthority('pos.vender')")
     @ResponseStatus(HttpStatus.CREATED)
-    public VentaMostradorResponse registrar(
+    public ApiResponse<VentaMostradorResponse> registrar(
             @Valid @RequestBody RegistrarVentaMostradorRequest request) {
         VentaMostradorQuery query = ventaMostradorService.registrar(request.toCommand());
-        return VentaMostradorResponse.from(query);
+        return ApiResponse.created(VentaMostradorResponse.from(query));
     }
 }

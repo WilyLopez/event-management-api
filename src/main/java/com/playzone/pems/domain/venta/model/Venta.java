@@ -31,6 +31,9 @@ public class Venta {
     private BigDecimal    vuelto;
     private boolean       actaFirmada;
     private boolean       esAnticipada;
+    private boolean       impreso;
+    private boolean       enviadoCorreo;
+    private boolean       descargado;
     private String        notas;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;

@@ -82,6 +82,18 @@ public class VentaEntity {
     @Builder.Default
     private boolean esAnticipada = false;
 
+    @Column(name = "impreso", nullable = false)
+    @Builder.Default
+    private boolean impreso = false;
+
+    @Column(name = "enviado_correo", nullable = false)
+    @Builder.Default
+    private boolean enviadoCorreo = false;
+
+    @Column(name = "descargado", nullable = false)
+    @Builder.Default
+    private boolean descargado = false;
+
     @Column(name = "notas")
     private String notas;
 

@@ -42,6 +42,18 @@ public class VentaPersistenceAdapter implements VentaRepository {
     }
 
     @Override
+    public Page<Venta> findBySedeAndFechasBetweenAndSearch(Long idSede, OffsetDateTime desde,
+                                                          OffsetDateTime hasta, String search, Pageable pageable) {
+        return ventaJpa.findBySedeAndCreatedAtBetweenAndSearch(
+                        idSede,
+                        desde,
+                        hasta,
+                        search,
+                        pageable)
+                .map(mapper::toDomain);
+    }
+
+    @Override
     public Page<Venta> findByUsuario(UUID idUsuario, Pageable pageable) {
         return ventaJpa.findByCreatedBy(idUsuario, pageable).map(mapper::toDomain);
     }
@@ -57,5 +69,11 @@ public class VentaPersistenceAdapter implements VentaRepository {
         var sede = sedeJpa.findById(venta.getIdSede())
                 .orElseThrow(() -> new ResourceNotFoundException("Sede", venta.getIdSede()));
         return mapper.toDomain(ventaJpa.save(mapper.toEntity(venta, sede)));
+    }
+
+    @Override
+    @Transactional
+    public void deleteById(Long id) {
+        ventaJpa.deleteById(id);
     }
 }
