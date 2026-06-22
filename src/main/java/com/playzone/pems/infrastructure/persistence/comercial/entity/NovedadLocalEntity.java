@@ -5,6 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -24,11 +25,23 @@ public class NovedadLocalEntity {
     @Column(nullable = false, length = 150)
     private String titulo;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(name = "descripcion", nullable = false, columnDefinition = "TEXT")
     private String contenido;
 
     @Column(name = "imagen_path", length = 500)
     private String imagenUrl;
+
+    @Column(name = "texto_cta")
+    private String textoCta;
+
+    @Column(name = "url_cta")
+    private String urlCta;
+
+    @Column(name = "fecha_inicio")
+    private LocalDate fechaInicio;
+
+    @Column(name = "fecha_fin")
+    private LocalDate fechaFin;
 
     @Column(name = "es_activa", nullable = false)
     private boolean activa;

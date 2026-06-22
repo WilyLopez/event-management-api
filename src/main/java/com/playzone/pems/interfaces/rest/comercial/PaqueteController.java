@@ -37,6 +37,11 @@ public class PaqueteController {
         return ResponseEntity.ok(ApiResponse.ok(useCase.listarTodos().stream().map(this::toResponse).toList()));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<PaqueteEventoResponse>> obtenerPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.ok(toResponse(useCase.obtenerPorId(id))));
+    }
+
     @PostMapping
     @PreAuthorize("hasAuthority('paquete.gestionar')")
     public ResponseEntity<ApiResponse<PaqueteEventoResponse>> crear(@Valid @RequestBody CrearPaqueteCommand command) {

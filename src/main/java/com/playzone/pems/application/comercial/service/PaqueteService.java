@@ -25,7 +25,7 @@ public class PaqueteService implements GestionarPaquetesUseCase {
 
     @Override
     public PaqueteEventoQuery crear(CrearPaqueteCommand command) {
-        validarTipoEvento(command.getTipoEventoCodigo());
+        validarPaquete(command.getTipoEventoCodigo(), command.getColor());
         String slug = generarSlug(command.getNombre());
         if (repo.existsBySlug(slug)) {
             slug = slug + "-" + System.currentTimeMillis();
@@ -52,7 +52,7 @@ public class PaqueteService implements GestionarPaquetesUseCase {
 
     @Override
     public PaqueteEventoQuery actualizar(ActualizarPaqueteCommand command) {
-        validarTipoEvento(command.getTipoEventoCodigo());
+        validarPaquete(command.getTipoEventoCodigo(), command.getColor());
         PaqueteEvento existente = repo.findById(command.getId())
                 .orElseThrow(() -> new IllegalArgumentException("Paquete no encontrado: " + command.getId()));
         PaqueteEvento actualizado = PaqueteEvento.builder()
@@ -74,6 +74,14 @@ public class PaqueteService implements GestionarPaquetesUseCase {
                 .beneficios(command.getBeneficios())
                 .build();
         return toQuery(repo.save(actualizado));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PaqueteEventoQuery obtenerPorId(Long id) {
+        PaqueteEvento paquete = repo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Paquete no encontrado: " + id));
+        return toQuery(paquete);
     }
 
     @Override
@@ -117,6 +125,15 @@ public class PaqueteService implements GestionarPaquetesUseCase {
                 .beneficios(existente.getBeneficios())
                 .build();
         return toQuery(repo.save(actualizado));
+    }
+
+    private void validarPaquete(String tipoEventoCodigo, String colorHex) {
+        validarTipoEvento(tipoEventoCodigo);
+        if (colorHex != null && !colorHex.isBlank()) {
+            if (!colorHex.matches("^#[0-9A-Fa-f]{6}$")) {
+                throw new BusinessException("El color hexadecimal no es válido (debe tener el formato #RRGGBB).", HttpStatus.BAD_REQUEST);
+            }
+        }
     }
 
     private void validarTipoEvento(String codigo) {

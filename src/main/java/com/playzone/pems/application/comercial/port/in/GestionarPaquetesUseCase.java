@@ -9,6 +9,7 @@ import java.util.List;
 public interface GestionarPaquetesUseCase {
     PaqueteEventoQuery crear(CrearPaqueteCommand command);
     PaqueteEventoQuery actualizar(ActualizarPaqueteCommand command);
+    PaqueteEventoQuery obtenerPorId(Long id);
     List<PaqueteEventoQuery> listarTodos();
     List<PaqueteEventoQuery> listarActivos();
     void eliminar(Long id);
