@@ -145,4 +145,6 @@ public interface ReservaPublicaJpaRepository extends JpaRepository<ReservaPublic
             @Param("idSede") Long idSede,
             @Param("inicio") LocalDate inicio,
             @Param("fin")    LocalDate fin);
+
+    List<ReservaPublicaEntity> findByVentaId(Long ventaId);
 }

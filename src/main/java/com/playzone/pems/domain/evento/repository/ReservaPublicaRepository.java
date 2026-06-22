@@ -70,4 +70,8 @@ public interface ReservaPublicaRepository {
     List<ReservasPorDia> countAgrupadoPorDia(Long idSede, LocalDate inicio, LocalDate fin);
 
     List<IngresosPorDia> sumIngresosAgrupadoPorDia(Long idSede, LocalDate inicio, LocalDate fin);
+
+    List<ReservaPublica> findByVentaId(Long ventaId);
+
+    void deleteById(Long id);
 }

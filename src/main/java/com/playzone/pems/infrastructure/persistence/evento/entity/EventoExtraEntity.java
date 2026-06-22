@@ -18,21 +18,21 @@ public class EventoExtraEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ideventoextra")
+    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "ideventoprivado", nullable = false)
+    @JoinColumn(name = "evento_id", nullable = false)
     private EventoPrivadoEntity evento;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "idextra")
+    @JoinColumn(name = "paquete_extra_id")
     private ExtraPaqueteEntity extra;
 
-    @Column(name = "nombrelibre", length = 300)
+    @Column(name = "nombre_libre", length = 300)
     private String nombreLibre;
 
     @CreationTimestamp
-    @Column(name = "fechacreacion", nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;
 }

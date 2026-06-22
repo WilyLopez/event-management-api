@@ -80,8 +80,10 @@ public class EventoPrivadoPersistenceAdapter implements EventoPrivadoRepository 
     public EventoPrivado save(EventoPrivado evento) {
         var sede = sedeJpa.findById(evento.getIdSede())
                 .orElseThrow(() -> new ResourceNotFoundException("Sede", evento.getIdSede()));
-        var turno = turnoJpa.findById(evento.getIdTurno())
-                .orElseThrow(() -> new ResourceNotFoundException("Turno", evento.getIdTurno()));
+        Long idTurno = evento.getIdTurno();
+        String codigoTurno = idTurno == 1L ? "T1" : idTurno == 2L ? "T2" : String.valueOf(idTurno);
+        var turno = turnoJpa.findById(codigoTurno)
+                .orElseThrow(() -> new ResourceNotFoundException("Turno", idTurno));
 
         return mapper.toDomain(eventoJpa.save(mapper.toEntity(evento, sede, turno)));
     }

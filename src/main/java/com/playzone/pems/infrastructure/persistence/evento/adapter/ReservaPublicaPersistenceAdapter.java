@@ -174,4 +174,15 @@ public class ReservaPublicaPersistenceAdapter implements ReservaPublicaRepositor
     @Override public List<IngresosPorDia> sumIngresosAgrupadoPorDia(Long idSede, LocalDate inicio, LocalDate fin) {
         return reservaJpa.sumIngresosAgrupadoPorDia(idSede, inicio, fin);
     }
+
+    @Override
+    public List<ReservaPublica> findByVentaId(Long ventaId) {
+        return reservaJpa.findByVentaId(ventaId).stream().map(mapper::toDomain).toList();
+    }
+
+    @Override
+    @Transactional
+    public void deleteById(Long id) {
+        reservaJpa.deleteById(id);
+    }
 }

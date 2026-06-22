@@ -82,7 +82,7 @@ public class ReservaPublicaService
         ClientePerfil cliente = clientePerfilRepository.buscarPorId(idCliente)
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente", idCliente));
         return reservaRepository.findByCliente(idCliente, pageable)
-                .map(r -> toQuery(r, cliente.nombreCompleto(), cliente.getCorreo(), fetchNombreSede(r.getIdSede()), null));
+                .map(r -> toQuery(r, cliente.nombreCompleto(), cliente.getCorreo(), fetchNombreSede(r.getIdSede()), null, null));
     }
 
     @Override
@@ -90,7 +90,7 @@ public class ReservaPublicaService
     public Page<ReservaPublicaQuery> consultarPorSedeYFecha(Long idSede, LocalDate fecha, Pageable pageable) {
         String nombreSede = fetchNombreSede(idSede);
         return reservaRepository.findBySedeAndFecha(idSede, fecha, pageable)
-                .map(r -> toQuery(r, fetchNombreCliente(r.getIdCliente()), null, nombreSede, null));
+                .map(r -> toQuery(r, fetchNombreCliente(r.getIdCliente()), null, nombreSede, null, null));
     }
 
     @Override
@@ -98,7 +98,7 @@ public class ReservaPublicaService
     public Page<ReservaPublicaQuery> consultarPorSedeYEstado(Long idSede, String estado, Pageable pageable) {
         String nombreSede = fetchNombreSede(idSede);
         return reservaRepository.findBySedeAndEstado(idSede, EstadoReservaPublica.valueOf(estado), pageable)
-                .map(r -> toQuery(r, fetchNombreCliente(r.getIdCliente()), null, nombreSede, null));
+                .map(r -> toQuery(r, fetchNombreCliente(r.getIdCliente()), null, nombreSede, null, null));
     }
 
     @Transactional(readOnly = true)
@@ -174,7 +174,7 @@ public class ReservaPublicaService
         ReservaPublica guardada = reservaRepository.save(reserva);
 
         ReservaPublicaQuery query = toQuery(guardada, cliente.nombreCompleto(), cliente.getCorreo(),
-                fetchNombreSede(command.getIdSede()), null);
+                fetchNombreSede(command.getIdSede()), null, null);
         if (cliente.getCorreo() != null) {
             correoPort.enviarTicket(cliente.getCorreo(), cliente.nombreCompleto(), query);
         } else {
@@ -236,7 +236,7 @@ public class ReservaPublicaService
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente", guardada.getIdCliente()));
 
         ReservaPublicaQuery query = toQuery(guardada, cliente.nombreCompleto(), cliente.getCorreo(),
-                fetchNombreSede(guardada.getIdSede()), null);
+                fetchNombreSede(guardada.getIdSede()), null, null);
         if (cliente.getCorreo() != null) {
             correoPort.enviarTicket(cliente.getCorreo(), cliente.nombreCompleto(), query);
         } else {
@@ -267,7 +267,7 @@ public class ReservaPublicaService
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente", guardada.getIdCliente()));
 
         return toQuery(guardada, cliente.nombreCompleto(), cliente.getCorreo(),
-                fetchNombreSede(guardada.getIdSede()), null);
+                fetchNombreSede(guardada.getIdSede()), null, null);
     }
 
     @Transactional
@@ -279,6 +279,9 @@ public class ReservaPublicaService
         }
         ReservaPublica guardada = reservaRepository.save(
                 reserva.toBuilder().estado(EstadoReservaPublica.CONFIRMADA).build());
+        
+        ventaPagoRepository.deleteByVentaId(guardada.getVentaId());
+
         ventaPagoRepository.save(VentaPago.builder()
                 .ventaId(guardada.getVentaId())
                 .medioPagoCodigo(medioPago)
@@ -292,16 +295,40 @@ public class ReservaPublicaService
 
     @Transactional
     public ReservaPublicaQuery actualizarReferenciaPago(Long idReserva, MultipartFile archivo) {
+        String url;
         try {
             byte[] bytes = archivo.getBytes();
             String key = "comprobantes/" + UUID.randomUUID() + "_" + archivo.getOriginalFilename();
             String mime = archivo.getContentType() != null ? archivo.getContentType() : "application/octet-stream";
-            storagePort.upload("comprobantes", key, bytes, mime);
+            url = storagePort.upload("comprobantes", key, bytes, mime);
         } catch (IOException e) {
             throw new RuntimeException("No se pudo leer el comprobante", e);
         }
         ReservaPublica reserva = reservaRepository.findById(idReserva)
                 .orElseThrow(() -> new ReservaNotFoundException(idReserva));
+
+        var pagosExistentes = ventaPagoRepository.findByVentaId(reserva.getVentaId());
+        boolean actualizado = false;
+        for (var pago : pagosExistentes) {
+            if (!pago.isEsValidado()) {
+                ventaPagoRepository.save(pago.toBuilder()
+                        .referencia(url)
+                        .medioPagoCodigo("YAPE")
+                        .build());
+                actualizado = true;
+                break;
+            }
+        }
+        if (!actualizado) {
+            ventaPagoRepository.save(VentaPago.builder()
+                    .ventaId(reserva.getVentaId())
+                    .medioPagoCodigo("YAPE")
+                    .monto(reserva.getTotalPagado())
+                    .referencia(url)
+                    .esValidado(false)
+                    .build());
+        }
+
         return enriquecerQuery(reserva);
     }
 
@@ -366,12 +393,13 @@ public class ReservaPublicaService
                 cliente != null ? cliente.nombreCompleto() : null,
                 cliente != null ? cliente.getCorreo() : null,
                 fetchNombreSede(r.getIdSede()),
-                fetchMedioPago(r.getVentaId()));
+                fetchMedioPago(r.getVentaId()),
+                fetchReferenciaPago(r.getVentaId()));
     }
 
     private ReservaPublicaQuery toQuery(ReservaPublica r, String nombreCliente,
                                         String correoCliente, String nombreSede,
-                                        String medioPago) {
+                                        String medioPago, String referenciaPago) {
         return ReservaPublicaQuery.builder()
                 .id(r.getId())
                 .idCliente(r.getIdCliente())
@@ -398,6 +426,7 @@ public class ReservaPublicaService
                 .fechaIngreso(r.getIngresoAt())
                 .codigoQr(r.getCodigoQr())
                 .medioPago(medioPago)
+                .referenciaPago(referenciaPago)
                 .fechaCreacion(r.getCreatedAt())
                 .build();
     }
@@ -408,5 +437,13 @@ public class ReservaPublicaService
         if (pagos.isEmpty()) return null;
         if (pagos.size() == 1) return pagos.get(0).getMedioPagoCodigo();
         return "MULTIPLE";
+    }
+
+    private String fetchReferenciaPago(Long idVenta) {
+        if (idVenta == null) return null;
+        var pagos = ventaPagoRepository.findByVentaId(idVenta);
+        if (pagos.isEmpty()) return null;
+        if (pagos.size() == 1) return pagos.get(0).getReferencia();
+        return null;
     }
 }

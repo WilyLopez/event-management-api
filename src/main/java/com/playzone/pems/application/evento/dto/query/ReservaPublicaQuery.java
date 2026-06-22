@@ -36,5 +36,6 @@ public class ReservaPublicaQuery {
     private final OffsetDateTime fechaIngreso;
     private final String        codigoQr;
     private final String        medioPago;
+    private final String        referenciaPago;
     private final OffsetDateTime fechaCreacion;
 }

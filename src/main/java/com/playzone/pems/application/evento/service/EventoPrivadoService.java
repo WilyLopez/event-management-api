@@ -22,6 +22,7 @@ import com.playzone.pems.domain.calendario.repository.FeriadoRepository;
 import com.playzone.pems.domain.calendario.repository.TurnoRepository;
 import com.playzone.pems.domain.comercial.repository.ExtraPaqueteRepository;
 import com.playzone.pems.domain.comercial.repository.ServicioCotizacionRepository;
+import com.playzone.pems.domain.comercial.repository.TipoEventoRepository;
 import com.playzone.pems.domain.evento.model.EventoExtra;
 import com.playzone.pems.domain.evento.model.EventoPrivado;
 import com.playzone.pems.domain.evento.model.enums.EstadoEventoPrivado;
@@ -72,6 +73,7 @@ public class EventoPrivadoService
     private final SupabaseAuthFacade              supabaseAuthFacade;
     private final ExtraPaqueteRepository          extraPaqueteRepository;
     private final ServicioCotizacionRepository    servicioCotizacionRepository;
+    private final TipoEventoRepository            tipoEventoRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -121,6 +123,7 @@ public class EventoPrivadoService
     @Override
     @Transactional
     public EventoPrivadoQuery ejecutar(SolicitarEventoPrivadoCommand command) {
+        validarTipoEvento(command.getTipoEvento());
         validarFechaEvento(command.getIdSede(), command.getFechaEvento());
         validarTurnoEvento(command.getIdSede(), command.getFechaEvento(), command.getIdTurno());
 
@@ -294,6 +297,19 @@ public class EventoPrivadoService
             log.warn("Evento {} sin correo de cliente {}, no se envia notificacion cancelacion", guardado.getId(), guardado.getIdCliente());
         }
         return query;
+    }
+
+    private void validarTipoEvento(String tipoEventoCodigo) {
+        if (tipoEventoCodigo == null || tipoEventoCodigo.isBlank()) {
+            throw new ValidationException("tipoEvento", "El tipo de evento es obligatorio.");
+        }
+        var tipoEventoOpt = tipoEventoRepository.buscarPorCodigo(tipoEventoCodigo);
+        if (tipoEventoOpt.isEmpty()) {
+            throw new ValidationException("tipoEvento", "El tipo de evento especificado no existe.");
+        }
+        if (!tipoEventoOpt.get().isActivo()) {
+            throw new ValidationException("tipoEvento", "El tipo de evento especificado no está activo.");
+        }
     }
 
     private void validarFechaEvento(Long idSede, LocalDate fecha) {

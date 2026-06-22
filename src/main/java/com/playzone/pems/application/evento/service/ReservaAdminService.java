@@ -17,6 +17,8 @@ import com.playzone.pems.domain.evento.repository.EventoPrivadoRepository;
 import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
 import com.playzone.pems.domain.usuario.model.ClientePerfil;
 import com.playzone.pems.domain.usuario.repository.ClientePerfilRepository;
+import com.playzone.pems.domain.venta.repository.VentaRepository;
+import com.playzone.pems.domain.venta.repository.VentaPagoRepository;
 import com.playzone.pems.shared.exception.ValidationException;
 import com.playzone.pems.shared.util.FechaUtil;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -43,12 +46,19 @@ public class ReservaAdminService
     private final ConfiguracionCalendarioRepository configRepository;
     private final EventoPrivadoRepository           eventoRepository;
     private final RegistrarVisitaUseCase            registrarVisitaUseCase;
+    private final VentaRepository                   ventaRepository;
+    private final VentaPagoRepository               ventaPagoRepository;
 
     @Override
     @Transactional
     public ReservaPublicaQuery ejecutar(Long idReserva, UUID idUsuarioAdmin) {
         ReservaPublica reserva = reservaRepository.findById(idReserva)
                 .orElseThrow(() -> new ReservaNotFoundException(idReserva));
+
+        if (reserva.getFechaEvento().isBefore(LocalDate.now(ZoneId.of("America/Lima")))) {
+            throw new ValidationException(
+                    "No se puede registrar el ingreso de una reserva cuya fecha ya pasó.");
+        }
 
         if (!reserva.puedeRegistrarIngreso()) {
             throw new ValidationException(
@@ -120,6 +130,11 @@ public class ReservaAdminService
         ReservaPublica r = reservaRepository.findById(idReserva)
                 .orElseThrow(() -> new ReservaNotFoundException(idReserva));
 
+        if (r.getFechaEvento().isBefore(LocalDate.now(ZoneId.of("America/Lima")))) {
+            throw new ValidationException(
+                    "No se puede registrar el ingreso de una reserva cuya fecha ya pasó.");
+        }
+
         if (r.isIngresado()) {
             throw new ValidationException("Este ticket ya registro su ingreso.");
         }
@@ -128,6 +143,9 @@ public class ReservaAdminService
         }
         if (r.getEstado() == EstadoReservaPublica.PENDIENTE) {
             throw new ValidationException("Este ticket tiene pago pendiente. Cobra antes de permitir el ingreso.");
+        }
+        if (r.requiresVentaForEntry()) {
+            throw new ValidationException("Este ticket no puede ser ingresado sin estar asociado a una venta (pago registrado).");
         }
 
         ReservaPublica actualizada = r.toBuilder()
@@ -228,5 +246,23 @@ public class ReservaAdminService
                 .codigoQr(r.getCodigoQr())
                 .fechaCreacion(r.getCreatedAt())
                 .build();
+    }
+
+    @Transactional
+    public void eliminar(Long idReserva) {
+        ReservaPublica reserva = reservaRepository.findById(idReserva)
+                .orElseThrow(() -> new ReservaNotFoundException(idReserva));
+
+        Long ventaId = reserva.getVentaId();
+
+        reservaRepository.deleteById(idReserva);
+
+        if (ventaId != null) {
+            List<ReservaPublica> otras = reservaRepository.findByVentaId(ventaId);
+            if (otras.isEmpty()) {
+                ventaPagoRepository.deleteByVentaId(ventaId);
+                ventaRepository.deleteById(ventaId);
+            }
+        }
     }
 }

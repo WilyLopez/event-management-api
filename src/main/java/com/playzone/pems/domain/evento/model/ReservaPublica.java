@@ -67,6 +67,10 @@ public class ReservaPublica {
                     || estado == EstadoReservaPublica.PENDIENTE);
     }
 
+    public boolean requiresVentaForEntry() {
+        return ventaId == null;
+    }
+
     public boolean totalEsCoherente() {
         BigDecimal esperado = precioHistorico.subtract(descuentoAplicado);
         return totalPagado.compareTo(esperado) == 0;

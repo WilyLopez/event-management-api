@@ -45,7 +45,8 @@ public interface EventoPrivadoJpaRepository extends JpaRepository<EventoPrivadoE
     @Query("""
             SELECT COUNT(e) > 0 FROM EventoPrivadoEntity e
             WHERE e.sede.id = :idSede AND e.fechaEvento = :fecha
-              AND e.turno.id = :idTurno AND e.estado IN ('SOLICITADA','CONFIRMADA')
+              AND e.turno.codigo = (CASE WHEN :idTurno = 1 THEN 'T1' WHEN :idTurno = 2 THEN 'T2' ELSE '' END)
+              AND e.estado IN ('SOLICITADA','CONFIRMADA')
             """)
     boolean existsActivoBySedeAndFechaAndTurno(
             @Param("idSede") Long idSede,

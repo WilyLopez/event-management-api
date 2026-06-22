@@ -33,6 +33,14 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 
+import com.playzone.pems.domain.usuario.repository.SedeRepository;
+import com.playzone.pems.infrastructure.pdf.TicketIngresoPdfService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
+import java.util.Arrays;
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/reservas")
 @RequiredArgsConstructor
@@ -47,6 +55,19 @@ public class ReservaPublicaController {
     private final ReservaPublicaService       reservaService;
     private final ReservaAdminService         reservaAdminService;
     private final SupabaseAuthFacade          supabaseAuthFacade;
+    private final TicketIngresoPdfService     ticketIngresoPdfService;
+    private final SedeRepository              sedeRepository;
+
+    @GetMapping("/catalogos/estados")
+    @PreAuthorize("hasAuthority('reserva.ver')")
+    public ResponseEntity<ApiResponse<List<EstadoReservaResponse>>> listarEstados() {
+        List<EstadoReservaResponse> estados = Arrays.stream(EstadoReservaPublica.values())
+                .map(e -> new EstadoReservaResponse(e.getCodigo(), e.getDescripcion()))
+                .toList();
+        return ResponseEntity.ok(ApiResponse.ok(estados));
+    }
+
+    public record EstadoReservaResponse(String nombre, String descripcion) {}
 
     @GetMapping
     @PreAuthorize("hasAuthority('reserva.ver')")
@@ -157,6 +178,15 @@ public class ReservaPublicaController {
                 .body(ApiResponse.created(toResponse(query)));
     }
 
+    @PostMapping
+    @PreAuthorize("hasAuthority('reserva.crear')")
+    public ResponseEntity<ApiResponse<ReservaPublicaResponse>> crearConParams(
+            @RequestParam Long idCliente,
+            @RequestParam Long idSede,
+            @Valid @RequestBody CrearReservaRequest request) {
+        return crear(idCliente, idSede, request);
+    }
+
     @PostMapping("/{idReserva}/reprogramar")
     @PreAuthorize("hasAuthority('reserva.reprogramar')")
     public ResponseEntity<ApiResponse<ReservaPublicaResponse>> reprogramar(
@@ -199,6 +229,24 @@ public class ReservaPublicaController {
         return ResponseEntity.ok(ApiResponse.ok(toResponse(reservaService.confirmarPago(id, medioPago))));
     }
 
+    @GetMapping("/{idReserva}/ticket")
+    @PreAuthorize("hasAuthority('reserva.ver')")
+    public ResponseEntity<byte[]> descargarTicket(@PathVariable Long idReserva) {
+        ReservaPublicaQuery reserva = reservaService.consultarPorId(idReserva);
+        
+        String nombreSede = sedeRepository.findById(reserva.getIdSede())
+                .map(s -> s.getNombre())
+                .orElse("Sede Principal");
+
+        byte[] pdf = ticketIngresoPdfService.generarTicketPdf(reserva, nombreSede);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment", "ticket-" + reserva.getNumeroTicket() + ".pdf");
+
+        return new ResponseEntity<>(pdf, headers, HttpStatus.OK);
+    }
+
     @PostMapping("/{idReserva}/comprobante")
     @PreAuthorize("hasAuthority('reserva.editar')")
     public ResponseEntity<ApiResponse<ReservaPublicaResponse>> subirComprobante(
@@ -239,6 +287,14 @@ public class ReservaPublicaController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate nuevaFecha) {
         TicketDetalleQuery q = reservaAdminService.editarFecha(idReserva, nuevaFecha);
         return ResponseEntity.ok(ApiResponse.ok(toDetalleResponse(q)));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('reserva.cancelar')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public ApiResponse<Void> eliminar(@PathVariable Long id) {
+        reservaAdminService.eliminar(id);
+        return ApiResponse.noContent();
     }
 
     private Long resolverIdCliente(Long solicitado) {
@@ -300,6 +356,7 @@ public class ReservaPublicaController {
                 .fechaIngreso(q.getFechaIngreso())
                 .codigoQr(q.getCodigoQr())
                 .medioPago(q.getMedioPago())
+                .referenciaPago(q.getReferenciaPago())
                 .fechaCreacion(q.getFechaCreacion())
                 .build();
     }
