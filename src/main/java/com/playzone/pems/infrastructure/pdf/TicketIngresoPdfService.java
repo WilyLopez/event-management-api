@@ -11,7 +11,7 @@ import java.io.ByteArrayOutputStream;
 
 @Service
 @RequiredArgsConstructor
-public class PdfTicketService {
+public class TicketIngresoPdfService {
 
     private final TemplateEngine templateEngine;
 
@@ -20,7 +20,7 @@ public class PdfTicketService {
         ctx.setVariable("reserva",    reserva);
         ctx.setVariable("nombreSede", nombreSede);
 
-        String html = templateEngine.process("ticket", ctx);
+        String html = templateEngine.process("ticket-ingreso", ctx);
 
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             PdfRendererBuilder builder = new PdfRendererBuilder();
