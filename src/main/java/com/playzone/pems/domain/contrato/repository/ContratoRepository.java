@@ -4,6 +4,7 @@ import com.playzone.pems.domain.contrato.model.Contrato;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 public interface ContratoRepository {
@@ -18,5 +19,5 @@ public interface ContratoRepository {
 
     boolean existsById(Long id);
 
-    Page<Contrato> buscarConFiltros(String search, String estado, Long idSede, Pageable pageable);
+    Page<Contrato> buscarConFiltros(String search, String estado, Long idSede, LocalDate fechaEvento, Pageable pageable);
 }

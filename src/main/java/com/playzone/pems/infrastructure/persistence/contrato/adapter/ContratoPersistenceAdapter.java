@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 @Component
@@ -30,7 +31,7 @@ public class ContratoPersistenceAdapter implements ContratoRepository {
 
     @Override
     public Optional<Contrato> findByEventoPrivado(Long idEventoPrivado) {
-        return contratoJpa.findByEventoPrivado_Id(idEventoPrivado).map(mapper::toDomain);
+        return contratoJpa.findFirstByEventoPrivado_IdOrderByIdDesc(idEventoPrivado).map(mapper::toDomain);
     }
 
     @Override
@@ -52,7 +53,7 @@ public class ContratoPersistenceAdapter implements ContratoRepository {
     }
 
     @Override
-    public Page<Contrato> buscarConFiltros(String search, String estado, Long idSede, Pageable pageable) {
+    public Page<Contrato> buscarConFiltros(String search, String estado, Long idSede, LocalDate fechaEvento, Pageable pageable) {
         EstadoContrato estadoEnum = null;
         if (estado != null && !estado.isBlank()) {
             try {
@@ -60,7 +61,7 @@ public class ContratoPersistenceAdapter implements ContratoRepository {
             } catch (IllegalArgumentException ignored) {
             }
         }
-        return contratoJpa.buscarConFiltros(search, estadoEnum, idSede, pageable)
+        return contratoJpa.buscarConFiltros(search, estadoEnum, idSede, fechaEvento, pageable)
                 .map(mapper::toDomain);
     }
 }

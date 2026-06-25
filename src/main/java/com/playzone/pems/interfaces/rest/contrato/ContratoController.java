@@ -3,16 +3,16 @@ package com.playzone.pems.interfaces.rest.contrato;
 import com.playzone.pems.application.contrato.dto.command.ActualizarContratoCommand;
 import com.playzone.pems.application.contrato.dto.command.CambiarEstadoContratoCommand;
 import com.playzone.pems.application.contrato.dto.command.GenerarContratoCommand;
-import com.playzone.pems.application.contrato.dto.query.ActividadContratoQuery;
 import com.playzone.pems.application.contrato.dto.query.ContratoPageQuery;
 import com.playzone.pems.application.contrato.dto.query.ContratoQuery;
-import com.playzone.pems.application.contrato.dto.query.DocumentoContratoQuery;
 import com.playzone.pems.application.contrato.port.in.ActualizarContratoUseCase;
 import com.playzone.pems.application.contrato.port.in.CambiarEstadoContratoUseCase;
 import com.playzone.pems.application.contrato.port.in.FirmarContratoUseCase;
 import com.playzone.pems.application.contrato.port.in.GenerarContratoUseCase;
 import com.playzone.pems.application.contrato.port.in.ListarContratosUseCase;
 import com.playzone.pems.application.contrato.port.in.ObtenerContratoUseCase;
+import com.playzone.pems.application.contrato.port.in.ReemplazarContratoUseCase;
+import com.playzone.pems.interfaces.rest.contrato.mapper.ContratoResponseMapper;
 import com.playzone.pems.interfaces.rest.contrato.request.ActualizarContratoRequest;
 import com.playzone.pems.interfaces.rest.contrato.request.CambiarEstadoRequest;
 import com.playzone.pems.interfaces.rest.contrato.request.GenerarContratoRequest;
@@ -20,15 +20,20 @@ import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.interfaces.rest.contrato.response.ContratoResponse;
 import com.playzone.pems.shared.response.ApiResponse;
 import com.playzone.pems.shared.response.PagedResponse;
+import com.playzone.pems.shared.util.SortUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.time.LocalDate;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/contratos")
@@ -41,29 +46,32 @@ public class ContratoController {
     private final ActualizarContratoUseCase    actualizarUseCase;
     private final ListarContratosUseCase       listarUseCase;
     private final CambiarEstadoContratoUseCase estadoUseCase;
+    private final ReemplazarContratoUseCase    reemplazarUseCase;
+    private final ContratoResponseMapper       mapper;
     private final SupabaseAuthFacade           supabaseAuthFacade;
 
     @GetMapping
     @PreAuthorize("hasAuthority('evento.contrato')")
     public ResponseEntity<ApiResponse<PagedResponse<ContratoResponse>>> listar(
-            @RequestParam(defaultValue = "0")                  int     page,
-            @RequestParam(defaultValue = "15")                 int     size,
-            @RequestParam(defaultValue = "fechaCreacion,desc") String  sort,
-            @RequestParam(required = false)                    String  search,
-            @RequestParam(required = false)                    String  estado,
-            @RequestParam(required = false)                    Long    idSede) {
+            @RequestParam(defaultValue = "0")                  int       page,
+            @RequestParam(defaultValue = "15")                 int       size,
+            @RequestParam(defaultValue = "fechaCreacion,desc") String    sort,
+            @RequestParam(required = false)                    String    search,
+            @RequestParam(required = false)                    String    estado,
+            @RequestParam(required = false)                    Long      idSede,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                                                               LocalDate fechaEvento) {
 
-        String[]       parts = sort.split(",");
-        Sort.Direction dir   = parts.length > 1 && "asc".equalsIgnoreCase(parts[1])
-                               ? Sort.Direction.ASC : Sort.Direction.DESC;
-        String sortProperty = "fechaCreacion".equals(parts[0]) ? "createdAt" : parts[0];
+        Sort parsedSort = SortUtils.parsearSort(sort);
+        String sortProperty = "fechaCreacion".equals(sort.split(",")[0]) ? "createdAt" : sort.split(",")[0];
+        Sort finalSort = Sort.by(parsedSort.iterator().next().getDirection(), sortProperty);
 
         ContratoPageQuery resultado = listarUseCase.ejecutar(
-                search, estado, idSede,
-                PageRequest.of(page, size, Sort.by(dir, sortProperty)));
+                search, estado, idSede, fechaEvento,
+                PageRequest.of(page, size, finalSort));
 
         PagedResponse<ContratoResponse> paginado = PagedResponse.<ContratoResponse>builder()
-                .content(resultado.getContent().stream().map(this::toResponse).toList())
+                .content(resultado.getContent().stream().map(mapper::toResponse).toList())
                 .page(resultado.getPage())
                 .size(resultado.getSize())
                 .totalElements(resultado.getTotalElements())
@@ -76,32 +84,35 @@ public class ContratoController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('evento.contrato')")
     public ResponseEntity<ApiResponse<ContratoResponse>> obtener(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.ok(toResponse(obtenerUseCase.porId(id))));
+        return ResponseEntity.ok(ApiResponse.ok(mapper.toResponse(obtenerUseCase.porId(id))));
     }
 
     @GetMapping("/eventos/{idEvento}")
     @PreAuthorize("hasAuthority('evento.contrato')")
     public ResponseEntity<ApiResponse<ContratoResponse>> obtenerPorEvento(
             @PathVariable Long idEvento) {
-        return ResponseEntity.ok(ApiResponse.ok(toResponse(obtenerUseCase.porEvento(idEvento))));
+        return ResponseEntity.ok(ApiResponse.ok(
+                mapper.toResponse(obtenerUseCase.porEvento(idEvento))));
     }
 
     @PostMapping("/eventos/{idEvento}")
     @PreAuthorize("hasAuthority('evento.contrato')")
     public ResponseEntity<ApiResponse<ContratoResponse>> generar(
             @PathVariable Long idEvento,
-            @Valid @RequestBody GenerarContratoRequest request) {
+            @RequestBody(required = false) GenerarContratoRequest request) {
+
+        String contenido = request != null ? request.getContenidoTexto() : null;
+        String plantilla = request != null ? request.getPlantilla() : null;
 
         ContratoQuery query = generarUseCase.ejecutar(GenerarContratoCommand.builder()
                 .idEventoPrivado(idEvento)
-                .idUsuarioRedactor(supabaseAuthFacade.usuarioActualId()
-                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado")))
-                .contenidoTexto(request.getContenidoTexto())
-                .plantilla(request.getPlantilla())
+                .idUsuarioRedactor(usuarioActual())
+                .contenidoTexto(contenido)
+                .plantilla(plantilla)
                 .build());
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.created(toResponse(query)));
+                .body(ApiResponse.created(mapper.toResponse(query)));
     }
 
     @PutMapping("/{id}")
@@ -115,16 +126,18 @@ public class ContratoController {
                 .contenidoTexto(request.getContenidoTexto())
                 .plantilla(request.getPlantilla())
                 .observaciones(request.getObservaciones())
+                .idUsuario(usuarioActual())
                 .build());
 
-        return ResponseEntity.ok(ApiResponse.ok(toResponse(query)));
+        return ResponseEntity.ok(ApiResponse.ok(mapper.toResponse(query)));
     }
 
     @PostMapping("/{idContrato}/firmar")
     @PreAuthorize("hasAuthority('evento.contrato')")
     public ResponseEntity<ApiResponse<ContratoResponse>> firmar(
             @PathVariable Long idContrato) {
-        return ResponseEntity.ok(ApiResponse.ok(toResponse(firmarUseCase.ejecutar(idContrato))));
+        return ResponseEntity.ok(ApiResponse.ok(
+                mapper.toResponse(firmarUseCase.ejecutar(idContrato, usuarioActual()))));
     }
 
     @PostMapping("/{idContrato}/estado")
@@ -137,54 +150,26 @@ public class ContratoController {
                 .idContrato(idContrato)
                 .nuevoEstado(request.getNuevoEstado())
                 .motivo(request.getMotivo())
-                .idUsuarioAdmin(supabaseAuthFacade.usuarioActualId()
-                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado")))
+                .idUsuarioAdmin(usuarioActual())
                 .build());
 
-        return ResponseEntity.ok(ApiResponse.ok(toResponse(query)));
+        return ResponseEntity.ok(ApiResponse.ok(mapper.toResponse(query)));
     }
 
-    private ContratoResponse toResponse(ContratoQuery q) {
-        return ContratoResponse.builder()
-                .id(q.getId())
-                .idEventoPrivado(q.getIdEventoPrivado())
-                .estado(q.getEstado())
-                .contenidoTexto(q.getContenidoTexto())
-                .archivoPdfUrl(q.getArchivoPdfUrl())
-                .fechaFirma(q.getFechaFirma())
-                .usuarioRedactor(q.getUsuarioRedactor())
-                .plantilla(q.getPlantilla())
-                .observaciones(q.getObservaciones())
-                .version(q.getVersion())
-                .nombreCliente(q.getNombreCliente())
-                .correoCliente(q.getCorreoCliente())
-                .tipoEvento(q.getTipoEvento())
-                .fechaEvento(q.getFechaEvento())
-                .turno(q.getTurno())
-                .aforoDeclarado(q.getAforoDeclarado())
-                .precioTotalContrato(q.getPrecioTotalContrato())
-                .montoAdelanto(q.getMontoAdelanto())
-                .saldoPendiente(q.getSaldoPendiente())
-                .documentos(q.getDocumentos() == null ? null : q.getDocumentos().stream()
-                        .map(d -> ContratoResponse.DocumentoContratoResponse.builder()
-                                .id(d.getId())
-                                .nombre(d.getNombre())
-                                .archivoUrl(d.getArchivoUrl())
-                                .tipoArchivo(d.getTipoArchivo())
-                                .tamanobytes(d.getTamanobytes())
-                                .usuarioCarga(d.getUsuarioCarga())
-                                .fechaCarga(d.getFechaCarga())
-                                .build()).toList())
-                .actividades(q.getActividades() == null ? null : q.getActividades().stream()
-                        .map(a -> ContratoResponse.ActividadContratoResponse.builder()
-                                .id(a.getId())
-                                .accion(a.getAccion())
-                                .descripcion(a.getDescripcion())
-                                .usuario(a.getUsuario())
-                                .fechaAccion(a.getFechaAccion())
-                                .build()).toList())
-                .fechaCreacion(q.getFechaCreacion())
-                .fechaActualizacion(q.getFechaActualizacion())
-                .build();
+    @PostMapping("/{idContrato}/reemplazar")
+    @PreAuthorize("hasAuthority('evento.contrato')")
+    public ResponseEntity<ApiResponse<ContratoResponse>> reemplazar(
+            @PathVariable Long idContrato) {
+
+        ContratoQuery query = reemplazarUseCase.reemplazar(idContrato, usuarioActual());
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.created(mapper.toResponse(query)));
+    }
+
+    private UUID usuarioActual() {
+        return supabaseAuthFacade.usuarioActualId()
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED, "Usuario no autenticado"));
     }
 }

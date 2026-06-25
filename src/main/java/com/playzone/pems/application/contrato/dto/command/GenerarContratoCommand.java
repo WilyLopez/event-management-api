@@ -1,6 +1,5 @@
 package com.playzone.pems.application.contrato.dto.command;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,9 +15,7 @@ public class GenerarContratoCommand {
 
     private final UUID idUsuarioRedactor;
 
-    @NotBlank
     private final String contenidoTexto;
 
-    @NotBlank
     private final String plantilla;
 }

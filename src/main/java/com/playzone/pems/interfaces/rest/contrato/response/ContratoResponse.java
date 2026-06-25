@@ -17,6 +17,7 @@ public class ContratoResponse {
     private Long        id;
     private Long        idEventoPrivado;
     private String      estado;
+    private boolean     esEditable;
     private String      contenidoTexto;
     private String      archivoPdfUrl;
     private LocalDate   fechaFirma;

@@ -14,6 +14,7 @@ import com.playzone.pems.application.contrato.port.in.FirmarContratoUseCase;
 import com.playzone.pems.application.contrato.port.in.GenerarContratoUseCase;
 import com.playzone.pems.application.contrato.port.in.ListarContratosUseCase;
 import com.playzone.pems.application.contrato.port.in.ObtenerContratoUseCase;
+import com.playzone.pems.application.contrato.port.in.ReemplazarContratoUseCase;
 import com.playzone.pems.application.contrato.port.in.SubirDocumentoContratoUseCase;
 import com.playzone.pems.domain.contrato.exception.ContratoNotFoundException;
 import com.playzone.pems.domain.contrato.model.ActividadContrato;
@@ -33,6 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -46,7 +48,8 @@ public class ContratoService
                    ActualizarContratoUseCase,
                    ListarContratosUseCase,
                    CambiarEstadoContratoUseCase,
-                   SubirDocumentoContratoUseCase {
+                   SubirDocumentoContratoUseCase,
+                   ReemplazarContratoUseCase {
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
@@ -86,8 +89,10 @@ public class ContratoService
 
         Contrato guardado = contratoRepository.save(contrato);
 
-        registrarActividad(guardado.getId(), "CREADO",
-                "Contrato generado desde plantilla: " + command.getPlantilla(),
+        String descripcionCreacion = command.getPlantilla() != null
+                ? "Contrato generado desde plantilla: " + command.getPlantilla()
+                : "Contrato generado.";
+        registrarActividad(guardado.getId(), "CREADO", descripcionCreacion,
                 command.getIdUsuarioRedactor());
 
         return toQuery(guardado);
@@ -95,7 +100,7 @@ public class ContratoService
 
     @Override
     @Transactional
-    public ContratoQuery ejecutar(Long idContrato) {
+    public ContratoQuery ejecutar(Long idContrato, UUID idUsuario) {
         Contrato contrato = contratoRepository.findById(idContrato)
                 .orElseThrow(() -> new ContratoNotFoundException(idContrato));
 
@@ -113,26 +118,51 @@ public class ContratoService
                 .fechaFirma(FechaUtil.hoyPeru())
                 .build());
 
-        registrarActividad(idContrato, "FIRMADO", "PDF generado y contrato firmado.", null);
+        registrarActividad(idContrato, "FIRMADO", "PDF generado y contrato firmado.", idUsuario);
 
         return toQuery(firmado);
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public ContratoQuery porId(Long id) {
         Contrato contrato = contratoRepository.findById(id)
                 .orElseThrow(() -> new ContratoNotFoundException(id));
+        contrato = aplicarVencimientoSiCorresponde(contrato);
         return toQueryConDetalle(contrato);
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public ContratoQuery porEvento(Long idEvento) {
         Contrato contrato = contratoRepository.findByEventoPrivado(idEvento)
                 .orElseThrow(() -> new ContratoNotFoundException(
                         "No existe contrato para el evento " + idEvento));
+        contrato = aplicarVencimientoSiCorresponde(contrato);
         return toQueryConDetalle(contrato);
+    }
+
+    @Override
+    @Transactional
+    public ContratoQuery reemplazar(Long idContratoActual, UUID idUsuarioAdmin) {
+        Contrato actual = contratoRepository.findById(idContratoActual)
+                .orElseThrow(() -> new ContratoNotFoundException(idContratoActual));
+
+        contratoRepository.save(actual.toBuilder().estado(EstadoContrato.ARCHIVADO).build());
+        registrarActividad(idContratoActual, "ARCHIVADO",
+                "Contrato archivado al ser reemplazado.", idUsuarioAdmin);
+
+        Contrato nuevo = contratoRepository.save(Contrato.builder()
+                .idEventoPrivado(actual.getIdEventoPrivado())
+                .idUsuarioRedactor(idUsuarioAdmin)
+                .estado(EstadoContrato.BORRADOR)
+                .contenidoTexto("")
+                .version(1)
+                .build());
+        registrarActividad(nuevo.getId(), "CREADO",
+                "Contrato creado en reemplazo del contrato #" + idContratoActual, idUsuarioAdmin);
+
+        return toQueryConDetalle(nuevo);
     }
 
     @Override
@@ -153,7 +183,7 @@ public class ContratoService
                 .build());
 
         registrarActividad(command.getId(), "ACTUALIZADO",
-                "Version incrementada a " + actualizado.getVersion(), null);
+                "Version incrementada a " + actualizado.getVersion(), command.getIdUsuario());
 
         return toQuery(actualizado);
     }
@@ -161,10 +191,10 @@ public class ContratoService
     @Override
     @Transactional(readOnly = true)
     public ContratoPageQuery ejecutar(
-            String search, String estado, Long idSede, Pageable pageable) {
+            String search, String estado, Long idSede, LocalDate fechaEvento, Pageable pageable) {
 
         Page<Contrato> pagina = contratoRepository.buscarConFiltros(
-                search, estado, idSede, pageable);
+                search, estado, idSede, fechaEvento, pageable);
 
         return ContratoPageQuery.builder()
                 .content(pagina.getContent().stream().map(this::toQuery).toList())
@@ -241,11 +271,24 @@ public class ContratoService
                 .build());
     }
 
+    private Contrato aplicarVencimientoSiCorresponde(Contrato c) {
+        if (!c.getEstado().esTerminal()
+                && c.getEstado() != EstadoContrato.VENCIDO
+                && c.getFechaEvento() != null
+                && FechaUtil.esPasado(c.getFechaEvento())) {
+            c = contratoRepository.save(c.toBuilder().estado(EstadoContrato.VENCIDO).build());
+            registrarActividad(c.getId(), "VENCIDO",
+                    "Contrato vencido por haber superado la fecha del evento.", null);
+        }
+        return c;
+    }
+
     private ContratoQuery toQuery(Contrato c) {
         return ContratoQuery.builder()
                 .id(c.getId())
                 .idEventoPrivado(c.getIdEventoPrivado())
                 .estado(c.getEstado().getCodigo())
+                .esEditable(c.getEstado().esEditable())
                 .contenidoTexto(c.getContenidoTexto())
                 .archivoPdfUrl(c.getArchivoPdfUrl())
                 .fechaFirma(c.getFechaFirma())

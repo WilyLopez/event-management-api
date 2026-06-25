@@ -4,7 +4,6 @@ import com.playzone.pems.application.contrato.dto.query.ContratoQuery;
 
 import java.util.UUID;
 
-public interface FirmarContratoUseCase {
-
-    ContratoQuery ejecutar(Long idContrato, UUID idUsuario);
+public interface ReemplazarContratoUseCase {
+    ContratoQuery reemplazar(Long idContratoActual, UUID idUsuarioAdmin);
 }
