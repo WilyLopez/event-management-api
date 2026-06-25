@@ -25,6 +25,7 @@ public class EventoPrivado {
     private String              codigoTurno;
     private LocalDate           fechaEvento;
     private String              tipoEvento;
+    private String              nombreTipoEvento;
     private String              contactoAdicional;
     private Integer             aforoDeclarado;
     private BigDecimal          precioContrato;
@@ -46,6 +47,8 @@ public class EventoPrivado {
     private boolean             checklistCompleto;
     private OffsetDateTime      horaInicioReal;
     private OffsetDateTime      horaFinReal;
+    private String              modalidadPago;    // AL_CONTADO | CUOTAS
+    private LocalDate           fechaLimitePago;
 
     public BigDecimal calcularMontoSaldo() {
         if (precioContrato == null) return null;

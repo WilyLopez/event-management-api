@@ -46,4 +46,7 @@ public class EventoPrivadoQuery {
     private final List<EventoExtraQuery>    extras;
     private final String                    medioPago;
     private final OffsetDateTime             fechaCreacion;
+    private final String                    modalidadPago;
+    private final LocalDate                 fechaLimitePago;
+    private final List<EventoCuotaQuery>    cuotas;
 }

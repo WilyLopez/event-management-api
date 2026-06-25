@@ -48,6 +48,10 @@ public class EventoPrivadoPersistenceAdapter implements EventoPrivadoRepository 
         return eventoJpa.findBySede_IdAndFechaEventoBetween(idSede, inicio, fin).stream().map(mapper::toDomain).toList();
     }
 
+    @Override public List<EventoPrivado> findActivosBySedeAndFechaBetween(Long idSede, LocalDate inicio, LocalDate fin) {
+        return eventoJpa.findActivosBySedeAndFechaBetween(idSede, inicio, fin).stream().map(mapper::toDomain).toList();
+    }
+
     @Override public List<EventoPrivado> findBySedeAndFecha(Long idSede, LocalDate fecha) {
         return eventoJpa.findBySede_IdAndFechaEvento(idSede, fecha).stream().map(mapper::toDomain).toList();
     }
@@ -70,8 +74,12 @@ public class EventoPrivadoPersistenceAdapter implements EventoPrivadoRepository 
 
     @Override
     public Page<EventoPrivado> buscarAdmin(
-            Long idSede, EstadoEventoPrivado estadoEnum, LocalDate fecha, String searchPattern, Pageable pageable) {
-        return eventoJpa.buscarAdmin(idSede, estadoEnum, fecha, searchPattern, pageable)
+            Long idSede, EstadoEventoPrivado estadoEnum,
+            LocalDate fechaDesde, LocalDate fechaHasta,
+            String tipoEvento, String modalidadPago,
+            String searchPattern, Pageable pageable) {
+        return eventoJpa.buscarAdmin(idSede, estadoEnum, fechaDesde, fechaHasta,
+                        tipoEvento, modalidadPago, searchPattern, pageable)
                 .map(mapper::toDomain);
     }
 

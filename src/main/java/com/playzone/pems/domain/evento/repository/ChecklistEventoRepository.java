@@ -10,4 +10,5 @@ public interface ChecklistEventoRepository {
     List<ChecklistEvento> findByEventoOrdenado(Long idEvento);
     ChecklistEvento save(ChecklistEvento checklist);
     void crearTareasBase(Long idEvento);
+    void deleteById(Long id);
 }

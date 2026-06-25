@@ -2,6 +2,7 @@ package com.playzone.pems.infrastructure.persistence.evento.entity;
 
 import com.playzone.pems.domain.evento.model.enums.EstadoEventoPrivado;
 import com.playzone.pems.infrastructure.persistence.calendario.entity.TurnoEntity;
+import com.playzone.pems.infrastructure.persistence.comercial.entity.TipoEventoEntity;
 import com.playzone.pems.infrastructure.persistence.usuario.entity.SedeEntity;
 
 import java.util.UUID;
@@ -49,6 +50,10 @@ public class EventoPrivadoEntity {
 
     @Column(name = "tipo_evento_codigo", nullable = false, length = 200)
     private String tipoEvento;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tipo_evento_codigo", referencedColumnName = "codigo", insertable = false, updatable = false)
+    private TipoEventoEntity tipoEventoRef;
 
     @Column(name = "contacto_adicional", length = 200)
     private String contactoAdicional;
@@ -120,4 +125,11 @@ public class EventoPrivadoEntity {
 
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
+
+    @Column(name = "modalidad_pago", nullable = false, length = 20)
+    @Builder.Default
+    private String modalidadPago = "AL_CONTADO";
+
+    @Column(name = "fecha_limite_pago")
+    private LocalDate fechaLimitePago;
 }

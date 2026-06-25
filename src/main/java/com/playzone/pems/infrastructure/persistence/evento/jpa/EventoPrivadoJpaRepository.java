@@ -27,18 +27,34 @@ public interface EventoPrivadoJpaRepository extends JpaRepository<EventoPrivadoE
 
     @Query("""
             SELECT e FROM EventoPrivadoEntity e
+            WHERE e.sede.id = :idSede
+              AND e.fechaEvento BETWEEN :inicio AND :fin
+              AND e.estado IN ('SOLICITADA', 'CONFIRMADA', 'COMPLETADA')
+            ORDER BY e.fechaEvento, e.turno.codigo
+            """)
+    List<EventoPrivadoEntity> findActivosBySedeAndFechaBetween(
+            @Param("idSede") Long      idSede,
+            @Param("inicio") LocalDate inicio,
+            @Param("fin")    LocalDate fin);
+
+    @Query("""
+            SELECT e FROM EventoPrivadoEntity e
             WHERE (CAST(:idSede AS long) IS NULL OR e.sede.id = :idSede)
               AND (:estadoEnum IS NULL OR e.estado = :estadoEnum)
-              AND (CAST(:fecha AS localdate) IS NULL OR e.fechaEvento = :fecha)
-              AND (:searchPattern IS NULL OR
-                   LOWER(e.tipoEvento)             LIKE :searchPattern
-              )
+              AND (CAST(:fechaDesde AS localdate) IS NULL OR e.fechaEvento >= :fechaDesde)
+              AND (CAST(:fechaHasta AS localdate) IS NULL OR e.fechaEvento <= :fechaHasta)
+              AND (:tipoEvento IS NULL OR e.tipoEvento = :tipoEvento)
+              AND (:modalidadPago IS NULL OR e.modalidadPago = :modalidadPago)
+              AND (:searchPattern IS NULL OR LOWER(e.tipoEvento) LIKE :searchPattern)
             """)
     Page<EventoPrivadoEntity> buscarAdmin(
-            @Param("idSede")    Long                idSede,
-            @Param("estadoEnum")EstadoEventoPrivado estadoEnum,
-            @Param("fecha")     LocalDate           fecha,
-            @Param("searchPattern") String          searchPattern,
+            @Param("idSede")        Long                idSede,
+            @Param("estadoEnum")    EstadoEventoPrivado estadoEnum,
+            @Param("fechaDesde")    LocalDate           fechaDesde,
+            @Param("fechaHasta")    LocalDate           fechaHasta,
+            @Param("tipoEvento")    String              tipoEvento,
+            @Param("modalidadPago") String              modalidadPago,
+            @Param("searchPattern") String              searchPattern,
             Pageable pageable
     );
 

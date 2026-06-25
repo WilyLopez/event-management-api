@@ -1,5 +1,6 @@
 package com.playzone.pems.interfaces.rest.evento.response;
 
+import com.playzone.pems.application.evento.dto.query.EventoCuotaQuery;
 import com.playzone.pems.application.evento.dto.query.EventoExtraQuery;
 import lombok.Builder;
 import lombok.Getter;
@@ -45,4 +46,7 @@ public class EventoPrivadoResponse {
     private final List<EventoExtraQuery> extras;
     private final String            medioPago;
     private final OffsetDateTime     fechaCreacion;
+    private final String            modalidadPago;
+    private final LocalDate         fechaLimitePago;
+    private final List<EventoCuotaQuery> cuotas;
 }

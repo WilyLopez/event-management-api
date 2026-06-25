@@ -58,6 +58,33 @@ public class ChecklistEventoService implements GestionarChecklistUseCase {
                 .build()));
     }
 
+    @Override
+    @Transactional
+    public ChecklistEventoQuery agregarTarea(Long idEvento, String tarea) {
+        List<ChecklistEvento> existentes = checklistRepository.findByEventoOrdenado(idEvento);
+        int siguienteOrden = existentes.stream()
+                .mapToInt(ChecklistEvento::getOrden)
+                .max()
+                .orElse(0) + 1;
+
+        ChecklistEvento nuevo = ChecklistEvento.builder()
+                .idEventoPrivado(idEvento)
+                .tarea(tarea.trim())
+                .completada(false)
+                .orden(siguienteOrden)
+                .build();
+
+        return toQuery(checklistRepository.save(nuevo));
+    }
+
+    @Override
+    @Transactional
+    public void eliminarTarea(Long idChecklist) {
+        checklistRepository.findById(idChecklist)
+                .orElseThrow(() -> new ResourceNotFoundException("ChecklistEvento", idChecklist));
+        checklistRepository.deleteById(idChecklist);
+    }
+
     private ChecklistEventoQuery toQuery(ChecklistEvento c) {
         return ChecklistEventoQuery.builder()
                 .id(c.getId())
