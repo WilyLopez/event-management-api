@@ -13,6 +13,7 @@ import com.playzone.pems.domain.calendario.model.enums.TipoOcupacionDia;
 import com.playzone.pems.domain.calendario.repository.BloqueCalendarioRepository;
 import com.playzone.pems.domain.calendario.repository.ConfiguracionCalendarioRepository;
 import com.playzone.pems.domain.calendario.repository.FeriadoRepository;
+import com.playzone.pems.domain.calendario.repository.ProgramacionSemanalRepository;
 import com.playzone.pems.domain.evento.model.EventoPrivado;
 import com.playzone.pems.domain.evento.repository.EventoPrivadoRepository;
 import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
@@ -31,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.time.temporal.ChronoUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -44,6 +46,7 @@ public class CalendarioService
     private final ReservaPublicaRepository             reservaRepository;
     private final EventoPrivadoRepository              eventoRepository;
     private final ConfiguracionCalendarioRepository    configRepository;
+    private final ProgramacionSemanalRepository        programacionRepository;
 
     public OcupacionDia ocupacionDia(Long idSede, LocalDate fecha) {
         if (feriadoRepository.existsByFecha(fecha))
@@ -82,21 +85,20 @@ public class CalendarioService
     public boolean disponibleParaReservaPublica(Long idSede, LocalDate fecha) {
         ConfiguracionCalendario cfg = configRepository.obtener(idSede);
         LocalDate hoy = FechaUtil.hoy();
-        LocalDate min = hoy.plusDays(cfg.getDiasMinReservaPublica());
-        LocalDate max = hoy.plusDays(cfg.getDiasMaxReservaPublica());
 
-        if (fecha.isBefore(min) || fecha.isAfter(max)) return false;
+        if (fecha.isBefore(hoy)) return false;
         if (!esDiaOperacion(cfg, fecha)) return false;
 
         if (fecha.isEqual(hoy)) {
             if (FechaUtil.ahora().toLocalTime().isAfter(cfg.getHoraCierre())) return false;
         }
 
+        if (!programacionRepository.existeActivaEnFecha(idSede, fecha)) return false;
+
         OcupacionDia oc = ocupacionDia(idSede, fecha);
-        if (oc.getTipo() == TipoOcupacionDia.BLOQUEADO
-                || oc.getTipo() == TipoOcupacionDia.FERIADO
-                || oc.getTipo() == TipoOcupacionDia.PRIVADO_PARCIAL
-                || oc.getTipo() == TipoOcupacionDia.PRIVADO_LLENO) return false;
+        if (oc.getTipo() == TipoOcupacionDia.PRIVADO_PARCIAL
+                || oc.getTipo() == TipoOcupacionDia.PRIVADO_LLENO
+                || oc.getTipo() == TipoOcupacionDia.FERIADO) return false;
 
         int reservas = reservaRepository.countActivasBySedeAndFecha(idSede, fecha);
         return reservas < cfg.getAforoMaximo();
@@ -166,11 +168,20 @@ public class CalendarioService
         else tipoDia = "LABORABLE";
 
         boolean bloqueadoEfectivo = bloqueRepository.existsBloqueEfectivoEnFecha(idSede, fecha);
+        boolean tieneProgramacionSemanal = programacionRepository.existeActivaEnFecha(idSede, fecha);
 
-        boolean disponiblePublico = diaOperacion && !esFeriado && !bloqueadoEfectivo
+        LocalDate hoy = FechaUtil.hoy();
+        long diasDesdeHoy = ChronoUnit.DAYS.between(hoy, fecha);
+        boolean pasoCierreHoy = fecha.isEqual(hoy)
+                && FechaUtil.ahora().toLocalTime().isAfter(cfg.getHoraCierre());
+
+        boolean disponiblePublico = diaOperacion && !esFeriado && tieneProgramacionSemanal
                 && oc.getTipo() != TipoOcupacionDia.PRIVADO_PARCIAL
                 && oc.getTipo() != TipoOcupacionDia.PRIVADO_LLENO
-                && aforoActual < aforoMax;
+                && aforoActual < aforoMax
+                && !pasoCierreHoy
+                && diasDesdeHoy >= cfg.getDiasMinReservaPublica()
+                && diasDesdeHoy <= cfg.getDiasMaxReservaPublica();
 
         boolean disponiblePrivado = diaOperacion && !esFeriado && !bloqueadoEfectivo
                 && oc.getTipo() != TipoOcupacionDia.PUBLICO;
@@ -208,6 +219,7 @@ public class CalendarioService
                 .idEventoT2(oc.getIdEventoT2())
                 .tituloEvento(eventos.size() == 1 ? eventos.get(0).getTipoEvento() : null)
                 .idEvento(eventos.size() == 1 ? eventos.get(0).getId() : null)
+                .tieneProgramacionSemanal(tieneProgramacionSemanal)
                 .build();
     }
 
@@ -221,7 +233,7 @@ public class CalendarioService
 
         List<BloqueCalendario> bloques = bloqueRepository.findActivosBySedeAndRango(idSede, inicio, fin);
 
-        Map<LocalDate, List<EventoPrivado>> eventosMap = eventoRepository.findBySedeAndFechaBetween(idSede, inicio, fin).stream()
+        Map<LocalDate, List<EventoPrivado>> eventosMap = eventoRepository.findActivosBySedeAndFechaBetween(idSede, inicio, fin).stream()
                 .collect(Collectors.groupingBy(EventoPrivado::getFechaEvento));
 
         Map<LocalDate, Long> reservasMap = reservaRepository.countAgrupadoPorDia(idSede, inicio, fin).stream()
@@ -229,6 +241,11 @@ public class CalendarioService
 
         Map<LocalDate, BigDecimal> ingresosMap = reservaRepository.sumIngresosAgrupadoPorDia(idSede, inicio, fin).stream()
                 .collect(Collectors.toMap(IngresosPorDia::fecha, IngresosPorDia::monto));
+
+        var programaciones = programacionRepository.findActivasBySedeAndRango(idSede, inicio, fin);
+
+        LocalDate hoy = FechaUtil.hoy();
+        boolean yaCerroHoy = FechaUtil.ahora().toLocalTime().isAfter(cfg.getHoraCierre());
 
         List<DisponibilidadQuery> resultado = new ArrayList<>();
         LocalDate current = inicio;
@@ -267,7 +284,14 @@ public class CalendarioService
             int aforoActual = (int) (long) reservasMap.getOrDefault(fechaRef, 0L);
             int aforoMax = cfg.getAforoMaximo();
             int plazas = Math.max(0, aforoMax - aforoActual);
-            BigDecimal ingresoEstimado = ingresosMap.getOrDefault(fechaRef, BigDecimal.ZERO);
+
+            BigDecimal ingresosReservas = ingresosMap.getOrDefault(fechaRef, BigDecimal.ZERO);
+            BigDecimal ingresosEventos  = eventosDia.stream()
+                    .filter(e -> e.getMontoAdelanto() != null)
+                    .map(EventoPrivado::getMontoAdelanto)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal ingresoEstimado  = ingresosReservas.add(ingresosEventos);
+
             int pct = aforoMax > 0 ? Math.min(100, aforoActual * 100 / aforoMax) : 0;
 
             String tipoDia;
@@ -276,12 +300,19 @@ public class CalendarioService
             else if (!diaOperacion) tipoDia = "NO_LABORABLE";
             else tipoDia = "LABORABLE";
 
-            boolean bloqueadoEfectivo = bloqueRepository.existsBloqueEfectivoEnFecha(idSede, fechaRef);
+            boolean bloqueadoEfectivo = bloqueado;
+            boolean tieneProgramacion = programaciones.stream().anyMatch(p -> p.comprendeFecha(fechaRef));
 
-            boolean dispPublico = diaOperacion && !esFeriado && !bloqueadoEfectivo
+            long diasDesdeHoy = ChronoUnit.DAYS.between(hoy, fechaRef);
+            boolean pasoCierreHoy = fechaRef.isEqual(hoy) && yaCerroHoy;
+
+            boolean dispPublico = diaOperacion && !esFeriado && tieneProgramacion
                     && oc.getTipo() != TipoOcupacionDia.PRIVADO_PARCIAL
                     && oc.getTipo() != TipoOcupacionDia.PRIVADO_LLENO
-                    && aforoActual < aforoMax;
+                    && aforoActual < aforoMax
+                    && !pasoCierreHoy
+                    && diasDesdeHoy >= cfg.getDiasMinReservaPublica()
+                    && diasDesdeHoy <= cfg.getDiasMaxReservaPublica();
 
             boolean dispPrivado = diaOperacion && !esFeriado && !bloqueadoEfectivo
                     && oc.getTipo() != TipoOcupacionDia.PUBLICO;
@@ -302,6 +333,7 @@ public class CalendarioService
                     .tituloEventoT2(oc.getTituloEventoT2()).idEventoT2(oc.getIdEventoT2())
                     .tituloEvento(eventosDia.size() == 1 ? eventosDia.get(0).getTipoEvento() : null)
                     .idEvento(eventosDia.size() == 1 ? eventosDia.get(0).getId() : null)
+                    .tieneProgramacionSemanal(tieneProgramacion)
                     .build());
 
             current = current.plusDays(1);
@@ -313,11 +345,22 @@ public class CalendarioService
     @Transactional
     public BloqueCalendario ejecutar(BloquearFechasCommand command) {
         LocalDate hoy = FechaUtil.hoy();
+        ConfiguracionCalendario cfg = configRepository.obtener(command.getIdSede());
+
+        if ("PLANIFICACION_SEMANAL".equals(command.getTipoBloqueo())) {
+            throw new ValidationException("tipoBloqueo",
+                    "Use el endpoint de programación semanal para habilitar reservas públicas.");
+        }
         if (command.getFechaInicio().isBefore(hoy)) {
             throw new ValidationException("No se pueden bloquear fechas pasadas.");
         }
         if (command.getFechaFin().isBefore(command.getFechaInicio())) {
             throw new ValidationException("fechaFin", "La fecha de fin no puede ser anterior a la fecha de inicio.");
+        }
+        long diasRango = ChronoUnit.DAYS.between(command.getFechaInicio(), command.getFechaFin()) + 1;
+        if (diasRango > cfg.getRangoMaxBloqueo()) {
+            throw new ValidationException("fechaFin",
+                    "El rango de bloqueo no puede exceder " + cfg.getRangoMaxBloqueo() + " dias.");
         }
         if (command.getMotivo() == null || command.getMotivo().isBlank()) {
             throw new ValidationException("El motivo del bloqueo es obligatorio.");
@@ -326,12 +369,9 @@ public class CalendarioService
                 command.getIdSede(), command.getFechaInicio(), command.getFechaFin())) {
             throw new ValidationException("El rango de fechas se solapa con un bloqueo existente.");
         }
-
-        boolean hayActividad = existeActividadEnRango(
-                command.getIdSede(), command.getFechaInicio(), command.getFechaFin());
-        if (hayActividad && !command.isConfirmado()) {
+        if (existeActividadEnRango(command.getIdSede(), command.getFechaInicio(), command.getFechaFin())) {
             throw new ConflictoActividadException(
-                    "Hay reservas o eventos en este rango. Confirma para bloquear de todos modos.");
+                    "No se puede bloquear un rango con reservas o eventos activos.");
         }
 
         BloqueCalendario bloque = BloqueCalendario.builder()

@@ -25,4 +25,6 @@ public class ConfiguracionCalendario {
     private LocalTime turnoT2Fin;
     private String    diasOperacion;
     private int       rangoMaxBloqueo;
+    private int       edadMinCumple;
+    private int       edadMaxCumple;
 }

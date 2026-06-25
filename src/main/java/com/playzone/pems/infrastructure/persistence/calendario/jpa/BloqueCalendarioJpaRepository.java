@@ -15,7 +15,7 @@ public interface BloqueCalendarioJpaRepository extends JpaRepository<BloqueCalen
     @Query("SELECT COUNT(b) > 0 FROM BloqueCalendarioEntity b WHERE b.sede.id = :idSede AND b.activo = true AND :fecha BETWEEN b.fechaInicio AND b.fechaFin")
     boolean existsBloqueActivoEnFecha(@Param("idSede") Long idSede, @Param("fecha") LocalDate fecha);
 
-    @Query("SELECT COUNT(b) > 0 FROM BloqueCalendarioEntity b WHERE b.sede.id = :idSede AND b.activo = true AND :fecha BETWEEN b.fechaInicio AND b.fechaFin AND (b.tipoBloqueo IS NULL OR b.tipoBloqueo <> 'PLANIFICACION_SEMANAL')")
+    @Query("SELECT COUNT(b) > 0 FROM BloqueCalendarioEntity b WHERE b.sede.id = :idSede AND b.activo = true AND :fecha BETWEEN b.fechaInicio AND b.fechaFin")
     boolean existsBloqueEfectivoEnFecha(@Param("idSede") Long idSede, @Param("fecha") LocalDate fecha);
 
     @Query("SELECT COUNT(b) > 0 FROM BloqueCalendarioEntity b WHERE b.sede.id = :idSede AND b.activo = true AND b.fechaFin >= :inicio AND b.fechaInicio <= :fin")

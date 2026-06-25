@@ -56,6 +56,8 @@ public class ConfiguracionCalendarioController {
                         .turnoT2Fin(LocalTime.parse(request.turnoT2Fin()))
                         .diasOperacion(request.diasOperacion())
                         .rangoMaxBloqueo(request.rangoMaxBloqueo())
+                        .edadMinCumple(request.edadMinCumple())
+                        .edadMaxCumple(request.edadMaxCumple())
                         .build());
 
         return ResponseEntity.ok(ApiResponse.ok(toResponse(actualizada)));
@@ -76,7 +78,9 @@ public class ConfiguracionCalendarioController {
                 c.getTurnoT2Inicio().toString(),
                 c.getTurnoT2Fin().toString(),
                 c.getDiasOperacion(),
-                c.getRangoMaxBloqueo()
+                c.getRangoMaxBloqueo(),
+                c.getEdadMinCumple(),
+                c.getEdadMaxCumple()
         );
     }
 
@@ -89,7 +93,9 @@ public class ConfiguracionCalendarioController {
                 c.getAforoMaximo(),
                 c.getHoraApertura().toString(),
                 c.getHoraCierre().toString(),
-                c.getDiasOperacion()
+                c.getDiasOperacion(),
+                c.getEdadMinCumple(),
+                c.getEdadMaxCumple()
         );
     }
 
@@ -107,7 +113,9 @@ public class ConfiguracionCalendarioController {
             String turnoT2Inicio,
             String turnoT2Fin,
             String diasOperacion,
-            int    rangoMaxBloqueo
+            int    rangoMaxBloqueo,
+            int    edadMinCumple,
+            int    edadMaxCumple
     ) {}
 
     public record ConfiguracionPublicaResponse(
@@ -118,7 +126,9 @@ public class ConfiguracionCalendarioController {
             int    aforoMaximo,
             String horaApertura,
             String horaCierre,
-            String diasOperacion
+            String diasOperacion,
+            int    edadMinCumple,
+            int    edadMaxCumple
     ) {}
 
     public record ActualizarConfiguracionRequest(
@@ -134,6 +144,8 @@ public class ConfiguracionCalendarioController {
             @NotBlank String turnoT2Inicio,
             @NotBlank String turnoT2Fin,
             @NotBlank String diasOperacion,
-            @Min(1) int rangoMaxBloqueo
+            @Min(1) int rangoMaxBloqueo,
+            @Min(0) int edadMinCumple,
+            @Min(0) int edadMaxCumple
     ) {}
 }

@@ -42,4 +42,5 @@ public class DisponibilidadQuery {
     private Long      idEventoT1;
     private String    tituloEventoT2;
     private Long      idEventoT2;
+    private boolean   tieneProgramacionSemanal;
 }

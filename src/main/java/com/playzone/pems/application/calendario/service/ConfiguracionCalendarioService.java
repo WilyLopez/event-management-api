@@ -35,6 +35,9 @@ public class ConfiguracionCalendarioService implements ConfiguracionCalendarioUs
         if (!config.getHoraCierre().isAfter(config.getHoraApertura())) {
             throw new ValidationException("La hora de cierre debe ser posterior a la hora de apertura.");
         }
+        if (config.getEdadMaxCumple() < config.getEdadMinCumple()) {
+            throw new ValidationException("La edad maxima debe ser mayor o igual a la edad minima.");
+        }
         return configRepository.save(config.toBuilder().idSede(idSede).build());
     }
 }
