@@ -1,24 +1,37 @@
 package com.playzone.pems.interfaces.rest.evento;
 
+import com.playzone.pems.application.evento.dto.query.KpisEventosQuery;
+import com.playzone.pems.application.evento.dto.command.ConfirmarEventoCommand;
+import com.playzone.pems.application.evento.dto.command.RegistrarPagoCuotaCommand;
+import com.playzone.pems.application.evento.dto.command.RegistrarSaldoCommand;
 import com.playzone.pems.application.evento.dto.command.SolicitarEventoPrivadoCommand;
+import com.playzone.pems.application.evento.dto.command.VentaPagoItem;
 import com.playzone.pems.application.evento.dto.query.ChecklistEventoQuery;
-import com.playzone.pems.application.evento.dto.query.EventoExtraQuery;
-import com.playzone.pems.application.evento.dto.query.EventoPrivadoQuery;
-import com.playzone.pems.application.evento.port.in.*;
-import com.playzone.pems.application.evento.service.EventoPrivadoService;
-import com.playzone.pems.domain.comercial.model.ExtraPaquete;
-import com.playzone.pems.domain.comercial.repository.ExtraPaqueteRepository;
+import com.playzone.pems.application.evento.port.in.BuscarEventosAdminUseCase;
+import com.playzone.pems.application.evento.port.in.CancelarEventoPrivadoUseCase;
+import com.playzone.pems.application.evento.port.in.CompletarEventoUseCase;
+import com.playzone.pems.application.evento.port.in.ConfirmarEventoPrivadoUseCase;
+import com.playzone.pems.application.evento.port.in.ConsultarEventosPrivadosUseCase;
+import com.playzone.pems.application.evento.port.in.GestionarChecklistUseCase;
+import com.playzone.pems.application.evento.port.in.RegistrarPagoCuotaUseCase;
+import com.playzone.pems.application.evento.port.in.RegistrarSaldoUseCase;
+import com.playzone.pems.application.evento.port.in.SolicitarEventoPrivadoUseCase;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
+import com.playzone.pems.interfaces.rest.evento.mapper.EventoPrivadoResponseMapper;
+import com.playzone.pems.interfaces.rest.evento.request.CancelarEventoRequest;
 import com.playzone.pems.interfaces.rest.evento.request.ConfirmarEventoRequest;
+import com.playzone.pems.interfaces.rest.evento.request.PagoItemRequest;
+import com.playzone.pems.interfaces.rest.evento.request.RegistrarPagoCuotaRequest;
+import com.playzone.pems.interfaces.rest.evento.request.RegistrarSaldoRequest;
 import com.playzone.pems.interfaces.rest.evento.request.SolicitarEventoPrivadoRequest;
 import com.playzone.pems.interfaces.rest.evento.response.EventoPrivadoResponse;
-import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.shared.response.ApiResponse;
+import com.playzone.pems.shared.util.SortUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,7 +43,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -44,8 +56,10 @@ public class EventoPrivadoController {
     private final ConsultarEventosPrivadosUseCase consultarUseCase;
     private final BuscarEventosAdminUseCase       buscarAdminUseCase;
     private final GestionarChecklistUseCase       checklistUseCase;
-    private final EventoPrivadoService            eventoService;
-    private final ExtraPaqueteRepository          extraPaqueteRepository;
+    private final CompletarEventoUseCase          completarUseCase;
+    private final RegistrarSaldoUseCase           registrarSaldoUseCase;
+    private final RegistrarPagoCuotaUseCase       registrarPagoCuotaUseCase;
+    private final EventoPrivadoResponseMapper     mapper;
     private final SupabaseAuthFacade              supabaseAuthFacade;
 
     @GetMapping
@@ -61,18 +75,21 @@ public class EventoPrivadoController {
             Pageable pageable) {
 
         Long idClienteEfectivo = resolverIdCliente(idCliente);
-        Page<EventoPrivadoQuery> result;
+        Page<EventoPrivadoResponse> result;
         if (idClienteEfectivo != null) {
-            result = consultarUseCase.consultarPorCliente(idClienteEfectivo, pageable);
+            result = consultarUseCase.consultarPorCliente(idClienteEfectivo, pageable)
+                    .map(mapper::toResponse);
         } else if (idSede != null && inicio != null && fin != null) {
-            result = consultarUseCase.consultarPorSedeYRangoFechas(idSede, inicio, fin, pageable);
+            result = consultarUseCase.consultarPorSedeYRangoFechas(idSede, inicio, fin, pageable)
+                    .map(mapper::toResponse);
         } else if (idSede != null && estado != null) {
-            result = consultarUseCase.consultarPorSedeYEstado(idSede, estado, pageable);
+            result = consultarUseCase.consultarPorSedeYEstado(idSede, estado, pageable)
+                    .map(mapper::toResponse);
         } else {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "Se requiere idCliente o filtros de sede");
         }
-        return ResponseEntity.ok(ApiResponse.ok(result.map(this::toResponse)));
+        return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
     @GetMapping("/admin")
@@ -81,26 +98,35 @@ public class EventoPrivadoController {
             @RequestParam(required = false)                    Long      idSede,
             @RequestParam(required = false)                    String    estado,
             @RequestParam(required = false)
-                @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
+                @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
+            @RequestParam(required = false)
+                @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta,
+            @RequestParam(required = false)                    String    tipoEvento,
+            @RequestParam(required = false)                    String    modalidadPago,
             @RequestParam(required = false)                    String    search,
             @RequestParam(defaultValue = "0")                  int       page,
-            @RequestParam(defaultValue = "20")                 int       size,
+            @RequestParam(defaultValue = "15")                 int       size,
             @RequestParam(defaultValue = "fechaEvento,asc")    String    sort) {
 
-        String[]       parts    = sort.split(",");
-        Sort.Direction dir      = parts.length > 1 && "desc".equalsIgnoreCase(parts[1])
-                                  ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Pageable       pageable = PageRequest.of(page, size, Sort.by(dir, parts[0]));
-
+        Pageable pageable = PageRequest.of(page, size, SortUtils.parsearSort(sort));
         return ResponseEntity.ok(ApiResponse.ok(
-                buscarAdminUseCase.buscar(idSede, estado, fecha, search, pageable)
-                        .map(this::toResponse)));
+                buscarAdminUseCase.buscar(idSede, estado, fechaDesde, fechaHasta,
+                                tipoEvento, modalidadPago, search, pageable)
+                        .map(mapper::toResponse)));
+    }
+
+    @GetMapping("/admin/kpis")
+    @PreAuthorize("hasAuthority('evento.ver')")
+    public ResponseEntity<ApiResponse<KpisEventosQuery>> kpis(
+            @RequestParam(required = false) Long idSede) {
+        return ResponseEntity.ok(ApiResponse.ok(buscarAdminUseCase.kpis(idSede)));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('evento.ver')")
     public ResponseEntity<ApiResponse<EventoPrivadoResponse>> obtener(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.ok(toResponse(consultarUseCase.consultarPorId(id))));
+        return ResponseEntity.ok(ApiResponse.ok(
+                mapper.toResponse(consultarUseCase.consultarPorId(id))));
     }
 
     @PostMapping("/clientes/{idCliente}/sedes/{idSede}")
@@ -110,28 +136,27 @@ public class EventoPrivadoController {
             @PathVariable Long idSede,
             @Valid @RequestBody SolicitarEventoPrivadoRequest request) {
 
-        EventoPrivadoQuery query = solicitarUseCase.ejecutar(
-                SolicitarEventoPrivadoCommand.builder()
-                        .idCliente(idCliente).idSede(idSede)
-                        .idTurno(request.getIdTurno())
-                        .fechaEvento(request.getFechaEvento())
-                        .tipoEvento(request.getTipoEvento())
-                        .contactoAdicional(request.getContactoAdicional())
-                        .aforoDeclarado(request.getAforoDeclarado())
-                        .nombreNino(request.getNombreNino())
-                        .edadCumple(request.getEdadCumple())
-                        .idPaquete(request.getIdPaquete())
-                        .idsExtras(request.getIdsExtras())
-                        .extrasLibres(request.getExtrasLibres())
-                        .observaciones(request.getObservaciones())
-                        .descripcionPersonalizada(request.getDescripcionPersonalizada())
-                        .presupuestoEstimado(request.getPresupuestoEstimado())
-                        .idsServiciosCotizacion(request.getIdsServiciosCotizacion())
-                        .esCotizacionPersonalizada(request.isEsCotizacionPersonalizada())
-                        .build());
-
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.created(toResponse(query)));
+                .body(ApiResponse.created(mapper.toResponse(
+                        solicitarUseCase.ejecutar(
+                                SolicitarEventoPrivadoCommand.builder()
+                                        .idCliente(idCliente).idSede(idSede)
+                                        .idTurno(request.getIdTurno())
+                                        .fechaEvento(request.getFechaEvento())
+                                        .tipoEvento(request.getTipoEvento())
+                                        .contactoAdicional(request.getContactoAdicional())
+                                        .aforoDeclarado(request.getAforoDeclarado())
+                                        .nombreNino(request.getNombreNino())
+                                        .edadCumple(request.getEdadCumple())
+                                        .idPaquete(request.getIdPaquete())
+                                        .idsExtras(request.getIdsExtras())
+                                        .extrasLibres(request.getExtrasLibres())
+                                        .observaciones(request.getObservaciones())
+                                        .descripcionPersonalizada(request.getDescripcionPersonalizada())
+                                        .presupuestoEstimado(request.getPresupuestoEstimado())
+                                        .idsServiciosCotizacion(request.getIdsServiciosCotizacion())
+                                        .esCotizacionPersonalizada(request.isEsCotizacionPersonalizada())
+                                        .build()))));
     }
 
     @PostMapping("/{id}/confirmar")
@@ -140,44 +165,77 @@ public class EventoPrivadoController {
             @PathVariable Long id,
             @Valid @RequestBody ConfirmarEventoRequest request) {
 
+        List<VentaPagoItem> pagos = resolverPagosAdelanto(request);
+
         return ResponseEntity.ok(ApiResponse.ok(
-                toResponse(confirmarUseCase.ejecutar(
-                        id,
-                        request.getPrecioTotal(),
-                        request.getMontoAdelanto(),
-                        supabaseAuthFacade.usuarioActualId()
-                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado")),
-                        request.getMedioPago()))));
+                mapper.toResponse(confirmarUseCase.ejecutar(
+                        ConfirmarEventoCommand.builder()
+                                .idEvento(id)
+                                .precioTotal(request.getPrecioTotal())
+                                .montoAdelanto(request.getMontoAdelanto())
+                                .idUsuarioGestor(usuarioActual())
+                                .pagosAdelanto(pagos)
+                                .modalidadPago(request.getModalidadPago() != null
+                                        ? request.getModalidadPago() : "AL_CONTADO")
+                                .numeroCuotas(request.getNumeroCuotas())
+                                .fechaLimitePago(request.getFechaLimitePago())
+                                .build()))));
     }
 
     @PostMapping("/{id}/completar")
     @PreAuthorize("hasAuthority('evento.confirmar')")
-    public ResponseEntity<ApiResponse<EventoPrivadoResponse>> completar(
-            @PathVariable Long id) {
+    public ResponseEntity<ApiResponse<EventoPrivadoResponse>> completar(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(
-                toResponse(eventoService.completar(id,
-                        supabaseAuthFacade.usuarioActualId()
-                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado"))))));
+                mapper.toResponse(completarUseCase.completar(id, usuarioActual()))));
     }
 
     @PostMapping("/{id}/registrar-saldo")
     @PreAuthorize("hasAuthority('evento.confirmar')")
     public ResponseEntity<ApiResponse<EventoPrivadoResponse>> registrarSaldo(
             @PathVariable Long id,
-            @RequestParam BigDecimal monto,
-            @RequestParam String medioPago) {
+            @Valid @RequestBody RegistrarSaldoRequest request) {
+
         return ResponseEntity.ok(ApiResponse.ok(
-                toResponse(eventoService.registrarSaldo(id, monto, medioPago,
-                        supabaseAuthFacade.usuarioActualId()
-                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado"))))));
+                mapper.toResponse(registrarSaldoUseCase.registrarSaldo(
+                        RegistrarSaldoCommand.builder()
+                                .idEvento(id)
+                                .monto(request.getMonto())
+                                .medioPago(request.getMedioPago())
+                                .idUsuario(usuarioActual())
+                                .build()))));
+    }
+
+    @PostMapping("/{idEvento}/cuotas/{idCuota}/pagar")
+    @PreAuthorize("hasAuthority('evento.confirmar')")
+    public ResponseEntity<ApiResponse<EventoPrivadoResponse>> pagarCuota(
+            @PathVariable Long idEvento,
+            @PathVariable Long idCuota,
+            @Valid @RequestBody RegistrarPagoCuotaRequest request) {
+
+        List<VentaPagoItem> pagos = request.getPagos().stream()
+                .map(p -> VentaPagoItem.builder()
+                        .medioPagoCodigo(p.getMedioPago())
+                        .monto(p.getMonto())
+                        .build())
+                .toList();
+
+        return ResponseEntity.ok(ApiResponse.ok(
+                mapper.toResponse(registrarPagoCuotaUseCase.ejecutar(
+                        RegistrarPagoCuotaCommand.builder()
+                                .idCuota(idCuota)
+                                .pagos(pagos)
+                                .idUsuario(usuarioActual())
+                                .build()))));
     }
 
     @PostMapping("/{id}/cancelar")
     @PreAuthorize("hasAuthority('evento.confirmar')")
     public ResponseEntity<ApiResponse<EventoPrivadoResponse>> cancelar(
             @PathVariable Long id,
-            @RequestParam String motivoCancelacion) {
-        return ResponseEntity.ok(ApiResponse.ok(toResponse(cancelarUseCase.ejecutar(id, motivoCancelacion))));
+            @Valid @RequestBody CancelarEventoRequest request) {
+
+        return ResponseEntity.ok(ApiResponse.ok(
+                mapper.toResponse(cancelarUseCase.ejecutar(id, request.getMotivo()))));
     }
 
     @GetMapping("/{idEvento}/checklist")
@@ -192,11 +250,8 @@ public class EventoPrivadoController {
     public ResponseEntity<ApiResponse<ChecklistEventoQuery>> completarTarea(
             @PathVariable Long idEvento,
             @PathVariable Long idChecklist) {
-
         return ResponseEntity.ok(ApiResponse.ok(
-                checklistUseCase.completar(idChecklist,
-                        supabaseAuthFacade.usuarioActualId()
-                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no autenticado")))));
+                checklistUseCase.completar(idChecklist, usuarioActual())));
     }
 
     @PostMapping("/{idEvento}/checklist/{idChecklist}/descompletar")
@@ -204,8 +259,59 @@ public class EventoPrivadoController {
     public ResponseEntity<ApiResponse<ChecklistEventoQuery>> descompletarTarea(
             @PathVariable Long idEvento,
             @PathVariable Long idChecklist) {
-
         return ResponseEntity.ok(ApiResponse.ok(checklistUseCase.descompletar(idChecklist)));
+    }
+
+    @PostMapping("/{idEvento}/checklist")
+    @PreAuthorize("hasAuthority('evento.confirmar')")
+    public ResponseEntity<ApiResponse<ChecklistEventoQuery>> agregarTarea(
+            @PathVariable Long idEvento,
+            @RequestBody java.util.Map<String, String> body) {
+        String tarea = body.get("tarea");
+        if (tarea == null || tarea.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El campo tarea es obligatorio.");
+        }
+        return ResponseEntity.ok(ApiResponse.ok(checklistUseCase.agregarTarea(idEvento, tarea)));
+    }
+
+    @DeleteMapping("/{idEvento}/checklist/{idChecklist}")
+    @PreAuthorize("hasAuthority('evento.confirmar')")
+    public ResponseEntity<ApiResponse<Void>> eliminarTarea(
+            @PathVariable Long idEvento,
+            @PathVariable Long idChecklist) {
+        checklistUseCase.eliminarTarea(idChecklist);
+        return ResponseEntity.ok(ApiResponse.ok(null));
+    }
+
+    // ─── Helpers ──────────────────────────────────────────────────────────────
+
+    /**
+     * Construye la lista de VentaPagoItem combinando el campo nuevo (pagosAdelanto)
+     * y el legado (medioPago), para mantener compatibilidad con el frontend actual.
+     */
+    private List<VentaPagoItem> resolverPagosAdelanto(ConfirmarEventoRequest request) {
+        if (request.getPagosAdelanto() != null && !request.getPagosAdelanto().isEmpty()) {
+            return request.getPagosAdelanto().stream()
+                    .map(p -> VentaPagoItem.builder()
+                            .medioPagoCodigo(p.getMedioPago())
+                            .monto(p.getMonto())
+                            .build())
+                    .toList();
+        }
+        BigDecimal adelanto = request.getMontoAdelanto();
+        if (adelanto != null && adelanto.compareTo(BigDecimal.ZERO) > 0 && request.getMedioPago() != null) {
+            return List.of(VentaPagoItem.builder()
+                    .medioPagoCodigo(request.getMedioPago())
+                    .monto(adelanto)
+                    .build());
+        }
+        return List.of();
+    }
+
+    private UUID usuarioActual() {
+        return supabaseAuthFacade.usuarioActualId()
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED, "Usuario no autenticado"));
     }
 
     private Long resolverIdCliente(Long solicitado) {
@@ -219,43 +325,5 @@ public class EventoPrivadoController {
             return propio;
         }
         return solicitado;
-    }
-
-    private EventoPrivadoResponse toResponse(EventoPrivadoQuery q) {
-        return EventoPrivadoResponse.builder()
-                .id(q.getId())
-                .idCliente(q.getIdCliente())
-                .nombreCliente(q.getNombreCliente())
-                .correoCliente(q.getCorreoCliente())
-                .telefonoCliente(q.getTelefonoCliente())
-                .idSede(q.getIdSede())
-                .estado(q.getEstado())
-                .idTurno(q.getIdTurno())
-                .turno(q.getTurno())
-                .horaInicio(q.getHoraInicio())
-                .horaFin(q.getHoraFin())
-                .fechaEvento(q.getFechaEvento())
-                .tipoEvento(q.getTipoEvento())
-                .contactoAdicional(q.getContactoAdicional())
-                .aforoDeclarado(q.getAforoDeclarado())
-                .precioTotalContrato(q.getPrecioTotalContrato())
-                .montoAdelanto(q.getMontoAdelanto())
-                .montoSaldo(q.getMontoSaldo())
-                .observaciones(q.getObservaciones())
-                .nombreNino(q.getNombreNino())
-                .edadCumple(q.getEdadCumple())
-                .idPaquete(q.getIdPaquete())
-                .descripcionPersonalizada(q.getDescripcionPersonalizada())
-                .presupuestoEstimado(q.getPresupuestoEstimado())
-                .esCotizacionPersonalizada(q.isEsCotizacionPersonalizada())
-                .usuarioGestor(q.getUsuarioGestor())
-                .estadoOperativo(q.getEstadoOperativo())
-                .checklistCompleto(q.isChecklistCompleto())
-                .horaInicioReal(q.getHoraInicioReal())
-                .horaFinReal(q.getHoraFinReal())
-                .extras(q.getExtras())
-                .medioPago(q.getMedioPago())
-                .fechaCreacion(q.getFechaCreacion())
-                .build();
     }
 }

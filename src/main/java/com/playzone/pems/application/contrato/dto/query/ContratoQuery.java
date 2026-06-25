@@ -35,6 +35,8 @@ public class ContratoQuery {
     private BigDecimal  montoAdelanto;
     private BigDecimal  saldoPendiente;
 
+    private boolean esEditable;
+
     private List<DocumentoContratoQuery> documentos;
     private List<ActividadContratoQuery> actividades;
 }

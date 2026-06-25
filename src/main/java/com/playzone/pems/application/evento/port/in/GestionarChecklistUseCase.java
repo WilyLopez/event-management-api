@@ -16,4 +16,8 @@ public interface GestionarChecklistUseCase {
     ChecklistEventoQuery completar(Long idChecklist, UUID idUsuarioAdmin);
 
     ChecklistEventoQuery descompletar(Long idChecklist);
+
+    ChecklistEventoQuery agregarTarea(Long idEvento, String tarea);
+
+    void eliminarTarea(Long idChecklist);
 }

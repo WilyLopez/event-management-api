@@ -148,6 +148,7 @@ public class CalendarioController {
                 .idEventoT1(q.getIdEventoT1())
                 .tituloEventoT2(q.getTituloEventoT2())
                 .idEventoT2(q.getIdEventoT2())
+                .tieneProgramacionSemanal(q.isTieneProgramacionSemanal())
                 .build();
     }
 

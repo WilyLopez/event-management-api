@@ -1,6 +1,5 @@
 package com.playzone.pems.interfaces.rest.contrato.request;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -8,9 +7,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class GenerarContratoRequest {
 
-    @NotBlank
     private String contenidoTexto;
 
-    @NotBlank
     private String plantilla;
 }

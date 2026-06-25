@@ -46,14 +46,7 @@ public class ResumenDiaService implements ConsultarResumenDiaUseCase {
         String tipoOcupacion = "LIBRE";
         if (esFeriado) tipoOcupacion = "FERIADO";
         else if (bloqueado) {
-             var b = bloqueRepository.findActivosBySede(idSede).stream()
-                     .filter(x -> x.comprendeFecha(fecha))
-                     .findFirst().orElse(null);
-             if (b != null && "PLANIFICACION_SEMANAL".equals(b.getTipoBloqueo())) {
-                 tipoOcupacion = "LIBRE";
-             } else {
-                 tipoOcupacion = "BLOQUEADO";
-             }
+            tipoOcupacion = "BLOQUEADO";
         } else if (eventos.size() >= 2) tipoOcupacion = "PRIVADO_LLENO";
         else if (eventos.size() == 1) tipoOcupacion = "PRIVADO_PARCIAL";
         else if (reservas.size() > 0) tipoOcupacion = "PUBLICO";

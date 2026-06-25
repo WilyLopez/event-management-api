@@ -1,21 +1,35 @@
 package com.playzone.pems.application.evento.service;
 
+import com.playzone.pems.application.evento.dto.command.ConfirmarEventoCommand;
+import com.playzone.pems.application.evento.dto.command.RegistrarPagoCuotaCommand;
+import com.playzone.pems.application.evento.dto.command.RegistrarSaldoCommand;
 import com.playzone.pems.application.evento.dto.command.SolicitarEventoPrivadoCommand;
+import com.playzone.pems.application.evento.dto.command.VentaPagoItem;
+import com.playzone.pems.application.evento.dto.query.EventoCuotaQuery;
 import com.playzone.pems.application.evento.dto.query.EventoExtraQuery;
 import com.playzone.pems.application.evento.dto.query.EventoPrivadoQuery;
+import com.playzone.pems.application.evento.dto.query.KpisEventosQuery;
 import com.playzone.pems.application.evento.port.in.BuscarEventosAdminUseCase;
 import com.playzone.pems.application.evento.port.in.CancelarEventoPrivadoUseCase;
+import com.playzone.pems.application.evento.port.in.CompletarEventoUseCase;
 import com.playzone.pems.application.evento.port.in.ConfirmarEventoPrivadoUseCase;
 import com.playzone.pems.application.evento.port.in.ConsultarEventosPrivadosUseCase;
+import com.playzone.pems.application.evento.port.in.RegistrarPagoCuotaUseCase;
+import com.playzone.pems.application.evento.port.in.RegistrarSaldoUseCase;
 import com.playzone.pems.application.evento.port.in.SolicitarEventoPrivadoUseCase;
 import com.playzone.pems.application.evento.port.out.EnviarNotificacionEventoPort;
 import com.playzone.pems.domain.calendario.exception.FechaNoDisponibleException;
-import com.playzone.pems.domain.venta.model.Venta;
-import com.playzone.pems.domain.venta.model.VentaPago;
-import com.playzone.pems.domain.venta.repository.VentaPagoRepository;
-import com.playzone.pems.domain.venta.repository.VentaRepository;
-import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
+import com.playzone.pems.domain.evento.model.EventoCuota;
+import com.playzone.pems.domain.evento.model.EventoExtra;
+import com.playzone.pems.domain.evento.model.EventoPrivado;
+import com.playzone.pems.domain.evento.model.enums.EstadoEventoPrivado;
+import com.playzone.pems.domain.evento.repository.ChecklistEventoRepository;
+import com.playzone.pems.domain.evento.repository.EventoCuotaRepository;
+import com.playzone.pems.domain.evento.repository.EventoExtraRepository;
+import com.playzone.pems.domain.evento.repository.EventoPrivadoRepository;
+import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
 import com.playzone.pems.domain.calendario.model.ConfiguracionCalendario;
+import com.playzone.pems.domain.calendario.model.Turno;
 import com.playzone.pems.domain.calendario.repository.BloqueCalendarioRepository;
 import com.playzone.pems.domain.calendario.repository.ConfiguracionCalendarioRepository;
 import com.playzone.pems.domain.calendario.repository.FeriadoRepository;
@@ -23,28 +37,28 @@ import com.playzone.pems.domain.calendario.repository.TurnoRepository;
 import com.playzone.pems.domain.comercial.repository.ExtraPaqueteRepository;
 import com.playzone.pems.domain.comercial.repository.ServicioCotizacionRepository;
 import com.playzone.pems.domain.comercial.repository.TipoEventoRepository;
-import com.playzone.pems.domain.evento.model.EventoExtra;
-import com.playzone.pems.domain.evento.model.EventoPrivado;
-import com.playzone.pems.domain.evento.model.enums.EstadoEventoPrivado;
-import com.playzone.pems.domain.evento.repository.EventoExtraRepository;
-import com.playzone.pems.domain.evento.repository.EventoPrivadoRepository;
-import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
 import com.playzone.pems.domain.usuario.model.ClientePerfil;
 import com.playzone.pems.domain.usuario.repository.ClientePerfilRepository;
-import com.playzone.pems.domain.calendario.model.Turno;
+import com.playzone.pems.domain.venta.model.Venta;
+import com.playzone.pems.domain.venta.model.VentaPago;
+import com.playzone.pems.domain.venta.repository.VentaPagoRepository;
+import com.playzone.pems.domain.venta.repository.VentaRepository;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import com.playzone.pems.shared.exception.ValidationException;
 import com.playzone.pems.shared.util.FechaUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -57,11 +71,14 @@ public class EventoPrivadoService
         ConfirmarEventoPrivadoUseCase,
         CancelarEventoPrivadoUseCase,
         ConsultarEventosPrivadosUseCase,
-        BuscarEventosAdminUseCase {
+        BuscarEventosAdminUseCase,
+        CompletarEventoUseCase,
+        RegistrarSaldoUseCase,
+        RegistrarPagoCuotaUseCase {
 
     private final EventoPrivadoRepository         eventoRepository;
     private final ReservaPublicaRepository        reservaRepository;
-    private final ClientePerfilRepository          clientePerfilRepository;
+    private final ClientePerfilRepository         clientePerfilRepository;
     private final BloqueCalendarioRepository      bloqueRepository;
     private final FeriadoRepository               feriadoRepository;
     private final TurnoRepository                 turnoRepository;
@@ -74,11 +91,18 @@ public class EventoPrivadoService
     private final ExtraPaqueteRepository          extraPaqueteRepository;
     private final ServicioCotizacionRepository    servicioCotizacionRepository;
     private final TipoEventoRepository            tipoEventoRepository;
+    private final EventoCuotaRepository           cuotaRepository;
+    private final ChecklistEventoRepository       checklistRepository;
+
+    // ─── Consultas ────────────────────────────────────────────────────────────
 
     @Override
     @Transactional(readOnly = true)
     public Page<EventoPrivadoQuery> buscar(
-            Long idSede, String estado, LocalDate fecha, String search, Pageable pageable) {
+            Long idSede, String estado,
+            LocalDate fechaDesde, LocalDate fechaHasta,
+            String tipoEvento, String modalidadPago,
+            String search, Pageable pageable) {
 
         EstadoEventoPrivado estadoEnum = null;
         if (estado != null && !estado.isBlank()) {
@@ -87,9 +111,28 @@ public class EventoPrivadoService
         }
         String searchPattern = (search != null && !search.isBlank())
                 ? "%" + search.toLowerCase() + "%" : null;
+        String tipoFiltro = (tipoEvento != null && !tipoEvento.isBlank()) ? tipoEvento : null;
+        String modalidadFiltro = (modalidadPago != null && !modalidadPago.isBlank()) ? modalidadPago : null;
 
-        return eventoRepository.buscarAdmin(idSede, estadoEnum, fecha, searchPattern, pageable)
+        return eventoRepository.buscarAdmin(
+                        idSede, estadoEnum, fechaDesde, fechaHasta,
+                        tipoFiltro, modalidadFiltro, searchPattern, pageable)
                 .map(e -> toQuery(e, obtenerCliente(e.getIdCliente()), obtenerTurno(e.getIdTurno()), false));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public KpisEventosQuery kpis(Long idSede) {
+        LocalDate hoy = LocalDate.now();
+        LocalDate inicioMes = hoy.withDayOfMonth(1);
+        LocalDate finMes = hoy.withDayOfMonth(hoy.lengthOfMonth());
+        return KpisEventosQuery.builder()
+                .solicitadas(eventoRepository.countBySedeAndEstado(idSede, EstadoEventoPrivado.SOLICITADA))
+                .confirmadas(eventoRepository.countBySedeAndEstado(idSede, EstadoEventoPrivado.CONFIRMADA))
+                .completadasEsteMes(eventoRepository.countBySedeAndRangoAndEstado(
+                        idSede, inicioMes, finMes, EstadoEventoPrivado.COMPLETADA))
+                .conSaldoPendiente(eventoRepository.countConfirmadosConSaldo(idSede))
+                .build();
     }
 
     @Override
@@ -120,6 +163,8 @@ public class EventoPrivadoService
         return toQuery(e, obtenerCliente(e.getIdCliente()), obtenerTurno(e.getIdTurno()), true);
     }
 
+    // ─── Solicitar ────────────────────────────────────────────────────────────
+
     @Override
     @Transactional
     public EventoPrivadoQuery ejecutar(SolicitarEventoPrivadoCommand command) {
@@ -144,6 +189,7 @@ public class EventoPrivadoService
                 .descripcionPersonalizada(command.getDescripcionPersonalizada())
                 .presupuestoEstimado(command.getPresupuestoEstimado())
                 .esCotizacionPersonalizada(command.isEsCotizacionPersonalizada())
+                .modalidadPago("AL_CONTADO")
                 .build();
 
         EventoPrivado guardado = eventoRepository.save(evento);
@@ -157,118 +203,153 @@ public class EventoPrivadoService
         if (cliente.getCorreo() != null) {
             notificacionPort.notificarSolicitudRecibida(cliente.getCorreo(), query);
         } else {
-            log.warn("Evento {} sin correo de cliente {}, no se envia notificacion solicitud", guardado.getId(), guardado.getIdCliente());
+            log.warn("Evento {} sin correo de cliente {}, no se envia notificacion solicitud",
+                    guardado.getId(), guardado.getIdCliente());
         }
         notificacionPort.notificarAdminNuevaSolicitud(query);
         return query;
     }
 
+    // ─── Confirmar ────────────────────────────────────────────────────────────
+
     @Override
     @Transactional
-    public EventoPrivadoQuery ejecutar(Long idEvento, BigDecimal precioTotal,
-                                       BigDecimal montoAdelanto,
-                                       UUID idUsuarioGestor,
-                                       String medioPago) {
-        EventoPrivado evento = obtenerEvento(idEvento);
+    public EventoPrivadoQuery ejecutar(ConfirmarEventoCommand command) {
+        EventoPrivado evento = obtenerEvento(command.getIdEvento());
 
         if (evento.getEstado() != EstadoEventoPrivado.SOLICITADA) {
             throw new ValidationException("Solo se pueden confirmar eventos en estado SOLICITADA.");
         }
 
+        String modalidad = command.getModalidadPago() != null ? command.getModalidadPago() : "AL_CONTADO";
+
+        if ("CUOTAS".equals(modalidad)) {
+            validarParametrosCuotas(command);
+        }
+
+        BigDecimal adelanto = command.getMontoAdelanto() != null
+                ? command.getMontoAdelanto() : BigDecimal.ZERO;
+
         EventoPrivado confirmado = evento.toBuilder()
                 .estado(EstadoEventoPrivado.CONFIRMADA)
-                .precioContrato(precioTotal)
-                .montoAdelanto(montoAdelanto != null ? montoAdelanto : BigDecimal.ZERO)
-                .idUsuarioGestor(idUsuarioGestor)
+                .precioContrato(command.getPrecioTotal())
+                .montoAdelanto(adelanto)
+                .idUsuarioGestor(command.getIdUsuarioGestor())
+                .modalidadPago(modalidad)
+                .fechaLimitePago(command.getFechaLimitePago())
                 .build();
 
         EventoPrivado guardado = eventoRepository.save(confirmado);
 
-        if (montoAdelanto != null && montoAdelanto.compareTo(BigDecimal.ZERO) > 0) {
-            Venta ventaAdelanto = ventaRepository.save(Venta.builder()
-                    .idSede(guardado.getIdSede())
-                    .clienteId(guardado.getIdCliente())
-                    .eventoId(guardado.getId())
-                    .tipo("ADELANTO_EVENTO")
-                    .canalCodigo("MOSTRADOR")
-                    .subtotal(montoAdelanto)
-                    .descuento(BigDecimal.ZERO)
-                    .total(montoAdelanto)
-                    .efectivoRecibido(BigDecimal.ZERO)
-                    .vuelto(BigDecimal.ZERO)
-                    .actaFirmada(false)
-                    .esAnticipada(false)
-                    .createdBy(idUsuarioGestor)
-                    .build());
-            ventaPagoRepository.save(VentaPago.builder()
-                    .ventaId(ventaAdelanto.getId())
-                    .medioPagoCodigo(medioPago)
-                    .monto(montoAdelanto)
-                    .esValidado(true)
-                    .validadoPor(idUsuarioGestor)
-                    .validadoAt(java.time.OffsetDateTime.now())
-                    .build());
+        checklistRepository.crearTareasBase(guardado.getId());
+
+        // Registrar venta del adelanto si corresponde
+        Venta ventaAdelanto = null;
+        if (adelanto.compareTo(BigDecimal.ZERO) > 0 && !command.getPagosAdelanto().isEmpty()) {
+            ventaAdelanto = crearVenta(guardado, "ADELANTO_EVENTO", adelanto, command.getIdUsuarioGestor());
+            registrarPagos(ventaAdelanto.getId(), command.getPagosAdelanto(), command.getIdUsuarioGestor());
+        }
+
+        // Crear cronograma de cuotas
+        if ("CUOTAS".equals(modalidad)) {
+            crearCuotas(guardado, adelanto, command, ventaAdelanto);
         }
 
         ClientePerfil cliente = obtenerCliente(guardado.getIdCliente());
         Turno         turno   = obtenerTurno(guardado.getIdTurno());
         EventoPrivadoQuery query = toQuery(guardado, cliente, turno, true);
+
         if (cliente.getCorreo() != null) {
             notificacionPort.notificarEventoConfirmado(cliente.getCorreo(), query);
         } else {
-            log.warn("Evento {} sin correo de cliente {}, no se envia notificacion confirmacion", guardado.getId(), guardado.getIdCliente());
+            log.warn("Evento {} sin correo de cliente {}, no se envia notificacion confirmacion",
+                    guardado.getId(), guardado.getIdCliente());
         }
         return query;
     }
 
+    // ─── Registrar pago de cuota ──────────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public EventoPrivadoQuery ejecutar(RegistrarPagoCuotaCommand command) {
+        EventoCuota cuota = cuotaRepository.findById(command.getIdCuota())
+                .orElseThrow(() -> new ResourceNotFoundException("EventoCuota", command.getIdCuota()));
+
+        if (!cuota.esPendiente()) {
+            throw new ValidationException("La cuota " + cuota.getNumeroCuota() + " ya está en estado " + cuota.getEstado() + ".");
+        }
+
+        BigDecimal totalPago = command.getPagos().stream()
+                .map(VentaPagoItem::getMonto)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (totalPago.compareTo(cuota.getMonto()) != 0) {
+            throw new ValidationException("El total de los pagos (" + totalPago +
+                    ") no coincide con el monto de la cuota (" + cuota.getMonto() + ").");
+        }
+
+        EventoPrivado evento = obtenerEvento(cuota.getEventoId());
+
+        Venta ventaSaldo = crearVenta(evento, "SALDO_EVENTO", totalPago, command.getIdUsuario());
+        registrarPagos(ventaSaldo.getId(), command.getPagos(), command.getIdUsuario());
+
+        // Marcar cuota como pagada
+        cuotaRepository.save(cuota.toBuilder()
+                .estado("PAGADO")
+                .ventaId(ventaSaldo.getId())
+                .build());
+
+        // Acumular en montoAdelanto del evento
+        BigDecimal nuevoAdelanto = evento.getMontoAdelanto().add(totalPago);
+        EventoPrivado actualizado = evento.toBuilder().montoAdelanto(nuevoAdelanto).build();
+        EventoPrivado guardado = eventoRepository.save(actualizado);
+
+        return toQuery(guardado, obtenerCliente(guardado.getIdCliente()), obtenerTurno(guardado.getIdTurno()), true);
+    }
+
+    // ─── Registrar saldo (pago libre, sin cuotas) ─────────────────────────────
+
+    @Override
+    @Transactional
+    public EventoPrivadoQuery registrarSaldo(RegistrarSaldoCommand command) {
+        EventoPrivado evento = obtenerEvento(command.getIdEvento());
+
+        Venta ventaSaldo = crearVenta(evento, "SALDO_EVENTO", command.getMonto(), command.getIdUsuario());
+        ventaPagoRepository.save(VentaPago.builder()
+                .ventaId(ventaSaldo.getId())
+                .medioPagoCodigo(command.getMedioPago())
+                .monto(command.getMonto())
+                .esValidado(true)
+                .validadoPor(command.getIdUsuario())
+                .validadoAt(OffsetDateTime.now())
+                .build());
+
+        BigDecimal nuevoAdelanto = evento.getMontoAdelanto().add(command.getMonto());
+        EventoPrivado guardado = eventoRepository.save(evento.toBuilder().montoAdelanto(nuevoAdelanto).build());
+        return toQuery(guardado, obtenerCliente(guardado.getIdCliente()), obtenerTurno(guardado.getIdTurno()), false);
+    }
+
+    // ─── Completar ────────────────────────────────────────────────────────────
+
+    @Override
     @Transactional
     public EventoPrivadoQuery completar(Long idEvento, UUID idUsuarioGestor) {
         EventoPrivado evento = obtenerEvento(idEvento);
         if (evento.getEstado() != EstadoEventoPrivado.CONFIRMADA) {
             throw new ValidationException("Solo se pueden completar eventos en estado CONFIRMADA.");
         }
-        EventoPrivado completado = evento.toBuilder()
+        if (LocalDate.now().isBefore(evento.getFechaEvento())) {
+            throw new ValidationException("No se puede completar un evento que aun no ha ocurrido.");
+        }
+        EventoPrivado guardado = eventoRepository.save(evento.toBuilder()
                 .estado(EstadoEventoPrivado.COMPLETADA)
                 .idUsuarioGestor(idUsuarioGestor)
-                .build();
-        EventoPrivado guardado = eventoRepository.save(completado);
+                .build());
         return toQuery(guardado, obtenerCliente(guardado.getIdCliente()), obtenerTurno(guardado.getIdTurno()), false);
     }
 
-    @Transactional
-    public EventoPrivadoQuery registrarSaldo(Long idEvento, BigDecimal monto, String medioPago, UUID idUsuarioGestor) {
-        EventoPrivado evento = obtenerEvento(idEvento);
-
-        Venta ventaSaldo = ventaRepository.save(Venta.builder()
-                .idSede(evento.getIdSede())
-                .clienteId(evento.getIdCliente())
-                .eventoId(evento.getId())
-                .tipo("SALDO_EVENTO")
-                .canalCodigo("MOSTRADOR")
-                .subtotal(monto)
-                .descuento(BigDecimal.ZERO)
-                .total(monto)
-                .efectivoRecibido(BigDecimal.ZERO)
-                .vuelto(BigDecimal.ZERO)
-                .actaFirmada(false)
-                .esAnticipada(false)
-                .createdBy(idUsuarioGestor)
-                .build());
-        ventaPagoRepository.save(VentaPago.builder()
-                .ventaId(ventaSaldo.getId())
-                .medioPagoCodigo(medioPago)
-                .monto(monto)
-                .esValidado(true)
-                .validadoPor(idUsuarioGestor)
-                .validadoAt(java.time.OffsetDateTime.now())
-                .build());
-
-        BigDecimal nuevoAdelanto = (evento.getMontoAdelanto() != null ? evento.getMontoAdelanto() : BigDecimal.ZERO)
-                .add(monto);
-        EventoPrivado actualizado = evento.toBuilder().montoAdelanto(nuevoAdelanto).build();
-        EventoPrivado guardado = eventoRepository.save(actualizado);
-        return toQuery(guardado, obtenerCliente(guardado.getIdCliente()), obtenerTurno(guardado.getIdTurno()), false);
-    }
+    // ─── Cancelar ─────────────────────────────────────────────────────────────
 
     @Override
     @Transactional
@@ -282,22 +363,121 @@ public class EventoPrivadoService
             throw new ValidationException("motivoCancelacion", "El motivo de cancelacion es obligatorio.");
         }
 
-        EventoPrivado cancelado = evento.toBuilder()
+        EventoPrivado guardado = eventoRepository.save(evento.toBuilder()
                 .estado(EstadoEventoPrivado.CANCELADA)
                 .motivoCancelacion(motivoCancelacion)
-                .build();
+                .build());
 
-        EventoPrivado guardado = eventoRepository.save(cancelado);
         ClientePerfil cliente = obtenerCliente(guardado.getIdCliente());
         Turno         turno   = obtenerTurno(guardado.getIdTurno());
         EventoPrivadoQuery query = toQuery(guardado, cliente, turno, false);
         if (cliente.getCorreo() != null) {
             notificacionPort.notificarEventoCancelado(cliente.getCorreo(), query, motivoCancelacion);
-        } else {
-            log.warn("Evento {} sin correo de cliente {}, no se envia notificacion cancelacion", guardado.getId(), guardado.getIdCliente());
         }
         return query;
     }
+
+    // ─── Helpers de negocio ───────────────────────────────────────────────────
+
+    private void validarParametrosCuotas(ConfirmarEventoCommand command) {
+        if (command.getNumeroCuotas() == null || command.getNumeroCuotas() < 2) {
+            throw new ValidationException("numeroCuotas",
+                    "Se requiere al menos 2 cuotas para la modalidad CUOTAS.");
+        }
+        if (command.getFechaLimitePago() == null) {
+            throw new ValidationException("fechaLimitePago",
+                    "Se requiere fecha límite de pago para la modalidad CUOTAS.");
+        }
+        if (!command.getFechaLimitePago().isAfter(LocalDate.now())) {
+            throw new ValidationException("fechaLimitePago",
+                    "La fecha límite de pago debe ser futura.");
+        }
+        BigDecimal adelanto = command.getMontoAdelanto() != null ? command.getMontoAdelanto() : BigDecimal.ZERO;
+        if (adelanto.compareTo(command.getPrecioTotal()) >= 0) {
+            throw new ValidationException("montoAdelanto",
+                    "El adelanto no puede cubrir el 100% del precio en modalidad CUOTAS.");
+        }
+    }
+
+    /**
+     * Crea el cronograma de cuotas.
+     * Cuota 1 = adelanto (PAGADO si ventaAdelanto != null, PENDIENTE si montoAdelanto = 0).
+     * Cuotas 2..N = partes iguales del saldo restante, distribuidas hasta fechaLimitePago.
+     */
+    private void crearCuotas(EventoPrivado evento, BigDecimal adelanto,
+                              ConfirmarEventoCommand command, Venta ventaAdelanto) {
+        int n = command.getNumeroCuotas();
+        LocalDate hoy = LocalDate.now();
+        LocalDate limite = command.getFechaLimitePago();
+        BigDecimal restante = command.getPrecioTotal().subtract(adelanto);
+
+        List<EventoCuota> cuotas = new ArrayList<>();
+
+        // Cuota 1: adelanto
+        cuotas.add(EventoCuota.builder()
+                .eventoId(evento.getId())
+                .numeroCuota(1)
+                .monto(adelanto.compareTo(BigDecimal.ZERO) > 0 ? adelanto : restante.divide(BigDecimal.valueOf(n), 2, RoundingMode.HALF_UP))
+                .fechaVencimiento(hoy)
+                .estado(ventaAdelanto != null ? "PAGADO" : "PENDIENTE")
+                .ventaId(ventaAdelanto != null ? ventaAdelanto.getId() : null)
+                .build());
+
+        // Cuotas 2..N: distribuir el saldo restante
+        int cuotasRestantes = n - 1;
+        BigDecimal montoPorCuota = restante.divide(BigDecimal.valueOf(cuotasRestantes), 2, RoundingMode.FLOOR);
+        BigDecimal acumulado = montoPorCuota.multiply(BigDecimal.valueOf(cuotasRestantes - 1));
+        BigDecimal montoUltima = restante.subtract(acumulado);
+
+        long diasTotal = ChronoUnit.DAYS.between(hoy, limite);
+
+        for (int i = 2; i <= n; i++) {
+            long diasOffset = cuotasRestantes == 1 ? diasTotal
+                    : diasTotal * (i - 1) / cuotasRestantes;
+            BigDecimal monto = (i == n) ? montoUltima : montoPorCuota;
+
+            cuotas.add(EventoCuota.builder()
+                    .eventoId(evento.getId())
+                    .numeroCuota(i)
+                    .monto(monto)
+                    .fechaVencimiento(hoy.plusDays(diasOffset))
+                    .estado("PENDIENTE")
+                    .build());
+        }
+
+        cuotaRepository.saveAll(cuotas);
+    }
+
+    private Venta crearVenta(EventoPrivado evento, String tipo, BigDecimal monto, UUID idUsuario) {
+        return ventaRepository.save(Venta.builder()
+                .idSede(evento.getIdSede())
+                .clienteId(evento.getIdCliente())
+                .eventoId(evento.getId())
+                .tipo(tipo)
+                .canalCodigo("MOSTRADOR")
+                .subtotal(monto)
+                .descuento(BigDecimal.ZERO)
+                .total(monto)
+                .efectivoRecibido(BigDecimal.ZERO)
+                .vuelto(BigDecimal.ZERO)
+                .actaFirmada(false)
+                .esAnticipada(false)
+                .createdBy(idUsuario)
+                .build());
+    }
+
+    private void registrarPagos(Long ventaId, List<VentaPagoItem> pagos, UUID idUsuario) {
+        pagos.forEach(p -> ventaPagoRepository.save(VentaPago.builder()
+                .ventaId(ventaId)
+                .medioPagoCodigo(p.getMedioPagoCodigo())
+                .monto(p.getMonto())
+                .esValidado(true)
+                .validadoPor(idUsuario)
+                .validadoAt(OffsetDateTime.now())
+                .build()));
+    }
+
+    // ─── Validaciones ─────────────────────────────────────────────────────────
 
     private void validarTipoEvento(String tipoEventoCodigo) {
         if (tipoEventoCodigo == null || tipoEventoCodigo.isBlank()) {
@@ -316,16 +496,21 @@ public class EventoPrivadoService
         ConfiguracionCalendario cfg = configRepository.obtener(idSede);
         long dias = FechaUtil.diasEntre(FechaUtil.hoy(), fecha);
 
-        if (dias < cfg.getDiasMinEventoPrivado()) {
-            throw new FechaNoDisponibleException(fecha,
-                    "Los eventos privados deben reservarse con un minimo de "
-                    + cfg.getDiasMinEventoPrivado()
-                    + " dias de anticipacion. Por favor selecciona una fecha posterior.");
+        boolean esAdmin = supabaseAuthFacade.tieneRol("ADMIN") || supabaseAuthFacade.tieneRol("SUPERADMIN");
+
+        if (!esAdmin) {
+            if (dias < cfg.getDiasMinEventoPrivado()) {
+                throw new FechaNoDisponibleException(fecha,
+                        "Los eventos privados deben reservarse con un minimo de "
+                        + cfg.getDiasMinEventoPrivado()
+                        + " dias de anticipacion. Por favor selecciona una fecha posterior.");
+            }
+            if (dias > cfg.getDiasMaxEventoPrivado()) {
+                throw new ValidationException(
+                        "Los eventos solo pueden agendarse hasta " + cfg.getDiasMaxEventoPrivado() + " dias adelante.");
+            }
         }
-        if (dias > cfg.getDiasMaxEventoPrivado()) {
-            throw new ValidationException(
-                    "Los eventos solo pueden agendarse hasta " + cfg.getDiasMaxEventoPrivado() + " dias adelante.");
-        }
+
         if (feriadoRepository.existsByFecha(fecha)) {
             throw new FechaNoDisponibleException(fecha, "Esta fecha es feriado.");
         }
@@ -347,6 +532,8 @@ public class EventoPrivadoService
         }
     }
 
+    // ─── Persistencia auxiliar ────────────────────────────────────────────────
+
     private void persistirServiciosCotizacion(Long idEvento, List<Long> idsServicios) {
         if (idsServicios == null || idsServicios.isEmpty()) return;
         List<EventoExtra> extras = servicioCotizacionRepository.findAllActivos().stream()
@@ -356,9 +543,7 @@ public class EventoPrivadoService
                         .nombreLibre("Servicio: " + s.getNombre())
                         .build())
                 .toList();
-        if (!extras.isEmpty()) {
-            eventoExtraRepository.saveAll(extras);
-        }
+        if (!extras.isEmpty()) eventoExtraRepository.saveAll(extras);
     }
 
     private void persistirExtras(Long idEvento, List<Long> idsExtras, List<String> extrasLibres) {
@@ -371,10 +556,10 @@ public class EventoPrivadoService
             extrasLibres.stream().filter(t -> t != null && !t.isBlank()).forEach(texto -> extras.add(
                     EventoExtra.builder().idEventoPrivado(idEvento).nombreLibre(texto).build()));
         }
-        if (!extras.isEmpty()) {
-            eventoExtraRepository.saveAll(extras);
-        }
+        if (!extras.isEmpty()) eventoExtraRepository.saveAll(extras);
     }
+
+    // ─── Mapeo a Query ────────────────────────────────────────────────────────
 
     private EventoPrivado obtenerEvento(Long id) {
         return eventoRepository.findById(id)
@@ -391,23 +576,40 @@ public class EventoPrivadoService
                 .orElseThrow(() -> new ResourceNotFoundException("Turno", idTurno));
     }
 
-    private EventoPrivadoQuery toQuery(EventoPrivado e, ClientePerfil c, Turno t, boolean cargarExtras) {
-        List<EventoExtraQuery> extras = cargarExtras
-                ? eventoExtraRepository.findByEvento(e.getId()).stream()
-                        .map(ex -> {
-                            String nombre = null;
-                            if (ex.getIdExtra() != null) {
-                                nombre = extraPaqueteRepository.findById(ex.getIdExtra())
-                                        .map(ep -> ep.getNombre()).orElse(null);
-                            }
-                            return EventoExtraQuery.builder()
-                                    .id(ex.getId())
-                                    .idExtra(ex.getIdExtra())
-                                    .nombreExtra(nombre)
-                                    .nombreLibre(ex.getNombreLibre())
-                                    .build();
-                        }).toList()
-                : null;
+    private EventoPrivadoQuery toQuery(EventoPrivado e, ClientePerfil c, Turno t, boolean cargarDetalle) {
+        List<EventoExtraQuery> extras = null;
+        List<EventoCuotaQuery> cuotas = null;
+
+        if (cargarDetalle) {
+            extras = eventoExtraRepository.findByEvento(e.getId()).stream()
+                    .map(ex -> {
+                        String nombre = null;
+                        if (ex.getIdExtra() != null) {
+                            nombre = extraPaqueteRepository.findById(ex.getIdExtra())
+                                    .map(ep -> ep.getNombre()).orElse(null);
+                        }
+                        return EventoExtraQuery.builder()
+                                .id(ex.getId())
+                                .idExtra(ex.getIdExtra())
+                                .nombreExtra(nombre)
+                                .nombreLibre(ex.getNombreLibre())
+                                .build();
+                    }).toList();
+
+            if ("CUOTAS".equals(e.getModalidadPago())) {
+                cuotas = cuotaRepository.findByEventoId(e.getId()).stream()
+                        .map(c2 -> EventoCuotaQuery.builder()
+                                .id(c2.getId())
+                                .numeroCuota(c2.getNumeroCuota())
+                                .monto(c2.getMonto())
+                                .fechaVencimiento(c2.getFechaVencimiento())
+                                .estado(c2.getEstado())
+                                .ventaId(c2.getVentaId())
+                                .createdAt(c2.getCreatedAt())
+                                .build())
+                        .toList();
+            }
+        }
 
         return EventoPrivadoQuery.builder()
                 .id(e.getId())
@@ -422,7 +624,7 @@ public class EventoPrivadoService
                 .horaInicio(t.getHoraInicio().toString())
                 .horaFin(t.getHoraFin().toString())
                 .fechaEvento(e.getFechaEvento())
-                .tipoEvento(e.getTipoEvento())
+                .tipoEvento(e.getNombreTipoEvento() != null ? e.getNombreTipoEvento() : e.getTipoEvento())
                 .contactoAdicional(e.getContactoAdicional())
                 .aforoDeclarado(e.getAforoDeclarado())
                 .precioTotalContrato(e.getPrecioContrato())
@@ -443,6 +645,9 @@ public class EventoPrivadoService
                 .extras(extras)
                 .medioPago(fetchMedioPagoEvento(e.getId()))
                 .fechaCreacion(e.getCreatedAt())
+                .modalidadPago(e.getModalidadPago())
+                .fechaLimitePago(e.getFechaLimitePago())
+                .cuotas(cuotas)
                 .build();
     }
 

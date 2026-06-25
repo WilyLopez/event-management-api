@@ -65,6 +65,12 @@ public class ConfiguracionCalendarioEntity {
     @Column(name = "rango_max_bloqueo_dias", nullable = false)
     private int rangoMaxBloqueo;
 
+    @Column(name = "edad_min_cumple", nullable = false)
+    private int edadMinCumple;
+
+    @Column(name = "edad_max_cumple", nullable = false)
+    private int edadMaxCumple;
+
     @UpdateTimestamp
     @Column(name = "fechaactualizacion", nullable = false)
     private OffsetDateTime fechaActualizacion;

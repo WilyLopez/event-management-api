@@ -314,3 +314,40 @@ CREATE TABLE fidelizacion (
 );
 
 CREATE INDEX idx_fidelizacion_cliente ON fidelizacion (cliente_id, visita_numero);
+
+
+-- ─── Plan de Pagos de Eventos (agregado 2026-06-23) ───────────────────────────
+--
+-- Extiende la tabla evento con modalidad de pago (al contado o por cuotas)
+-- y agrega la tabla evento_cuota para registrar el cronograma de pagos.
+-- La primera cuota siempre corresponde al adelanto pagado al confirmar;
+-- las cuotas restantes quedan PENDIENTE hasta que el admin las registre.
+
+ALTER TABLE evento
+    ADD COLUMN modalidad_pago    TEXT NOT NULL DEFAULT 'AL_CONTADO',
+    ADD COLUMN fecha_limite_pago DATE;
+
+ALTER TABLE evento
+    ADD CONSTRAINT ck_evento_modalidad_pago
+        CHECK (modalidad_pago IN ('AL_CONTADO', 'CUOTAS'));
+
+
+CREATE TABLE evento_cuota (
+    id                  BIGINT        GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    evento_id           BIGINT        NOT NULL REFERENCES evento(id) ON DELETE CASCADE,
+    numero_cuota        INT           NOT NULL,
+    monto               NUMERIC(10,2) NOT NULL,
+    fecha_vencimiento   DATE          NOT NULL,
+    estado              TEXT          NOT NULL DEFAULT 'PENDIENTE',
+    venta_id            BIGINT        REFERENCES venta(id) ON DELETE SET NULL,
+    created_at          TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT ck_cuota_numero  CHECK (numero_cuota > 0),
+    CONSTRAINT ck_cuota_monto   CHECK (monto > 0),
+    CONSTRAINT ck_cuota_estado  CHECK (estado IN ('PENDIENTE', 'PAGADO', 'VENCIDO')),
+    CONSTRAINT uk_evento_cuota  UNIQUE (evento_id, numero_cuota)
+);
+
+CREATE INDEX idx_evento_cuota_evento      ON evento_cuota (evento_id);
+CREATE INDEX idx_evento_cuota_vencimiento ON evento_cuota (fecha_vencimiento)
+    WHERE estado = 'PENDIENTE';

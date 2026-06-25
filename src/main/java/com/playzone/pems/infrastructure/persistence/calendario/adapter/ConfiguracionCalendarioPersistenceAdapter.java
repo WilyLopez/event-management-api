@@ -45,6 +45,8 @@ public class ConfiguracionCalendarioPersistenceAdapter implements ConfiguracionC
         entity.setTurnoT2Fin(config.getTurnoT2Fin());
         entity.setDiasOperacion(config.getDiasOperacion());
         entity.setRangoMaxBloqueo(config.getRangoMaxBloqueo());
+        entity.setEdadMinCumple(config.getEdadMinCumple());
+        entity.setEdadMaxCumple(config.getEdadMaxCumple());
 
         return toDomain(configJpa.save(entity));
     }
@@ -66,6 +68,8 @@ public class ConfiguracionCalendarioPersistenceAdapter implements ConfiguracionC
                 .turnoT2Fin(e.getTurnoT2Fin())
                 .diasOperacion(e.getDiasOperacion())
                 .rangoMaxBloqueo(e.getRangoMaxBloqueo())
+                .edadMinCumple(e.getEdadMinCumple())
+                .edadMaxCumple(e.getEdadMaxCumple())
                 .build();
     }
 }

@@ -15,6 +15,7 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.Instant;
@@ -209,6 +210,11 @@ public class GlobalExceptionHandler {
             return nl > 0 ? rest.substring(0, nl).trim() : rest;
         }
         return rawMessage;
+    }
+
+    @ExceptionHandler(AsyncRequestNotUsableException.class)
+    public void handleClientAbort(AsyncRequestNotUsableException ex, HttpServletRequest request) {
+        log.debug("Cliente desconectado en {}", request.getRequestURI());
     }
 
     @ExceptionHandler(Exception.class)

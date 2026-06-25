@@ -56,6 +56,12 @@ public class ChecklistEventoPersistenceAdapter implements ChecklistEventoReposit
 
     @Override
     @Transactional
+    public void deleteById(Long id) {
+        checklistJpa.deleteById(id);
+    }
+
+    @Override
+    @Transactional
     public void crearTareasBase(Long idEvento) {
         EventoPrivadoEntity evento = eventoJpa.findById(idEvento)
                 .orElseThrow(() -> new ResourceNotFoundException("EventoPrivado", idEvento));
