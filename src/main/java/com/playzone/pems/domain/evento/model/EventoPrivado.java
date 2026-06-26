@@ -27,6 +27,7 @@ public class EventoPrivado {
     private String              tipoEvento;
     private String              nombreTipoEvento;
     private String              contactoAdicional;
+    private String              origenContacto;
     private Integer             aforoDeclarado;
     private BigDecimal          precioContrato;
     private BigDecimal          montoAdelanto;

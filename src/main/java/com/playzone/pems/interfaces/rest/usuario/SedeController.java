@@ -14,12 +14,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/sedes")
 @RequiredArgsConstructor
 public class SedeController {
 
     private final GestionarSedeUseCase gestionarSedeUseCase;
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<SedeResponse>>> listar() {
+        return ResponseEntity.ok(ApiResponse.ok(
+            gestionarSedeUseCase.listar().stream().map(this::toResponse).toList()
+        ));
+    }
 
     @GetMapping("/{idSede}")
     public ResponseEntity<ApiResponse<SedeResponse>> obtener(@PathVariable Long idSede) {

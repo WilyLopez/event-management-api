@@ -20,6 +20,7 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -122,6 +123,7 @@ public class CorreoAdapter
         }
     }
 
+    @Async("asyncExecutor")
     @Override
     public void notificarSolicitudRecibida(String destinatario, EventoPrivadoQuery evento) {
         String asunto = "Solicitud de evento privado recibida — Kiki y Lala";
@@ -164,6 +166,7 @@ public class CorreoAdapter
         correoClient.enviarConLogo(destinatario, asunto, cuerpo);
     }
 
+    @Async("asyncExecutor")
     @Override
     public void notificarAdminNuevaSolicitud(EventoPrivadoQuery evento) {
         String asunto = "[Nueva solicitud] " + evento.getTipoEvento() + " — " + evento.getFechaEvento();

@@ -32,6 +32,9 @@ public class SolicitarEventoPrivadoCommand {
     @Size(max = 200)
     private final String contactoAdicional;
 
+    @Size(max = 30)
+    private final String origenContacto;
+
     @Min(1) @Max(60)
     private final Integer aforoDeclarado;
 

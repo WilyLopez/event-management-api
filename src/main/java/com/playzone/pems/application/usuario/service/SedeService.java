@@ -8,11 +8,18 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class SedeService implements GestionarSedeUseCase {
 
     private final SedeRepository sedeRepository;
+
+    @Override
+    public List<Sede> listar() {
+        return sedeRepository.findAllActivas();
+    }
 
     @Override
     public Sede obtener(Long idSede) {

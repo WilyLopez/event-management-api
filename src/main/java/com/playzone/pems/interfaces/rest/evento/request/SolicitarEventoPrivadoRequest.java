@@ -24,6 +24,9 @@ public class SolicitarEventoPrivadoRequest {
     @Size(max = 200)
     private String contactoAdicional;
 
+    @Size(max = 30)
+    private String origenContacto;
+
     @Min(1) @Max(60)
     private Integer aforoDeclarado;
 

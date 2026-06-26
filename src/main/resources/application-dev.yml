@@ -4,6 +4,8 @@ spring:
       enabled: false
   jackson:
     time-zone: America/Lima
+    serialization:
+      write-dates-as-timestamps: false
   jpa:
     show-sql: true
     properties:
