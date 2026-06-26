@@ -63,7 +63,7 @@ public class EventoPrivadoController {
     private final SupabaseAuthFacade              supabaseAuthFacade;
 
     @GetMapping
-    @PreAuthorize("hasAuthority('evento.ver')")
+    @PreAuthorize("hasAuthority('evento.ver') or @supabaseAuthFacade.tieneRol('CLIENTE')")
     public ResponseEntity<ApiResponse<Page<EventoPrivadoResponse>>> listar(
             @RequestParam(required = false) Long      idCliente,
             @RequestParam(required = false) Long      idSede,
@@ -123,14 +123,14 @@ public class EventoPrivadoController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('evento.ver')")
+    @PreAuthorize("hasAuthority('evento.ver') or @supabaseAuthFacade.tieneRol('CLIENTE')")
     public ResponseEntity<ApiResponse<EventoPrivadoResponse>> obtener(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.ok(
                 mapper.toResponse(consultarUseCase.consultarPorId(id))));
     }
 
     @PostMapping("/clientes/{idCliente}/sedes/{idSede}")
-    @PreAuthorize("hasAuthority('evento.crear')")
+    @PreAuthorize("hasAuthority('evento.crear') or @supabaseAuthFacade.tieneRol('CLIENTE')")
     public ResponseEntity<ApiResponse<EventoPrivadoResponse>> solicitar(
             @PathVariable Long idCliente,
             @PathVariable Long idSede,
@@ -145,6 +145,7 @@ public class EventoPrivadoController {
                                         .fechaEvento(request.getFechaEvento())
                                         .tipoEvento(request.getTipoEvento())
                                         .contactoAdicional(request.getContactoAdicional())
+                                        .origenContacto(request.getOrigenContacto())
                                         .aforoDeclarado(request.getAforoDeclarado())
                                         .nombreNino(request.getNombreNino())
                                         .edadCumple(request.getEdadCumple())

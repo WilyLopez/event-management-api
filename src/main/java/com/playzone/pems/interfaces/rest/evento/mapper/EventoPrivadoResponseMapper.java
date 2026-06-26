@@ -23,6 +23,8 @@ public class EventoPrivadoResponseMapper {
                 .fechaEvento(q.getFechaEvento())
                 .tipoEvento(q.getTipoEvento())
                 .contactoAdicional(q.getContactoAdicional())
+                .origenContacto(q.getOrigenContacto())
+                .motivoCancelacion(q.getMotivoCancelacion())
                 .aforoDeclarado(q.getAforoDeclarado())
                 .precioTotalContrato(q.getPrecioTotalContrato())
                 .montoAdelanto(q.getMontoAdelanto())

@@ -26,6 +26,8 @@ public class EventoPrivadoQuery {
     private final LocalDate                 fechaEvento;
     private final String                    tipoEvento;
     private final String                    contactoAdicional;
+    private final String                    origenContacto;
+    private final String                    motivoCancelacion;
     private final Integer                   aforoDeclarado;
     private final BigDecimal                precioTotalContrato;
     private final BigDecimal                montoAdelanto;

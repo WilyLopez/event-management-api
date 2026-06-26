@@ -58,6 +58,9 @@ public class EventoPrivadoEntity {
     @Column(name = "contacto_adicional", length = 200)
     private String contactoAdicional;
 
+    @Column(name = "origen_contacto", length = 30)
+    private String origenContacto;
+
     @Column(name = "aforo_declarado")
     private Integer aforoDeclarado;
 

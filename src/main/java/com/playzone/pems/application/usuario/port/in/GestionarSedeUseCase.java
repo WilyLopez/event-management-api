@@ -2,6 +2,8 @@ package com.playzone.pems.application.usuario.port.in;
 
 import com.playzone.pems.domain.usuario.model.Sede;
 
+import java.util.List;
+
 public interface GestionarSedeUseCase {
 
     record ActualizarSedeCommand(
@@ -13,6 +15,8 @@ public interface GestionarSedeUseCase {
             String correo,
             String ruc
     ) {}
+
+    List<Sede> listar();
 
     Sede obtener(Long idSede);
 

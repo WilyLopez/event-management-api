@@ -38,7 +38,9 @@ import com.playzone.pems.domain.comercial.repository.ExtraPaqueteRepository;
 import com.playzone.pems.domain.comercial.repository.ServicioCotizacionRepository;
 import com.playzone.pems.domain.comercial.repository.TipoEventoRepository;
 import com.playzone.pems.domain.usuario.model.ClientePerfil;
+import com.playzone.pems.domain.usuario.model.PerfilUsuario;
 import com.playzone.pems.domain.usuario.repository.ClientePerfilRepository;
+import com.playzone.pems.domain.usuario.repository.PerfilUsuarioRepository;
 import com.playzone.pems.domain.venta.model.Venta;
 import com.playzone.pems.domain.venta.model.VentaPago;
 import com.playzone.pems.domain.venta.repository.VentaPagoRepository;
@@ -93,6 +95,7 @@ public class EventoPrivadoService
     private final TipoEventoRepository            tipoEventoRepository;
     private final EventoCuotaRepository           cuotaRepository;
     private final ChecklistEventoRepository       checklistRepository;
+    private final PerfilUsuarioRepository          perfilUsuarioRepository;
 
     // ─── Consultas ────────────────────────────────────────────────────────────
 
@@ -180,6 +183,7 @@ public class EventoPrivadoService
                 .fechaEvento(command.getFechaEvento())
                 .tipoEvento(command.getTipoEvento())
                 .contactoAdicional(command.getContactoAdicional())
+                .origenContacto(command.getOrigenContacto())
                 .aforoDeclarado(command.getAforoDeclarado())
                 .montoAdelanto(BigDecimal.ZERO)
                 .nombreNino(command.getNombreNino())
@@ -620,12 +624,14 @@ public class EventoPrivadoService
                 .idSede(e.getIdSede())
                 .estado(e.getEstado().getCodigo())
                 .idTurno(e.getIdTurno())
-                .turno(t.getCodigo())
+                .turno(t.getDescripcion())
                 .horaInicio(t.getHoraInicio().toString())
                 .horaFin(t.getHoraFin().toString())
                 .fechaEvento(e.getFechaEvento())
                 .tipoEvento(e.getNombreTipoEvento() != null ? e.getNombreTipoEvento() : e.getTipoEvento())
                 .contactoAdicional(e.getContactoAdicional())
+                .origenContacto(e.getOrigenContacto())
+                .motivoCancelacion(e.getMotivoCancelacion())
                 .aforoDeclarado(e.getAforoDeclarado())
                 .precioTotalContrato(e.getPrecioContrato())
                 .montoAdelanto(e.getMontoAdelanto())
@@ -637,7 +643,11 @@ public class EventoPrivadoService
                 .descripcionPersonalizada(e.getDescripcionPersonalizada())
                 .presupuestoEstimado(e.getPresupuestoEstimado())
                 .esCotizacionPersonalizada(e.isEsCotizacionPersonalizada())
-                .usuarioGestor(e.getIdUsuarioGestor() != null ? "USR-" + e.getIdUsuarioGestor() : null)
+                .usuarioGestor(e.getIdUsuarioGestor() != null
+                        ? perfilUsuarioRepository.buscarPorId(e.getIdUsuarioGestor())
+                                .map(PerfilUsuario::getNombreCompleto)
+                                .orElse(null)
+                        : null)
                 .estadoOperativo(e.getEstadoOperativo())
                 .checklistCompleto(e.isChecklistCompleto())
                 .horaInicioReal(e.getHoraInicioReal())
