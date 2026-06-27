@@ -75,6 +75,12 @@ public class AperturaCajaEntity {
     @Column(name = "cierre_por", columnDefinition = "uuid")
     private UUID cierrePor;
 
+    @Column(name = "saldo_esperado", precision = 10, scale = 2)
+    private BigDecimal saldoEsperado;
+
+    @Column(name = "diferencia", precision = 10, scale = 2)
+    private BigDecimal diferencia;
+
     @Column(name = "observaciones")
     private String observaciones;
 
