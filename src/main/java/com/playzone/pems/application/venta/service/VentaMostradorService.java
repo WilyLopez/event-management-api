@@ -13,7 +13,11 @@ import com.playzone.pems.domain.evento.model.ReservaPublica;
 import com.playzone.pems.domain.evento.model.enums.CanalReserva;
 import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
 import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
+import com.playzone.pems.domain.finanzas.model.AperturaCaja;
+import com.playzone.pems.domain.finanzas.model.MovimientoCaja;
+import com.playzone.pems.domain.finanzas.model.enums.TipoMovimientoCaja;
 import com.playzone.pems.domain.finanzas.repository.AperturaCajaRepository;
+import com.playzone.pems.domain.finanzas.repository.MovimientoCajaRepository;
 import com.playzone.pems.domain.promocion.model.Promocion;
 import com.playzone.pems.domain.promocion.repository.PromocionRepository;
 import com.playzone.pems.domain.venta.model.Venta;
@@ -45,6 +49,7 @@ public class VentaMostradorService {
     private final ReservaPublicaRepository reservaRepository;
     private final VentaPagoRepository      ventaPagoRepository;
     private final AperturaCajaRepository   aperturaCajaRepository;
+    private final MovimientoCajaRepository movimientoCajaRepository;
     private final TarifaRepository         tarifaRepository;
     private final FeriadoRepository        feriadoRepository;
     private final PromocionRepository      promocionRepository;
@@ -54,7 +59,7 @@ public class VentaMostradorService {
     @Transactional
     public VentaMostradorQuery registrar(RegistrarVentaMostradorCommand cmd) {
 
-        aperturaCajaRepository.findActivaBySede(cmd.getSedeId())
+        AperturaCaja aperturaCaja = aperturaCajaRepository.findActivaBySede(cmd.getSedeId())
                 .orElseThrow(() -> new ValidationException(
                         "No hay caja abierta para esta sede. Abrir caja antes de registrar ventas."));
 
@@ -198,6 +203,21 @@ public class VentaMostradorService {
                     .build());
             pagosGuardados.add(pago);
         }
+
+        String conceptoVenta = "Venta #" + ventaGuardada.getId();
+        for (VentaPago pago : pagosGuardados) {
+            movimientoCajaRepository.save(MovimientoCaja.builder()
+                    .idAperturaCaja(aperturaCaja.getId())
+                    .tipo(TipoMovimientoCaja.INGRESO)
+                    .concepto(conceptoVenta)
+                    .monto(pago.getMonto())
+                    .medioPago(pago.getMedioPagoCodigo())
+                    .idVenta(ventaGuardada.getId())
+                    .esManual(false)
+                    .idUsuarioRegistra(usuarioActual)
+                    .build());
+        }
+        aperturaCajaRepository.incrementarIngresos(aperturaCaja.getId(), total);
 
         List<VentaMostradorQuery.TicketMostradorQuery> tickets = reservas.stream()
                 .map(r -> VentaMostradorQuery.TicketMostradorQuery.builder()
