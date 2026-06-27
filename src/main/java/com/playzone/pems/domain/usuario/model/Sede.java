@@ -20,6 +20,9 @@ public class Sede {
 
     private String        ruc;
 
+    private Double        latitud;
+    private Double        longitud;
+
     private OffsetDateTime fechaCreacion;
     private OffsetDateTime deletedAt;
 

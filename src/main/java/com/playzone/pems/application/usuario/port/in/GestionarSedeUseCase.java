@@ -13,7 +13,9 @@ public interface GestionarSedeUseCase {
             String departamento,
             String telefono,
             String correo,
-            String ruc
+            String ruc,
+            Double latitud,
+            Double longitud
     ) {}
 
     List<Sede> listar();

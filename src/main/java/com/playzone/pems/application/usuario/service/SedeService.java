@@ -41,6 +41,8 @@ public class SedeService implements GestionarSedeUseCase {
                 .telefono(command.telefono())
                 .correo(command.correo())
                 .ruc(command.ruc())
+                .latitud(command.latitud())
+                .longitud(command.longitud())
                 .build());
     }
 }
