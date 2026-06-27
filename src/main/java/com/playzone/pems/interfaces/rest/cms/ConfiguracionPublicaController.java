@@ -22,15 +22,12 @@ public class ConfiguracionPublicaController {
 
     private final GestionarConfiguracionPublicaUseCase configUseCase;
 
-    // ── Público ──────────────────────────────────────────────────────────
-
+ 
     @GetMapping("/publica")
     public ResponseEntity<ApiResponse<ConfiguracionPublicaResponse>> obtenerPublica() {
         return ResponseEntity.ok(ApiResponse.ok(
                 ConfiguracionPublicaResponse.from(configUseCase.obtener())));
     }
-
-    // ── Admin ─────────────────────────────────────────────────────────────
 
     @GetMapping
     @PreAuthorize("hasAuthority('configuracion.editar')")
@@ -43,7 +40,6 @@ public class ConfiguracionPublicaController {
     @PreAuthorize("hasAuthority('configuracion.editar')")
     public ResponseEntity<ApiResponse<ConfiguracionPublicaResponse>> actualizar(
             @Valid @RequestBody ActualizarConfiguracionRequest request) {
-        // Actualizar la configuración pública del sitio web
         ConfiguracionPublicaResponse response = ConfiguracionPublicaResponse.from(
                 configUseCase.actualizar(new GestionarConfiguracionPublicaUseCase.ActualizarCommand(
                         request.getNombreNegocio(),
@@ -80,8 +76,6 @@ public class ConfiguracionPublicaController {
                         request.getMensajeMantenimiento())));
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
-
-    // ── Request / Response DTOs ───────────────────────────────────────────
 
     @Getter
     @NoArgsConstructor

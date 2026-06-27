@@ -46,7 +46,7 @@ public class MovimientoCajaEntity {
     @Column(name = "registro_egreso_id")
     private Long idRegistroEgreso;
 
-    @Column(name = "venta_id", insertable = false, updatable = false)
+    @Column(name = "venta_id", updatable = false)
     private Long ventaId;
 
     @Column(name = "es_manual", nullable = false)

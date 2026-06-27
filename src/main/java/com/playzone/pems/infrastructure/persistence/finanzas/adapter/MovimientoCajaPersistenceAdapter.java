@@ -39,6 +39,7 @@ public class MovimientoCajaPersistenceAdapter implements MovimientoCajaRepositor
                 .medioPago(movimiento.getMedioPago())
                 .idRegistroIngreso(movimiento.getIdRegistroIngreso())
                 .idRegistroEgreso(movimiento.getIdRegistroEgreso())
+                .ventaId(movimiento.getIdVenta())
                 .esManual(movimiento.isEsManual())
                 .createdBy(movimiento.getIdUsuarioRegistra())
                 .build();
@@ -64,7 +65,7 @@ public class MovimientoCajaPersistenceAdapter implements MovimientoCajaRepositor
                 .idVenta(e.getVentaId())
                 .esManual(e.isEsManual())
                 .idUsuarioRegistra(e.getCreatedBy())
-                .fechaCreacion(e.getFechaCreacion() != null ? e.getFechaCreacion() : null)
+                .fechaCreacion(e.getFechaCreacion())
                 .build();
     }
 }
