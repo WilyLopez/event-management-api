@@ -19,7 +19,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.web.server.ResponseStatusException;
+
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @RestController
@@ -57,6 +60,10 @@ public class EgresoController {
             @PathVariable Long idSede,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fin) {
+        if (inicio.isAfter(fin))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "inicio debe ser anterior o igual a fin");
+        if (ChronoUnit.DAYS.between(inicio, fin) > 365)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Rango máximo: 365 días");
         List<RegistroEgresoResponse> body = useCase.listarPorRango(idSede, inicio, fin)
                 .stream().map(this::toResponse).toList();
         return ResponseEntity.ok(ApiResponse.ok(body));
@@ -77,7 +84,8 @@ public class EgresoController {
                 .descripcion(request.getDescripcion())
                 .comprobanteUrl(request.getComprobanteUrl())
                 .esRecurrente(request.isEsRecurrente())
-                .idUsuarioRegistra(supabaseAuthFacade.usuarioActualId().orElseThrow())
+                .idUsuarioRegistra(supabaseAuthFacade.usuarioActualId()
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado")))
                 .build());
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(query)));
     }

@@ -2,16 +2,22 @@ package com.playzone.pems.interfaces.rest.finanzas;
 
 import com.playzone.pems.application.finanzas.dto.command.AbrirCajaCommand;
 import com.playzone.pems.application.finanzas.dto.command.CerrarCajaCommand;
+import com.playzone.pems.application.finanzas.dto.command.RegistrarArqueoCommand;
 import com.playzone.pems.application.finanzas.dto.command.RegistrarMovimientoManualCommand;
 import com.playzone.pems.application.finanzas.dto.query.AperturaCajaQuery;
+import com.playzone.pems.application.finanzas.dto.query.ArqueoCajaQuery;
 import com.playzone.pems.application.finanzas.dto.query.MovimientoCajaQuery;
+import com.playzone.pems.application.finanzas.dto.query.ResumenCajaQuery;
 import com.playzone.pems.application.finanzas.port.in.GestionarCajaUseCase;
 import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.interfaces.rest.finanzas.request.AbrirCajaRequest;
 import com.playzone.pems.interfaces.rest.finanzas.request.CerrarCajaRequest;
+import com.playzone.pems.interfaces.rest.finanzas.request.RegistrarArqueoRequest;
 import com.playzone.pems.interfaces.rest.finanzas.request.RegistrarMovimientoManualRequest;
 import com.playzone.pems.interfaces.rest.finanzas.response.AperturaCajaResponse;
+import com.playzone.pems.interfaces.rest.finanzas.response.ArqueoCajaResponse;
 import com.playzone.pems.interfaces.rest.finanzas.response.MovimientoCajaResponse;
+import com.playzone.pems.interfaces.rest.finanzas.response.ResumenCajaResponse;
 import com.playzone.pems.shared.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -59,6 +65,12 @@ public class CajaController {
                 .observaciones(request.getObservaciones())
                 .build());
         return ResponseEntity.ok(ApiResponse.ok(toResponse(query)));
+    }
+
+    @GetMapping("/sedes/{idSede}/hoy")
+    @PreAuthorize("hasAuthority('caja.ver_historial') or hasAuthority('caja.abrir')")
+    public ResponseEntity<ApiResponse<AperturaCajaResponse>> obtenerHoy(@PathVariable Long idSede) {
+        return ResponseEntity.ok(ApiResponse.ok(toResponse(useCase.obtenerHoy(idSede))));
     }
 
     @GetMapping("/sedes/{idSede}/fecha/{fecha}")
@@ -112,6 +124,36 @@ public class CajaController {
         return ResponseEntity.ok(ApiResponse.noContent());
     }
 
+    @PostMapping("/{idApertura}/arqueos")
+    @PreAuthorize("hasAuthority('caja.cerrar') or hasAuthority('caja.movimiento')")
+    public ResponseEntity<ApiResponse<ArqueoCajaResponse>> registrarArqueo(
+            @PathVariable Long idApertura,
+            @Valid @RequestBody RegistrarArqueoRequest request) {
+        ArqueoCajaQuery query = useCase.registrarArqueo(RegistrarArqueoCommand.builder()
+                .idAperturaCaja(idApertura)
+                .saldoContado(request.getSaldoContado())
+                .observaciones(request.getObservaciones())
+                .realizadoPor(supabaseAuthFacade.usuarioActualId().orElseThrow())
+                .build());
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toArqueoResponse(query)));
+    }
+
+    @GetMapping("/{idApertura}/arqueos")
+    @PreAuthorize("hasAuthority('caja.ver_historial')")
+    public ResponseEntity<ApiResponse<List<ArqueoCajaResponse>>> listarArqueos(
+            @PathVariable Long idApertura) {
+        List<ArqueoCajaResponse> body = useCase.listarArqueos(idApertura)
+                .stream().map(this::toArqueoResponse).toList();
+        return ResponseEntity.ok(ApiResponse.ok(body));
+    }
+
+    @GetMapping("/{idApertura}/resumen")
+    @PreAuthorize("hasAuthority('caja.ver_historial') or hasAuthority('caja.cerrar')")
+    public ResponseEntity<ApiResponse<ResumenCajaResponse>> resumen(@PathVariable Long idApertura) {
+        ResumenCajaQuery query = useCase.generarResumen(idApertura);
+        return ResponseEntity.ok(ApiResponse.ok(toResumenResponse(query)));
+    }
+
     private AperturaCajaResponse toResponse(AperturaCajaQuery q) {
         return AperturaCajaResponse.builder()
                 .id(q.getId())
@@ -121,6 +163,8 @@ public class CajaController {
                 .saldoFinal(q.getSaldoFinal())
                 .totalIngresos(q.getTotalIngresos())
                 .totalEgresos(q.getTotalEgresos())
+                .saldoEsperado(q.getSaldoEsperado())
+                .diferencia(q.getDiferencia())
                 .estado(q.getEstado())
                 .idUsuarioApertura(q.getIdUsuarioApertura())
                 .idUsuarioCierre(q.getIdUsuarioCierre())
@@ -143,6 +187,41 @@ public class CajaController {
                 .idVenta(q.getIdVenta())
                 .esManual(q.isEsManual())
                 .fechaCreacion(q.getFechaCreacion())
+                .build();
+    }
+
+    private ArqueoCajaResponse toArqueoResponse(ArqueoCajaQuery q) {
+        return ArqueoCajaResponse.builder()
+                .id(q.getId())
+                .idAperturaCaja(q.getIdAperturaCaja())
+                .saldoEsperado(q.getSaldoEsperado())
+                .saldoContado(q.getSaldoContado())
+                .diferencia(q.getDiferencia())
+                .observaciones(q.getObservaciones())
+                .realizadoPor(q.getRealizadoPor())
+                .fechaCreacion(q.getFechaCreacion())
+                .build();
+    }
+
+    private ResumenCajaResponse toResumenResponse(ResumenCajaQuery q) {
+        return ResumenCajaResponse.builder()
+                .id(q.getId())
+                .idSede(q.getIdSede())
+                .fecha(q.getFecha())
+                .saldoInicial(q.getSaldoInicial())
+                .totalIngresos(q.getTotalIngresos())
+                .totalEgresos(q.getTotalEgresos())
+                .saldoEsperado(q.getSaldoEsperado())
+                .saldoFinal(q.getSaldoFinal())
+                .diferencia(q.getDiferencia())
+                .estado(q.getEstado())
+                .fechaApertura(q.getFechaApertura())
+                .fechaCierre(q.getFechaCierre())
+                .observaciones(q.getObservaciones())
+                .movimientos(q.getMovimientos() != null
+                        ? q.getMovimientos().stream().map(this::toMovimientoResponse).toList() : null)
+                .arqueos(q.getArqueos() != null
+                        ? q.getArqueos().stream().map(this::toArqueoResponse).toList() : null)
                 .build();
     }
 }
