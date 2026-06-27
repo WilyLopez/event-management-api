@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Resumen de Cierre de Caja</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: #1a1a1a; background: #fff; }
+    .page { max-width: 680px; margin: 0 auto; padding: 28px 32px; }
+
+    .header { text-align: center; border-bottom: 2px solid #e91e8c; padding-bottom: 18px; margin-bottom: 22px; }
+    .header .logo { font-size: 22px; font-weight: 800; color: #e91e8c; letter-spacing: -0.5px; }
+    .header .subtitle { font-size: 11px; color: #888; margin-top: 3px; }
+    .header h2 { font-size: 16px; font-weight: 700; color: #333; margin-top: 10px; }
+
+    .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 20px; margin-bottom: 20px; }
+    .meta-item { display: flex; flex-direction: column; }
+    .meta-item .label { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+    .meta-item .value { font-size: 13px; font-weight: 600; color: #222; margin-top: 2px; }
+
+    .section-title {
+      font-size: 11px; font-weight: 700; color: #e91e8c;
+      text-transform: uppercase; letter-spacing: 0.8px;
+      border-bottom: 1px solid #fce4f3; padding-bottom: 5px; margin-bottom: 10px;
+    }
+
+    .summary-table { width: 100%; border-collapse: collapse; margin-bottom: 22px; }
+    .summary-table th {
+      text-align: left; font-size: 10px; color: #888; text-transform: uppercase;
+      font-weight: 600; padding: 5px 8px; background: #fafafa; border-bottom: 1px solid #eee;
+    }
+    .summary-table td { padding: 7px 8px; border-bottom: 1px solid #f3f3f3; font-size: 12px; }
+    .summary-table tr:last-child td { border-bottom: none; }
+    .summary-table .monto { text-align: right; font-variant-numeric: tabular-nums; }
+    .summary-table .ingreso { color: #16a34a; }
+    .summary-table .egreso  { color: #dc2626; }
+
+    .totales-box {
+      background: #fdf0f6; border: 1px solid #fce4f3; border-radius: 10px;
+      padding: 16px 20px; margin-bottom: 22px;
+    }
+    .totales-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 5px 0; font-size: 13px;
+    }
+    .totales-row.separador { border-top: 1px solid #f0c0dc; margin-top: 8px; padding-top: 10px; }
+    .totales-row .t-label { color: #555; }
+    .totales-row .t-value { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .totales-row.destacado .t-label { font-size: 14px; font-weight: 700; color: #1a1a1a; }
+    .totales-row.destacado .t-value { font-size: 16px; font-weight: 800; color: #e91e8c; }
+    .positivo { color: #16a34a !important; }
+    .negativo { color: #dc2626 !important; }
+
+    .arqueos-section { margin-bottom: 22px; }
+    .arqueo-card {
+      background: #f9f9f9; border: 1px solid #eee; border-radius: 8px;
+      padding: 10px 14px; margin-bottom: 8px; display: flex; justify-content: space-between;
+    }
+    .arqueo-card .hora { font-size: 11px; color: #888; }
+    .arqueo-card .diferencia-label { font-size: 11px; color: #555; }
+    .arqueo-card .diferencia-value { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+    .estado-badge {
+      display: inline-block; padding: 3px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;
+    }
+    .estado-cerrada { background: #dcfce7; color: #15803d; }
+    .estado-abierta { background: #fef9c3; color: #854d0e; }
+
+    .footer {
+      text-align: center; border-top: 1px solid #eee; padding-top: 14px;
+      font-size: 11px; color: #bbb; margin-top: 10px;
+    }
+
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .page { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ENCABEZADO -->
+  <div class="header">
+    <div class="logo">Kiki y Lala</div>
+    <div class="subtitle" th:text="${sede != null ? sede : ''}"></div>
+    <h2>Resumen de Cierre de Caja</h2>
+  </div>
+
+  <!-- DATOS DE LA APERTURA -->
+  <div class="section-title">Información de la caja</div>
+  <div class="meta-grid" style="margin-bottom: 22px;">
+    <div class="meta-item">
+      <span class="label">Fecha</span>
+      <span class="value" th:text="${#temporals.format(fecha, 'dd/MM/yyyy')}">—</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">Estado</span>
+      <span class="estado-badge"
+            th:classappend="${estado != null and estado.name() == 'CERRADA'} ? 'estado-cerrada' : 'estado-abierta'"
+            th:text="${estado != null ? estado.name() : '—'}">—</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">Apertura</span>
+      <span class="value" th:text="${fechaApertura != null ? #temporals.format(fechaApertura, 'dd/MM/yyyy HH:mm') : '—'}">—</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">Cierre</span>
+      <span class="value" th:text="${fechaCierre != null ? #temporals.format(fechaCierre, 'dd/MM/yyyy HH:mm') : '—'}">—</span>
+    </div>
+  </div>
+
+  <!-- TOTALES -->
+  <div class="section-title">Resumen financiero</div>
+  <div class="totales-box">
+    <div class="totales-row">
+      <span class="t-label">Saldo inicial</span>
+      <span class="t-value" th:text="'S/ ' + ${#numbers.formatDecimal(saldoInicial, 1, 2)}">S/ 0.00</span>
+    </div>
+    <div class="totales-row">
+      <span class="t-label">Total ingresos</span>
+      <span class="t-value ingreso" th:text="'+ S/ ' + ${#numbers.formatDecimal(totalIngresos, 1, 2)}">+ S/ 0.00</span>
+    </div>
+    <div class="totales-row">
+      <span class="t-label">Total egresos</span>
+      <span class="t-value egreso" th:text="'- S/ ' + ${#numbers.formatDecimal(totalEgresos, 1, 2)}">- S/ 0.00</span>
+    </div>
+    <div class="totales-row separador destacado">
+      <span class="t-label">Saldo esperado</span>
+      <span class="t-value" th:text="'S/ ' + ${#numbers.formatDecimal(saldoEsperado, 1, 2)}">S/ 0.00</span>
+    </div>
+    <div class="totales-row" th:if="${saldoFinal != null}">
+      <span class="t-label">Saldo contado</span>
+      <span class="t-value" th:text="'S/ ' + ${#numbers.formatDecimal(saldoFinal, 1, 2)}">S/ 0.00</span>
+    </div>
+    <div class="totales-row" th:if="${diferencia != null}">
+      <span class="t-label">Diferencia</span>
+      <span class="t-value"
+            th:classappend="${diferencia >= 0} ? 'positivo' : 'negativo'"
+            th:text="${diferencia >= 0} ? ('+ S/ ' + ${#numbers.formatDecimal(diferencia, 1, 2)}) : ('- S/ ' + ${#numbers.formatDecimal(diferencia.abs(), 1, 2)})">
+        S/ 0.00
+      </span>
+    </div>
+  </div>
+
+  <!-- MOVIMIENTOS -->
+  <div th:if="${movimientos != null and not #lists.isEmpty(movimientos)}">
+    <div class="section-title">Movimientos del día</div>
+    <table class="summary-table" style="margin-bottom: 22px;">
+      <thead>
+        <tr>
+          <th>Hora</th>
+          <th>Concepto</th>
+          <th>Medio de pago</th>
+          <th class="monto">Monto</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="m : ${movimientos}">
+          <td th:text="${m.fechaCreacion != null ? #temporals.format(m.fechaCreacion, 'HH:mm') : '—'}">—</td>
+          <td th:text="${m.concepto}">—</td>
+          <td th:text="${m.medioPago != null ? m.medioPago : '—'}">—</td>
+          <td class="monto"
+              th:classappend="${m.tipo != null and m.tipo.name() == 'INGRESO'} ? 'ingreso' : 'egreso'"
+              th:text="${(m.tipo != null and m.tipo.name() == 'INGRESO') ? '+ ' : '- '} + 'S/ ' + ${#numbers.formatDecimal(m.monto, 1, 2)}">
+            S/ 0.00
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ARQUEOS -->
+  <div th:if="${arqueos != null and not #lists.isEmpty(arqueos)}">
+    <div class="section-title">Arqueos realizados</div>
+    <div class="arqueos-section">
+      <div class="arqueo-card" th:each="a : ${arqueos}">
+        <div>
+          <div class="hora" th:text="${a.fechaCreacion != null ? #temporals.format(a.fechaCreacion, 'HH:mm') : '—'}">—</div>
+          <div style="font-size: 12px; margin-top: 3px;">
+            Contado: <strong th:text="'S/ ' + ${#numbers.formatDecimal(a.saldoContado, 1, 2)}">S/ 0.00</strong>
+            &nbsp;|&nbsp;
+            Esperado: <strong th:text="'S/ ' + ${#numbers.formatDecimal(a.saldoEsperado, 1, 2)}">S/ 0.00</strong>
+          </div>
+          <div th:if="${a.observaciones}" style="font-size: 11px; color: #888; margin-top: 2px;" th:text="${a.observaciones}"></div>
+        </div>
+        <div style="text-align: right;">
+          <div class="diferencia-label">Diferencia</div>
+          <div class="diferencia-value"
+               th:classappend="${a.diferencia >= 0} ? 'positivo' : 'negativo'"
+               th:text="${a.diferencia >= 0} ? ('+ S/ ' + ${#numbers.formatDecimal(a.diferencia, 1, 2)}) : ('- S/ ' + ${#numbers.formatDecimal(a.diferencia.abs(), 1, 2)})">
+            S/ 0.00
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OBSERVACIONES -->
+  <div th:if="${observaciones}">
+    <div class="section-title">Observaciones</div>
+    <p style="font-size: 12px; color: #555; margin-bottom: 22px;" th:text="${observaciones}"></p>
+  </div>
+
+  <!-- PIE -->
+  <div class="footer">
+    <p>Documento generado el <span th:text="${#temporals.format(#temporals.createNow(), 'dd/MM/yyyy HH:mm')}">—</span></p>
+    <p style="margin-top: 4px;">&copy; Kiki y Lala &mdash; Uso interno</p>
+  </div>
+
+</div>
+</body>
+</html>
