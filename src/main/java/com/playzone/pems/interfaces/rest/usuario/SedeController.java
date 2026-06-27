@@ -49,7 +49,9 @@ public class SedeController {
                         request.getDepartamento(),
                         request.getTelefono(),
                         request.getCorreo(),
-                        request.getRuc()));
+                        request.getRuc(),
+                        request.getLatitud(),
+                        request.getLongitud()));
 
         return ResponseEntity.ok(ApiResponse.ok(toResponse(sede)));
     }
@@ -64,6 +66,8 @@ public class SedeController {
                 .telefono(s.getTelefono())
                 .correo(s.getCorreo())
                 .ruc(s.getRuc())
+                .latitud(s.getLatitud())
+                .longitud(s.getLongitud())
                 .activo(s.getDeletedAt() == null)
                 .fechaCreacion(s.getFechaCreacion())
                 .build();
@@ -75,8 +79,10 @@ public class SedeController {
         @NotBlank @Size(max = 300) private String direccion;
         @NotBlank @Size(max = 80)  private String ciudad;
         @NotBlank @Size(max = 80)  private String departamento;
-        @Size(max = 20)            private String telefono;
-        @Size(max = 120)           private String correo;
-        @Size(max = 11)            private String ruc;
+        @Size(max = 20)            private String  telefono;
+        @Size(max = 120)           private String  correo;
+        @Size(max = 11)            private String  ruc;
+        private Double latitud;
+        private Double longitud;
     }
 }
