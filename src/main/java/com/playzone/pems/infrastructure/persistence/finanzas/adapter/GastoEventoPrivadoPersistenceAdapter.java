@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,18 @@ public class GastoEventoPrivadoPersistenceAdapter implements GastoEventoPrivadoR
     public List<GastoEventoPrivado> findByEvento(Long idEvento) {
         return jpaRepository.findByEventoId(idEvento).stream()
                 .map(mapper::toDomain).toList();
+    }
+
+    @Override
+    public List<GastoEventoPrivado> findBySedeAndRango(Long idSede, LocalDate inicio, LocalDate fin) {
+        return jpaRepository.findBySedeAndRangoConFecha(idSede, inicio, fin)
+                .stream().map(row -> {
+                    GastoEventoPrivadoEntity entity = (GastoEventoPrivadoEntity) row[0];
+                    LocalDate fechaEvento = (LocalDate) row[1];
+                    return mapper.toDomain(entity).toBuilder()
+                            .fechaEvento(fechaEvento)
+                            .build();
+                }).toList();
     }
 
     @Override

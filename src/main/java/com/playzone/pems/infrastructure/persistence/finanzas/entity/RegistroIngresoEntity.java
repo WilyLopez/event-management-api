@@ -76,4 +76,7 @@ public class RegistroIngresoEntity {
 
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
+
+    @Column(name = "deleted_by", columnDefinition = "uuid")
+    private UUID deletedBy;
 }

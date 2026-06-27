@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -37,6 +38,13 @@ public class GastoEventoService implements GestionarGastoEventoUseCase {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<GastoEventoQuery> listarPorSedeYRango(Long idSede, LocalDate inicio, LocalDate fin) {
+        return gastoEventoRepository.findBySedeAndRango(idSede, inicio, fin)
+                .stream().map(this::toQuery).toList();
+    }
+
+    @Override
     public void eliminar(Long id) {
         gastoEventoRepository.deleteById(id);
     }
@@ -45,6 +53,7 @@ public class GastoEventoService implements GestionarGastoEventoUseCase {
         return GastoEventoQuery.builder()
                 .id(g.getId())
                 .idEventoPrivado(g.getIdEventoPrivado())
+                .fechaEvento(g.getFechaEvento())
                 .descripcion(g.getDescripcion())
                 .monto(g.getMonto())
                 .comprobanteUrl(g.getComprobanteUrl())

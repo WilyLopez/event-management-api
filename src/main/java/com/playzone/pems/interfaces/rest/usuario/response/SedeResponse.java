@@ -16,6 +16,8 @@ public class SedeResponse {
     private String        telefono;
     private String        correo;
     private String        ruc;
+    private Double        latitud;
+    private Double        longitud;
     private boolean       activo;
     private OffsetDateTime fechaCreacion;
 }

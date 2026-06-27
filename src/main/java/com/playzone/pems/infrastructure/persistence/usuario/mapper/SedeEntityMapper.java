@@ -20,6 +20,8 @@ public class SedeEntityMapper {
                 .telefono(e.getTelefono())
                 .correo(e.getCorreo())
                 .ruc(e.getRuc())
+                .latitud(e.getLatitud())
+                .longitud(e.getLongitud())
                 .fechaCreacion(e.getCreatedAt() != null ? e.getCreatedAt() : null)
                 .deletedAt(e.getDeletedAt() != null ? e.getDeletedAt() : null)
                 .build();
@@ -36,6 +38,8 @@ public class SedeEntityMapper {
                 .telefono(d.getTelefono())
                 .correo(d.getCorreo())
                 .ruc(d.getRuc())
+                .latitud(d.getLatitud())
+                .longitud(d.getLongitud())
                 .build();
     }
 

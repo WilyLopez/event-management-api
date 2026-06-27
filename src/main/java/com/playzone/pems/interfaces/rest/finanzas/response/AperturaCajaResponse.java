@@ -21,6 +21,8 @@ public class AperturaCajaResponse {
     private BigDecimal saldoFinal;
     private BigDecimal totalIngresos;
     private BigDecimal totalEgresos;
+    private BigDecimal saldoEsperado;
+    private BigDecimal diferencia;
     private EstadoCaja estado;
     private UUID       idUsuarioApertura;
     private UUID       idUsuarioCierre;

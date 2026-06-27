@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 public interface GastoEventoPrivadoJpaRepository extends JpaRepository<GastoEventoPrivadoEntity, Long> {
@@ -18,4 +19,19 @@ public interface GastoEventoPrivadoJpaRepository extends JpaRepository<GastoEven
     @Query("SELECT g.eventoId, COALESCE(SUM(g.monto), 0) FROM GastoEventoPrivadoEntity g " +
            "WHERE g.eventoId IN :ids GROUP BY g.eventoId")
     List<Object[]> sumMontoByEventoIds(@Param("ids") List<Long> ids);
+
+    @Query("""
+        SELECT g, e.fechaEvento
+        FROM GastoEventoPrivadoEntity g, EventoPrivadoEntity e
+        WHERE g.eventoId = e.id
+          AND e.sede.id = :idSede
+          AND CAST(g.createdAt AS LocalDate) BETWEEN :inicio AND :fin
+          AND g.deletedAt IS NULL
+        ORDER BY g.createdAt
+    """)
+    List<Object[]> findBySedeAndRangoConFecha(
+        @Param("idSede") Long idSede,
+        @Param("inicio") LocalDate inicio,
+        @Param("fin") LocalDate fin
+    );
 }
