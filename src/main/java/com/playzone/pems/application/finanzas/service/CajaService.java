@@ -1,5 +1,7 @@
 package com.playzone.pems.application.finanzas.service;
 
+import com.playzone.pems.application.auditoria.AuditoriaConstants;
+import com.playzone.pems.application.auditoria.port.in.RegistrarLogUseCase;
 import com.playzone.pems.application.finanzas.dto.command.AbrirCajaCommand;
 import com.playzone.pems.application.finanzas.dto.command.CerrarCajaCommand;
 import com.playzone.pems.application.finanzas.dto.command.RegistrarArqueoCommand;
@@ -39,6 +41,7 @@ public class CajaService implements GestionarCajaUseCase {
     private final AperturaCajaRepository   aperturaCajaRepository;
     private final MovimientoCajaRepository movimientoCajaRepository;
     private final ArqueoCajaRepository     arqueoCajaRepository;
+    private final RegistrarLogUseCase      auditoria;
 
     @Override
     public AperturaCajaQuery abrir(AbrirCajaCommand command) {
@@ -65,7 +68,14 @@ public class CajaService implements GestionarCajaUseCase {
                 .fechaApertura(OffsetDateTime.now(LIMA))
                 .observaciones(command.getObservaciones())
                 .build();
-        return toQuery(aperturaCajaRepository.save(apertura));
+        AperturaCajaQuery resultado = toQuery(aperturaCajaRepository.save(apertura));
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                command.getIdUsuarioApertura(), AuditoriaConstants.ACCION_ABRIR, AuditoriaConstants.MOD_CAJA,
+                "AperturaCaja", resultado.getId(),
+                null, "saldoInicial=" + apertura.getSaldoInicial(),
+                "Caja abierta para sede #" + command.getIdSede() + " | fecha=" + command.getFecha(),
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
+        return resultado;
     }
 
     @Override
@@ -100,7 +110,14 @@ public class CajaService implements GestionarCajaUseCase {
                 .observaciones(command.getObservaciones() != null
                         ? command.getObservaciones() : existente.getObservaciones())
                 .build();
-        return toQuery(aperturaCajaRepository.save(cerrada));
+        AperturaCajaQuery resultado = toQuery(aperturaCajaRepository.save(cerrada));
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                command.getIdUsuarioCierre(), AuditoriaConstants.ACCION_CERRAR, AuditoriaConstants.MOD_CAJA,
+                "AperturaCaja", command.getIdAperturaCaja(),
+                "ABIERTA", "CERRADA",
+                "Caja #" + command.getIdAperturaCaja() + " cerrada | saldoFinal=" + saldoFinal + " | diferencia=" + diferencia,
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
+        return resultado;
     }
 
     @Override
@@ -140,6 +157,7 @@ public class CajaService implements GestionarCajaUseCase {
                 .concepto(command.getConcepto())
                 .monto(command.getMonto())
                 .medioPago(command.getMedioPago())
+                .categoriaRetiro(command.getCategoriaRetiro())
                 .esManual(true)
                 .idUsuarioRegistra(command.getIdUsuarioRegistra())
                 .build();
@@ -187,7 +205,14 @@ public class CajaService implements GestionarCajaUseCase {
                 .observaciones(command.getObservaciones())
                 .realizadoPor(command.getRealizadoPor())
                 .build();
-        return toArqueoQuery(arqueoCajaRepository.save(arqueo));
+        ArqueoCajaQuery resultado = toArqueoQuery(arqueoCajaRepository.save(arqueo));
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                command.getRealizadoPor(), AuditoriaConstants.ACCION_ARQUEO, AuditoriaConstants.MOD_CAJA,
+                "ArqueoCaja", resultado.getId(),
+                null, "contado=" + command.getSaldoContado() + " | diferencia=" + diferencia,
+                "Arqueo en caja #" + command.getIdAperturaCaja() + " | diferencia=" + diferencia,
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
+        return resultado;
     }
 
     @Override
@@ -260,6 +285,7 @@ public class CajaService implements GestionarCajaUseCase {
                 .concepto(m.getConcepto())
                 .monto(m.getMonto())
                 .medioPago(m.getMedioPago())
+                .categoriaRetiro(m.getCategoriaRetiro())
                 .idRegistroIngreso(m.getIdRegistroIngreso())
                 .idRegistroEgreso(m.getIdRegistroEgreso())
                 .idVenta(m.getIdVenta())

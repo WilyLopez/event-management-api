@@ -6,13 +6,13 @@ import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
 import com.playzone.pems.domain.evento.query.IngresosPorDia;
 import com.playzone.pems.domain.evento.query.ReservasPorDia;
 import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
+import com.playzone.pems.infrastructure.persistence.calendario.jpa.ConfiguracionCalendarioJpaRepository;
 import com.playzone.pems.infrastructure.persistence.evento.entity.ReservaPublicaEntity;
 import com.playzone.pems.infrastructure.persistence.evento.jpa.ReservaPublicaJpaRepository;
 import com.playzone.pems.infrastructure.persistence.evento.mapper.ReservaPublicaEntityMapper;
 import com.playzone.pems.infrastructure.persistence.usuario.jpa.SedeJpaRepository;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
@@ -28,12 +28,10 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ReservaPublicaPersistenceAdapter implements ReservaPublicaRepository {
 
-    private final ReservaPublicaJpaRepository reservaJpa;
-    private final SedeJpaRepository           sedeJpa;
-    private final ReservaPublicaEntityMapper  mapper;
-
-    @Value("${playzone.negocio.aforo-maximo:60}")
-    private int aforoMaximo;
+    private final ReservaPublicaJpaRepository       reservaJpa;
+    private final SedeJpaRepository                 sedeJpa;
+    private final ReservaPublicaEntityMapper        mapper;
+    private final ConfiguracionCalendarioJpaRepository configuracionCalendarioJpa;
 
     @Override public Optional<ReservaPublica> findById(Long id) {
         return reservaJpa.findById(id).map(mapper::toDomain);
@@ -93,6 +91,9 @@ public class ReservaPublicaPersistenceAdapter implements ReservaPublicaRepositor
     @Override
     public MetricasReservaQuery calcularMetricas(Long idSede, LocalDate fecha) {
         LocalDate dia = fecha != null ? fecha : LocalDate.now(ZoneId.of("America/Lima"));
+        int aforoMaximo = configuracionCalendarioJpa.findBySede_Id(idSede)
+                .map(c -> c.getAforoMaximo())
+                .orElse(60);
         int total      = reservaJpa.countBySedeAndFechaAndEstado(idSede, dia, EstadoReservaPublica.PENDIENTE)
                        + reservaJpa.countBySedeAndFechaAndEstado(idSede, dia, EstadoReservaPublica.CONFIRMADA)
                        + reservaJpa.countBySedeAndFechaAndEstado(idSede, dia, EstadoReservaPublica.CANCELADA)

@@ -1,5 +1,7 @@
 package com.playzone.pems.application.comercial.service;
 
+import com.playzone.pems.application.auditoria.AuditoriaConstants;
+import com.playzone.pems.application.auditoria.port.in.RegistrarLogUseCase;
 import com.playzone.pems.application.comercial.dto.command.ActualizarPaqueteCommand;
 import com.playzone.pems.application.comercial.dto.command.CrearPaqueteCommand;
 import com.playzone.pems.application.comercial.dto.query.PaqueteEventoQuery;
@@ -7,7 +9,9 @@ import com.playzone.pems.application.comercial.port.in.GestionarPaquetesUseCase;
 import com.playzone.pems.domain.comercial.model.PaqueteEvento;
 import com.playzone.pems.domain.comercial.repository.PaqueteEventoRepository;
 import com.playzone.pems.domain.comercial.repository.TipoEventoRepository;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.shared.exception.BusinessException;
+import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -22,6 +26,8 @@ public class PaqueteService implements GestionarPaquetesUseCase {
 
     private final PaqueteEventoRepository repo;
     private final TipoEventoRepository    tipoEventoRepo;
+    private final SupabaseAuthFacade      authFacade;
+    private final RegistrarLogUseCase     auditoria;
 
     @Override
     public PaqueteEventoQuery crear(CrearPaqueteCommand command) {
@@ -47,14 +53,22 @@ public class PaqueteService implements GestionarPaquetesUseCase {
                 .tipoEventoCodigo(command.getTipoEventoCodigo())
                 .beneficios(command.getBeneficios())
                 .build();
-        return toQuery(repo.save(paquete));
+        PaqueteEventoQuery resultado = toQuery(repo.save(paquete));
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                authFacade.usuarioActualId().orElse(null),
+                AuditoriaConstants.ACCION_CREAR, AuditoriaConstants.MOD_COMERCIAL,
+                "PaqueteEvento", resultado.getId(),
+                null, resultado.getNombre(),
+                "Paquete creado: " + resultado.getNombre(),
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
+        return resultado;
     }
 
     @Override
     public PaqueteEventoQuery actualizar(ActualizarPaqueteCommand command) {
         validarPaquete(command.getTipoEventoCodigo(), command.getColor());
         PaqueteEvento existente = repo.findById(command.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Paquete no encontrado: " + command.getId()));
+                .orElseThrow(() -> new ResourceNotFoundException("PaqueteEvento", command.getId()));
         PaqueteEvento actualizado = PaqueteEvento.builder()
                 .id(existente.getId())
                 .nombre(command.getNombre())
@@ -73,14 +87,22 @@ public class PaqueteService implements GestionarPaquetesUseCase {
                 .tipoEventoCodigo(command.getTipoEventoCodigo())
                 .beneficios(command.getBeneficios())
                 .build();
-        return toQuery(repo.save(actualizado));
+        PaqueteEventoQuery resultado = toQuery(repo.save(actualizado));
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                authFacade.usuarioActualId().orElse(null),
+                AuditoriaConstants.ACCION_ACTUALIZAR, AuditoriaConstants.MOD_COMERCIAL,
+                "PaqueteEvento", command.getId(),
+                existente.getNombre(), resultado.getNombre(),
+                "Paquete actualizado: " + resultado.getNombre(),
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
+        return resultado;
     }
 
     @Override
     @Transactional(readOnly = true)
     public PaqueteEventoQuery obtenerPorId(Long id) {
         PaqueteEvento paquete = repo.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Paquete no encontrado: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("PaqueteEvento", id));
         return toQuery(paquete);
     }
 
@@ -98,14 +120,22 @@ public class PaqueteService implements GestionarPaquetesUseCase {
 
     @Override
     public void eliminar(Long id) {
-        repo.findById(id).orElseThrow(() -> new IllegalArgumentException("Paquete no encontrado: " + id));
+        PaqueteEvento paquete = repo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("PaqueteEvento", id));
         repo.deleteById(id);
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                authFacade.usuarioActualId().orElse(null),
+                AuditoriaConstants.ACCION_ELIMINAR, AuditoriaConstants.MOD_COMERCIAL,
+                "PaqueteEvento", id,
+                paquete.getNombre(), null,
+                "Paquete eliminado: " + paquete.getNombre(),
+                null, null, AuditoriaConstants.NIVEL_CRITICAL, AuditoriaConstants.RESULTADO_EXITOSO));
     }
 
     @Override
     public PaqueteEventoQuery subirImagen(Long id, String url) {
         PaqueteEvento existente = repo.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Paquete no encontrado: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("PaqueteEvento", id));
         PaqueteEvento actualizado = PaqueteEvento.builder()
                 .id(existente.getId())
                 .nombre(existente.getNombre())
@@ -148,7 +178,7 @@ public class PaqueteService implements GestionarPaquetesUseCase {
     @Override
     public PaqueteEventoQuery reordenar(Long id, int nuevoOrden) {
         PaqueteEvento paquete = repo.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Paquete no encontrado: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("PaqueteEvento", id));
         List<PaqueteEvento> todos = repo.findAll();
         todos.stream()
                 .filter(p -> p.getOrden() == nuevoOrden && !p.getId().equals(id))

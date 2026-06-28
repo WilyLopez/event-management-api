@@ -1,5 +1,6 @@
 package com.playzone.pems.infrastructure.external.correo;
 
+import com.playzone.pems.application.cms.port.in.GestionarConfiguracionPublicaUseCase;
 import com.playzone.pems.application.evento.dto.query.EventoPrivadoQuery;
 import com.playzone.pems.application.evento.dto.query.ReservaPublicaQuery;
 import com.playzone.pems.application.evento.port.out.EnviarNotificacionEventoPort;
@@ -36,21 +37,16 @@ public class CorreoAdapter
         EnviarCorreoBienvenidaPort,
         EnviarDocumentosVentaPort {
 
-    private final JavaMailCorreoClient correoClient;
-    private final JavaMailSender       mailSender;
-    private final TicketIngresoPdfService ticketIngresoPdfService;
-    private final NotaVentaPdfService  notaVentaPdfService;
-    private final SedeRepository       sedeRepository;
-    private final TemplateService      templateService;
+    private final JavaMailCorreoClient            correoClient;
+    private final JavaMailSender                  mailSender;
+    private final TicketIngresoPdfService         ticketIngresoPdfService;
+    private final NotaVentaPdfService             notaVentaPdfService;
+    private final SedeRepository                  sedeRepository;
+    private final TemplateService                 templateService;
+    private final GestionarConfiguracionPublicaUseCase configuracionPublica;
 
     @Value("${spring.mail.username}")
     private String remitente;
-
-    @Value("${playzone.correo.nombre-remitente:PlayZone}")
-    private String nombreRemitente;
-
-    @Value("${playzone.negocio.correo-admin:admin@kikiylala.com}")
-    private String correoAdmin;
 
     @Value("${playzone.url-login:http://localhost:3000/auth/login}")
     private String loginUrl;
@@ -82,6 +78,9 @@ public class CorreoAdapter
         byte[] pdfTicket = ticketIngresoPdfService.generarTicketPdf(reserva, nombreSede);
 
         try {
+            String nombreRemitente = configuracionPublica.obtener().getNombreNegocio();
+            if (nombreRemitente == null || nombreRemitente.isBlank()) nombreRemitente = "PlayZone";
+
             MimeMessage mensaje = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mensaje, true, "UTF-8");
             helper.setFrom(remitente, nombreRemitente);
@@ -169,6 +168,11 @@ public class CorreoAdapter
     @Async("asyncExecutor")
     @Override
     public void notificarAdminNuevaSolicitud(EventoPrivadoQuery evento) {
+        String correoAdmin = configuracionPublica.obtener().getCorreo();
+        if (correoAdmin == null || correoAdmin.isBlank()) {
+            log.warn("correo admin no configurado en configuracion publica, omitiendo notificacion de nueva solicitud");
+            return;
+        }
         String asunto = "[Nueva solicitud] " + evento.getTipoEvento() + " — " + evento.getFechaEvento();
         String cuerpo = htmlBase(
             "Nueva solicitud de evento",
@@ -252,6 +256,9 @@ public class CorreoAdapter
         byte[] pdfNota = notaVentaPdfService.generarNotaVentaPdf(ventaQuery, nombreSede);
 
         try {
+            String nombreRemitente = configuracionPublica.obtener().getNombreNegocio();
+            if (nombreRemitente == null || nombreRemitente.isBlank()) nombreRemitente = "PlayZone";
+
             MimeMessage mensaje = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mensaje, true, "UTF-8");
             helper.setFrom(remitente, nombreRemitente);

@@ -1,9 +1,12 @@
 package com.playzone.pems.application.comercial.service;
 
+import com.playzone.pems.application.auditoria.AuditoriaConstants;
+import com.playzone.pems.application.auditoria.port.in.RegistrarLogUseCase;
 import com.playzone.pems.application.comercial.dto.response.TipoEventoResponse;
 import com.playzone.pems.application.comercial.port.in.GestionarTipoEventoUseCase;
 import com.playzone.pems.domain.comercial.model.TipoEvento;
 import com.playzone.pems.domain.comercial.repository.TipoEventoRepository;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.shared.exception.BusinessException;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +24,8 @@ import java.util.Map;
 public class TipoEventoService implements GestionarTipoEventoUseCase {
 
     private final TipoEventoRepository repository;
+    private final SupabaseAuthFacade   authFacade;
+    private final RegistrarLogUseCase  auditoria;
 
     @Override
     @Transactional(readOnly = true)
@@ -62,7 +67,15 @@ public class TipoEventoService implements GestionarTipoEventoUseCase {
                 .activo(bool(datos, "activo", true))
                 .orden(num(datos, "orden", 0))
                 .build();
-        return toResponse(repository.guardar(nuevo));
+        TipoEventoResponse resultado = toResponse(repository.guardar(nuevo));
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                authFacade.usuarioActualId().orElse(null),
+                AuditoriaConstants.ACCION_CREAR, AuditoriaConstants.MOD_COMERCIAL,
+                "TipoEvento", null,
+                null, resultado.getCodigo(),
+                "Tipo de evento creado: " + resultado.getNombre(),
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
+        return resultado;
     }
 
     @Override
@@ -85,7 +98,15 @@ public class TipoEventoService implements GestionarTipoEventoUseCase {
                 .activo(bool(datos, "activo", existente.isActivo()))
                 .orden(num(datos, "orden", existente.getOrden()))
                 .build();
-        return toResponse(repository.guardar(actualizado));
+        TipoEventoResponse resultado = toResponse(repository.guardar(actualizado));
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                authFacade.usuarioActualId().orElse(null),
+                AuditoriaConstants.ACCION_ACTUALIZAR, AuditoriaConstants.MOD_COMERCIAL,
+                "TipoEvento", null,
+                existente.getNombre(), resultado.getNombre(),
+                "Tipo de evento actualizado: " + resultado.getCodigo(),
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
+        return resultado;
     }
 
     @Override
@@ -99,6 +120,13 @@ public class TipoEventoService implements GestionarTipoEventoUseCase {
                     "No se puede eliminar: existen paquetes asociados a este tipo de evento.", HttpStatus.CONFLICT);
         }
         repository.eliminar(codigo);
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                authFacade.usuarioActualId().orElse(null),
+                AuditoriaConstants.ACCION_ELIMINAR, AuditoriaConstants.MOD_COMERCIAL,
+                "TipoEvento", null,
+                existente.getNombre(), null,
+                "Tipo de evento eliminado: " + codigo,
+                null, null, AuditoriaConstants.NIVEL_CRITICAL, AuditoriaConstants.RESULTADO_EXITOSO));
     }
 
     private TipoEvento buscarOFallar(String codigo) {

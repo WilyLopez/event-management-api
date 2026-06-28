@@ -1,5 +1,7 @@
 package com.playzone.pems.application.finanzas.service;
 
+import com.playzone.pems.application.auditoria.AuditoriaConstants;
+import com.playzone.pems.application.auditoria.port.in.RegistrarLogUseCase;
 import com.playzone.pems.application.finanzas.dto.command.ActualizarEgresoCommand;
 import com.playzone.pems.application.finanzas.dto.command.RegistrarEgresoCommand;
 import com.playzone.pems.application.finanzas.dto.query.RegistroEgresoQuery;
@@ -8,6 +10,7 @@ import com.playzone.pems.domain.finanzas.model.RegistroEgreso;
 import com.playzone.pems.domain.finanzas.model.TipoEgreso;
 import com.playzone.pems.domain.finanzas.repository.RegistroEgresoRepository;
 import com.playzone.pems.domain.finanzas.repository.TipoEgresoRepository;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import com.playzone.pems.shared.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +29,8 @@ public class EgresoService implements RegistrarEgresoUseCase {
 
     private final RegistroEgresoRepository registroEgresoRepository;
     private final TipoEgresoRepository     tipoEgresoRepository;
+    private final SupabaseAuthFacade       authFacade;
+    private final RegistrarLogUseCase      auditoria;
 
     @Override
     public RegistroEgresoQuery registrar(RegistrarEgresoCommand command) {
@@ -46,7 +51,14 @@ public class EgresoService implements RegistrarEgresoUseCase {
                 .esRecurrente(command.isEsRecurrente())
                 .idUsuarioRegistra(command.getIdUsuarioRegistra())
                 .build();
-        return toQuery(registroEgresoRepository.save(egreso));
+        RegistroEgresoQuery resultado = toQuery(registroEgresoRepository.save(egreso));
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                command.getIdUsuarioRegistra(), AuditoriaConstants.ACCION_CREAR, AuditoriaConstants.MOD_FINANZAS,
+                "RegistroEgreso", resultado.getId(),
+                null, "monto=" + command.getMonto() + " | tipo=" + command.getTipoEgresoCodigo(),
+                "Egreso registrado: " + command.getTipoEgresoCodigo() + " | S/ " + command.getMonto(),
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
+        return resultado;
     }
 
     @Override
@@ -99,6 +111,13 @@ public class EgresoService implements RegistrarEgresoUseCase {
     @Override
     public void eliminar(Long id) {
         registroEgresoRepository.deleteById(id);
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                authFacade.usuarioActualId().orElse(null),
+                AuditoriaConstants.ACCION_ELIMINAR, AuditoriaConstants.MOD_FINANZAS,
+                "RegistroEgreso", id,
+                String.valueOf(id), null,
+                "Egreso #" + id + " eliminado",
+                null, null, AuditoriaConstants.NIVEL_WARNING, AuditoriaConstants.RESULTADO_EXITOSO));
     }
 
     private RegistroEgresoQuery toQuery(RegistroEgreso r) {

@@ -1,5 +1,7 @@
 package com.playzone.pems.application.comercial.service;
 
+import com.playzone.pems.application.auditoria.AuditoriaConstants;
+import com.playzone.pems.application.auditoria.port.in.RegistrarLogUseCase;
 import com.playzone.pems.application.comercial.dto.command.ActualizarZonaCommand;
 import com.playzone.pems.application.comercial.dto.command.CrearZonaCommand;
 import com.playzone.pems.application.comercial.dto.query.ZonaJuegoQuery;
@@ -7,6 +9,8 @@ import com.playzone.pems.application.comercial.port.in.GestionarZonasUseCase;
 import com.playzone.pems.domain.comercial.model.ZonaJuego;
 import com.playzone.pems.domain.comercial.repository.ZonaJuegoRepository;
 import com.playzone.pems.domain.storage.StoragePort;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
+import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +30,8 @@ public class ZonaService implements GestionarZonasUseCase {
 
     private final ZonaJuegoRepository repo;
     private final StoragePort         storagePort;
+    private final SupabaseAuthFacade  authFacade;
+    private final RegistrarLogUseCase auditoria;
 
     @Override
     public ZonaJuegoQuery crear(CrearZonaCommand command) {
@@ -46,13 +52,21 @@ public class ZonaService implements GestionarZonasUseCase {
                 .imagenes(command.getImagenes() != null ? command.getImagenes() : List.of())
                 .videos(command.getVideos() != null ? command.getVideos() : List.of())
                 .build();
-        return toQuery(repo.save(zona));
+        ZonaJuegoQuery resultado = toQuery(repo.save(zona));
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                authFacade.usuarioActualId().orElse(null),
+                AuditoriaConstants.ACCION_CREAR, AuditoriaConstants.MOD_COMERCIAL,
+                "ZonaJuego", resultado.getId(),
+                null, resultado.getNombre(),
+                "Zona creada: " + resultado.getNombre(),
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
+        return resultado;
     }
 
     @Override
     public ZonaJuegoQuery actualizar(ActualizarZonaCommand command) {
         ZonaJuego existente = repo.findById(command.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Zona no encontrada: " + command.getId()));
+                .orElseThrow(() -> new ResourceNotFoundException("ZonaJuego", command.getId()));
         validarVideos(command.getVideos());
         ZonaJuego actualizada = ZonaJuego.builder()
                 .id(existente.getId())
@@ -67,7 +81,15 @@ public class ZonaService implements GestionarZonasUseCase {
                 .imagenes(command.getImagenes() != null ? command.getImagenes() : existente.getImagenes())
                 .videos(command.getVideos() != null ? command.getVideos() : existente.getVideos())
                 .build();
-        return toQuery(repo.save(actualizada));
+        ZonaJuegoQuery resultado = toQuery(repo.save(actualizada));
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                authFacade.usuarioActualId().orElse(null),
+                AuditoriaConstants.ACCION_ACTUALIZAR, AuditoriaConstants.MOD_COMERCIAL,
+                "ZonaJuego", command.getId(),
+                existente.getNombre(), resultado.getNombre(),
+                "Zona actualizada: " + resultado.getNombre(),
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
+        return resultado;
     }
 
     @Override
@@ -84,14 +106,22 @@ public class ZonaService implements GestionarZonasUseCase {
 
     @Override
     public void eliminar(Long id) {
-        repo.findById(id).orElseThrow(() -> new IllegalArgumentException("Zona no encontrada: " + id));
+        ZonaJuego zona = repo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("ZonaJuego", id));
         repo.deleteById(id);
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                authFacade.usuarioActualId().orElse(null),
+                AuditoriaConstants.ACCION_ELIMINAR, AuditoriaConstants.MOD_COMERCIAL,
+                "ZonaJuego", id,
+                zona.getNombre(), null,
+                "Zona eliminada: " + zona.getNombre(),
+                null, null, AuditoriaConstants.NIVEL_CRITICAL, AuditoriaConstants.RESULTADO_EXITOSO));
     }
 
     @Override
     public ZonaJuegoQuery agregarMedia(Long id, String url, String tipo) {
         ZonaJuego zona = repo.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Zona no encontrada: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("ZonaJuego", id));
         String tipoDetectado = (tipo != null && !tipo.isBlank()) ? tipo.toUpperCase()
                 : (esVideo(url) ? "VIDEO" : "IMAGEN");
         List<String> imagenes = new ArrayList<>(zona.getImagenes() != null ? zona.getImagenes() : List.of());
@@ -113,7 +143,7 @@ public class ZonaService implements GestionarZonasUseCase {
     @Override
     public ZonaJuegoQuery eliminarMedia(Long id, String url) {
         ZonaJuego zona = repo.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Zona no encontrada: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("ZonaJuego", id));
         boolean esImagen = !esVideo(url);
         if (esImagen) {
             storagePort.deleteByUrl(url);
@@ -134,7 +164,7 @@ public class ZonaService implements GestionarZonasUseCase {
     @Override
     public ZonaJuegoQuery reordenar(Long id, int nuevoOrden) {
         ZonaJuego zona = repo.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Zona no encontrada: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("ZonaJuego", id));
         repo.findAll().stream()
                 .filter(z -> z.getOrden() == nuevoOrden && !z.getId().equals(id))
                 .findFirst()

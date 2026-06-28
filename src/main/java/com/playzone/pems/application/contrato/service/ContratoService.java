@@ -1,5 +1,9 @@
 package com.playzone.pems.application.contrato.service;
 
+import com.playzone.pems.application.auditoria.AuditoriaConstants;
+import com.playzone.pems.application.auditoria.port.in.RegistrarLogUseCase;
+import com.playzone.pems.application.notificacion.dto.command.CrearNotificacionCommand;
+import com.playzone.pems.application.notificacion.port.out.CrearNotificacionPort;
 import com.playzone.pems.application.contrato.dto.command.ActualizarContratoCommand;
 import com.playzone.pems.application.contrato.dto.command.CambiarEstadoContratoCommand;
 import com.playzone.pems.application.contrato.dto.command.GenerarContratoCommand;
@@ -38,6 +42,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -58,17 +63,23 @@ public class ContratoService
     private final ActividadContratoRepository actividadRepository;
     private final StoragePort                 storagePort;
     private final String                      bucketPrivado;
+    private final RegistrarLogUseCase         auditoria;
+    private final CrearNotificacionPort       crearNotificacionPort;
 
     public ContratoService(ContratoRepository contratoRepository,
                            DocumentoContratoRepository documentoRepository,
                            ActividadContratoRepository actividadRepository,
                            StoragePort storagePort,
-                           @Value("${supabase.storage.bucket-privado}") String bucketPrivado) {
-        this.contratoRepository = contratoRepository;
-        this.documentoRepository = documentoRepository;
-        this.actividadRepository = actividadRepository;
-        this.storagePort = storagePort;
-        this.bucketPrivado = bucketPrivado;
+                           @Value("${supabase.storage.bucket-privado}") String bucketPrivado,
+                           RegistrarLogUseCase auditoria,
+                           CrearNotificacionPort crearNotificacionPort) {
+        this.contratoRepository    = contratoRepository;
+        this.documentoRepository   = documentoRepository;
+        this.actividadRepository   = actividadRepository;
+        this.storagePort           = storagePort;
+        this.bucketPrivado         = bucketPrivado;
+        this.auditoria             = auditoria;
+        this.crearNotificacionPort = crearNotificacionPort;
     }
 
     @Override
@@ -95,6 +106,13 @@ public class ContratoService
         registrarActividad(guardado.getId(), "CREADO", descripcionCreacion,
                 command.getIdUsuarioRedactor());
 
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                command.getIdUsuarioRedactor(), AuditoriaConstants.ACCION_CREAR, AuditoriaConstants.MOD_CONTRATOS,
+                "Contrato", guardado.getId(),
+                null, null,
+                "Contrato #" + guardado.getId() + " creado para evento #" + command.getIdEventoPrivado(),
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
+
         return toQuery(guardado);
     }
 
@@ -119,6 +137,21 @@ public class ContratoService
                 .build());
 
         registrarActividad(idContrato, "FIRMADO", "PDF generado y contrato firmado.", idUsuario);
+
+        crearNotificacionPort.notificar(CrearNotificacionCommand.builder()
+                .tipoCodigo("CONTRATO_FIRMADO")
+                .destinatarioUsuarioId(idUsuario)
+                .entidadTipo("contrato")
+                .entidadId(idContrato)
+                .datosExtra(Map.of("contrato", String.valueOf(idContrato)))
+                .build());
+
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                idUsuario, AuditoriaConstants.ACCION_FIRMAR, AuditoriaConstants.MOD_CONTRATOS,
+                "Contrato", idContrato,
+                EstadoContrato.BORRADOR.getCodigo(), EstadoContrato.FIRMADO.getCodigo(),
+                "Contrato #" + idContrato + " firmado y PDF generado",
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
 
         return toQuery(firmado);
     }
@@ -185,6 +218,13 @@ public class ContratoService
         registrarActividad(command.getId(), "ACTUALIZADO",
                 "Version incrementada a " + actualizado.getVersion(), command.getIdUsuario());
 
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                command.getIdUsuario(), AuditoriaConstants.ACCION_ACTUALIZAR, AuditoriaConstants.MOD_CONTRATOS,
+                "Contrato", command.getId(),
+                null, "v" + actualizado.getVersion(),
+                "Contrato #" + command.getId() + " actualizado a versión " + actualizado.getVersion(),
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
+
         return toQuery(actualizado);
     }
 
@@ -228,6 +268,16 @@ public class ContratoService
 
         registrarActividad(command.getIdContrato(), command.getNuevoEstado(),
                 command.getMotivo(), command.getIdUsuarioAdmin());
+
+        String accionAudit = "CANCELADO".equals(command.getNuevoEstado())
+                ? AuditoriaConstants.ACCION_CANCELAR
+                : AuditoriaConstants.ACCION_ACTUALIZAR;
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                command.getIdUsuarioAdmin(), accionAudit, AuditoriaConstants.MOD_CONTRATOS,
+                "Contrato", command.getIdContrato(),
+                contrato.getEstado().getCodigo(), command.getNuevoEstado(),
+                "Cambio de estado: " + contrato.getEstado().getCodigo() + " → " + command.getNuevoEstado(),
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
 
         return toQuery(actualizado);
     }

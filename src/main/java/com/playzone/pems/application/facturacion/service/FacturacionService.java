@@ -1,5 +1,7 @@
 package com.playzone.pems.application.facturacion.service;
 
+import com.playzone.pems.application.auditoria.AuditoriaConstants;
+import com.playzone.pems.application.auditoria.port.in.RegistrarLogUseCase;
 import com.playzone.pems.application.facturacion.dto.command.AnularComprobanteCommand;
 import com.playzone.pems.application.facturacion.dto.command.EmitirComprobanteCommand;
 import com.playzone.pems.application.facturacion.dto.query.ComprobanteQuery;
@@ -8,6 +10,7 @@ import com.playzone.pems.application.facturacion.port.in.EmitirComprobanteUseCas
 import com.playzone.pems.application.facturacion.port.out.EnviarComprobanteSunatPort;
 import com.playzone.pems.domain.facturacion.exception.ComprobanteNotFoundException;
 import com.playzone.pems.domain.facturacion.exception.SunatRechazadoException;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.domain.facturacion.model.Comprobante;
 import com.playzone.pems.domain.facturacion.model.SerieComprobante;
 import com.playzone.pems.domain.facturacion.model.enums.EstadoComprobante;
@@ -30,6 +33,8 @@ public class FacturacionService implements EmitirComprobanteUseCase, AnularCompr
     private final ComprobanteRepository     comprobanteRepository;
     private final SerieComprobanteRepository serieRepository;
     private final EnviarComprobanteSunatPort sunatPort;
+    private final SupabaseAuthFacade         authFacade;
+    private final RegistrarLogUseCase        auditoria;
 
     @Override
     @Transactional
@@ -82,6 +87,16 @@ public class FacturacionService implements EmitirComprobanteUseCase, AnularCompr
 
         Comprobante final_ = comprobanteRepository.save(actualizado);
 
+        String nivelAudit = respuesta.aceptado() ? AuditoriaConstants.NIVEL_INFO : AuditoriaConstants.NIVEL_ERROR;
+        String resultadoAudit = respuesta.aceptado() ? AuditoriaConstants.RESULTADO_EXITOSO : AuditoriaConstants.RESULTADO_FALLIDO;
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                authFacade.usuarioActualId().orElse(null),
+                AuditoriaConstants.ACCION_EMITIR, AuditoriaConstants.MOD_FACTURACION,
+                "Comprobante", guardado.getId(),
+                null, numeroCompleto,
+                "Comprobante " + numeroCompleto + " | estado=" + estado,
+                null, null, nivelAudit, resultadoAudit));
+
         if (!respuesta.aceptado()) {
             throw new SunatRechazadoException(
                     numeroCompleto, respuesta.cdrEstado(), respuesta.cdrDescripcion());
@@ -110,7 +125,16 @@ public class FacturacionService implements EmitirComprobanteUseCase, AnularCompr
                 .cdrDescripcion(respuesta.cdrDescripcion())
                 .build();
 
-        return toQuery(comprobanteRepository.save(anulado));
+        Comprobante anuladoGuardado = comprobanteRepository.save(anulado);
+
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                command.getIdUsuario(), AuditoriaConstants.ACCION_ANULAR, AuditoriaConstants.MOD_FACTURACION,
+                "Comprobante", command.getIdComprobante(),
+                comprobante.getNumeroCompleto(), null,
+                "Comprobante " + comprobante.getNumeroCompleto() + " anulado: " + command.getMotivoAnulacion(),
+                null, null, AuditoriaConstants.NIVEL_WARNING, AuditoriaConstants.RESULTADO_EXITOSO));
+
+        return toQuery(anuladoGuardado);
     }
 
     private ComprobanteQuery toQuery(Comprobante c) {

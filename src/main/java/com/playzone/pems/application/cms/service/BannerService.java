@@ -1,9 +1,12 @@
 package com.playzone.pems.application.cms.service;
 
+import com.playzone.pems.application.auditoria.AuditoriaConstants;
+import com.playzone.pems.application.auditoria.port.in.RegistrarLogUseCase;
 import com.playzone.pems.application.cms.dto.query.BannerQuery;
 import com.playzone.pems.application.cms.port.in.GestionarBannerUseCase;
 import com.playzone.pems.domain.cms.model.Banner;
 import com.playzone.pems.domain.cms.repository.BannerRepository;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import com.playzone.pems.shared.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +24,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 @RequiredArgsConstructor
 public class BannerService implements GestionarBannerUseCase {
 
-    private final BannerRepository bannerRepository;
+    private final BannerRepository   bannerRepository;
+    private final SupabaseAuthFacade  authFacade;
+    private final RegistrarLogUseCase auditoria;
 
     @Override
     @Transactional
@@ -46,7 +51,15 @@ public class BannerService implements GestionarBannerUseCase {
                 .soloDesktop(command.soloDesktop())
                 .idUsuarioCreador(command.idUsuario())
                 .build();
-        return BannerQuery.from(bannerRepository.save(banner));
+        BannerQuery resultado = BannerQuery.from(bannerRepository.save(banner));
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                command.idUsuario(),
+                AuditoriaConstants.ACCION_CREAR, AuditoriaConstants.MOD_CMS,
+                "Banner", resultado.getId(),
+                null, resultado.getTitulo(),
+                "Banner creado: " + resultado.getTitulo(),
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
+        return resultado;
     }
 
     @Override
@@ -71,7 +84,15 @@ public class BannerService implements GestionarBannerUseCase {
                 .soloMovil(command.soloMovil())
                 .soloDesktop(command.soloDesktop())
                 .build();
-        return BannerQuery.from(bannerRepository.save(actualizado));
+        BannerQuery resultado = BannerQuery.from(bannerRepository.save(actualizado));
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                authFacade.usuarioActualId().orElse(null),
+                AuditoriaConstants.ACCION_ACTUALIZAR, AuditoriaConstants.MOD_CMS,
+                "Banner", command.idBanner(),
+                existente.getTitulo(), resultado.getTitulo(),
+                "Banner actualizado: " + resultado.getTitulo(),
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
+        return resultado;
     }
 
     @Override
@@ -92,6 +113,13 @@ public class BannerService implements GestionarBannerUseCase {
     public void activar(Long idBanner) {
         Banner banner = findOrThrow(idBanner);
         bannerRepository.save(banner.toBuilder().activo(true).build());
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                authFacade.usuarioActualId().orElse(null),
+                AuditoriaConstants.ACCION_ACTIVAR, AuditoriaConstants.MOD_CMS,
+                "Banner", idBanner,
+                "inactivo", "activo",
+                "Banner activado: " + banner.getTitulo(),
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
     }
 
     @Override
@@ -99,6 +127,13 @@ public class BannerService implements GestionarBannerUseCase {
     public void desactivar(Long idBanner) {
         Banner banner = findOrThrow(idBanner);
         bannerRepository.save(banner.toBuilder().activo(false).build());
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                authFacade.usuarioActualId().orElse(null),
+                AuditoriaConstants.ACCION_DESACTIVAR, AuditoriaConstants.MOD_CMS,
+                "Banner", idBanner,
+                "activo", "inactivo",
+                "Banner desactivado: " + banner.getTitulo(),
+                null, null, AuditoriaConstants.NIVEL_WARNING, AuditoriaConstants.RESULTADO_EXITOSO));
     }
 
     @Override
@@ -140,8 +175,15 @@ public class BannerService implements GestionarBannerUseCase {
     @Override
     @Transactional
     public void eliminar(Long idBanner) {
-        findOrThrow(idBanner);
+        Banner banner = findOrThrow(idBanner);
         bannerRepository.deleteById(idBanner);
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                authFacade.usuarioActualId().orElse(null),
+                AuditoriaConstants.ACCION_ELIMINAR, AuditoriaConstants.MOD_CMS,
+                "Banner", idBanner,
+                banner.getTitulo(), null,
+                "Banner eliminado: " + banner.getTitulo(),
+                null, null, AuditoriaConstants.NIVEL_CRITICAL, AuditoriaConstants.RESULTADO_EXITOSO));
     }
 
     private Banner findOrThrow(Long id) {

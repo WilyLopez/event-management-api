@@ -1,5 +1,7 @@
 package com.playzone.pems.application.venta.service;
 
+import com.playzone.pems.application.auditoria.AuditoriaConstants;
+import com.playzone.pems.application.auditoria.port.in.RegistrarLogUseCase;
 import com.playzone.pems.application.venta.dto.command.NinoMostradorCommand;
 import com.playzone.pems.application.venta.dto.command.PagoMostradorCommand;
 import com.playzone.pems.application.venta.dto.command.RegistrarVentaMostradorCommand;
@@ -55,6 +57,7 @@ public class VentaMostradorService {
     private final PromocionRepository      promocionRepository;
     private final SupabaseAuthFacade       authFacade;
     private final ConfiguracionCalendarioRepository configRepository;
+    private final RegistrarLogUseCase      auditoria;
 
     @Transactional
     public VentaMostradorQuery registrar(RegistrarVentaMostradorCommand cmd) {
@@ -218,6 +221,13 @@ public class VentaMostradorService {
                     .build());
         }
         aperturaCajaRepository.incrementarIngresos(aperturaCaja.getId(), total);
+
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                usuarioActual, AuditoriaConstants.ACCION_CREAR, AuditoriaConstants.MOD_VENTAS,
+                "Venta", ventaGuardada.getId(),
+                null, "total=" + ventaGuardada.getTotal() + " | ninos=" + cmd.getNinos().size(),
+                "Venta mostrador #" + ventaGuardada.getId() + " | " + cmd.getNinos().size() + " niño(s)",
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
 
         List<VentaMostradorQuery.TicketMostradorQuery> tickets = reservas.stream()
                 .map(r -> VentaMostradorQuery.TicketMostradorQuery.builder()

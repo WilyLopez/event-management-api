@@ -1,5 +1,7 @@
 package com.playzone.pems.application.promocion.service;
 
+import com.playzone.pems.application.auditoria.AuditoriaConstants;
+import com.playzone.pems.application.auditoria.port.in.RegistrarLogUseCase;
 import com.playzone.pems.application.promocion.dto.command.CrearPromocionCommand;
 import com.playzone.pems.application.promocion.dto.query.PromocionQuery;
 import com.playzone.pems.application.promocion.port.in.AplicarPromocionUseCase;
@@ -12,6 +14,7 @@ import com.playzone.pems.domain.promocion.exception.PromocionNotFoundException;
 import com.playzone.pems.domain.promocion.model.Promocion;
 import com.playzone.pems.domain.promocion.model.PromocionMarketing;
 import com.playzone.pems.domain.promocion.repository.PromocionRepository;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import com.playzone.pems.shared.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +37,8 @@ public class PromocionService
 
     private final PromocionRepository      promocionRepository;
     private final ReservaPublicaRepository reservaRepository;
+    private final SupabaseAuthFacade       authFacade;
+    private final RegistrarLogUseCase      auditoria;
 
     @Override
     @Transactional(readOnly = true)
@@ -87,7 +92,18 @@ public class PromocionService
                 .marketing(marketing)
                 .build();
 
-        return toQuery(promocionRepository.save(promocion));
+        PromocionQuery resultado = toQuery(promocionRepository.save(promocion));
+
+        String accion = existente ? AuditoriaConstants.ACCION_ACTUALIZAR : AuditoriaConstants.ACCION_CREAR;
+        UUID actor = existente ? authFacade.usuarioActualId().orElse(null) : command.getIdUsuarioCreador();
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                actor, accion, AuditoriaConstants.MOD_PROMOCIONES,
+                "Promocion", resultado.getId(),
+                null, "nombre=" + command.getNombre(),
+                (existente ? "Promoción actualizada" : "Promoción creada") + ": " + command.getNombre(),
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
+
+        return resultado;
     }
 
     private PromocionMarketing buildMarketing(CrearPromocionCommand cmd) {
@@ -142,9 +158,16 @@ public class PromocionService
     @Override
     @Transactional
     public void ejecutar(Long idPromocion) {
-        promocionRepository.findById(idPromocion)
+        Promocion promocion = promocionRepository.findById(idPromocion)
                 .orElseThrow(() -> new PromocionNotFoundException(idPromocion));
         promocionRepository.desactivar(idPromocion);
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                authFacade.usuarioActualId().orElse(null),
+                AuditoriaConstants.ACCION_DESACTIVAR, AuditoriaConstants.MOD_PROMOCIONES,
+                "Promocion", idPromocion,
+                promocion.getNombre(), null,
+                "Promoción desactivada: " + promocion.getNombre(),
+                null, null, AuditoriaConstants.NIVEL_WARNING, AuditoriaConstants.RESULTADO_EXITOSO));
     }
 
     private PromocionQuery toQuery(Promocion p) {
