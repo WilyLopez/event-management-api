@@ -12,12 +12,14 @@ import com.playzone.pems.domain.evento.repository.EventoPrivadoRepository;
 import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
 import com.playzone.pems.domain.finanzas.model.enums.EstadoCaja;
 import com.playzone.pems.domain.finanzas.repository.AperturaCajaRepository;
+import com.playzone.pems.domain.finanzas.repository.RegistroIngresoRepository;
 import com.playzone.pems.domain.usuario.model.ClientePerfil;
 import com.playzone.pems.domain.usuario.repository.ClientePerfilRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.List;
@@ -31,6 +33,7 @@ public class DashboardAdminService implements ConsultarDashboardAdminUseCase {
     private final AperturaCajaRepository         aperturaCajaRepository;
     private final ConsultarDisponibilidadUseCase calendarioService;
     private final ClientePerfilRepository        clientePerfilRepository;
+    private final RegistroIngresoRepository      registroIngresoRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -39,9 +42,13 @@ public class DashboardAdminService implements ConsultarDashboardAdminUseCase {
         LocalDate finSemana = hoy.with(DayOfWeek.SUNDAY);
 
         int reservasHoy    = reservaPublicaRepository.countActivasBySedeAndFecha(idSede, hoy);
+        int reservasAyer   = reservaPublicaRepository.countActivasBySedeAndFecha(idSede, hoy.minusDays(1));
         int reservasConf   = reservaPublicaRepository.countConfirmadasBySedeAndFecha(idSede, hoy);
         int pendientesPago = reservaPublicaRepository.countBySedeAndFechaAndEstado(
                                  idSede, hoy, EstadoReservaPublica.PENDIENTE);
+
+        BigDecimal ingresosHoy = registroIngresoRepository.sumMontoBySedeAndRango(idSede, hoy, hoy);
+        if (ingresosHoy == null) ingresosHoy = BigDecimal.ZERO;
 
         DisponibilidadQuery hoyDisp = calendarioService.consultarPorFecha(idSede, hoy);
         int aforoMaximo = hoyDisp.getAforoMaximo();
@@ -103,6 +110,8 @@ public class DashboardAdminService implements ConsultarDashboardAdminUseCase {
         return DashboardAdminQuery.builder()
                 .fecha(hoy)
                 .reservasHoy(reservasHoy)
+                .reservasAyer(reservasAyer)
+                .ingresosHoy(ingresosHoy)
                 .reservasConfirmadas(reservasConf)
                 .pendientesPago(pendientesPago)
                 .aforoMaximo(aforoMaximo)
