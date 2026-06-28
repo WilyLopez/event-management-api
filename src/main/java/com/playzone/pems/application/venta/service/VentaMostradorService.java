@@ -15,11 +15,7 @@ import com.playzone.pems.domain.evento.model.ReservaPublica;
 import com.playzone.pems.domain.evento.model.enums.CanalReserva;
 import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
 import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
-import com.playzone.pems.domain.finanzas.model.AperturaCaja;
-import com.playzone.pems.domain.finanzas.model.MovimientoCaja;
-import com.playzone.pems.domain.finanzas.model.enums.TipoMovimientoCaja;
 import com.playzone.pems.domain.finanzas.repository.AperturaCajaRepository;
-import com.playzone.pems.domain.finanzas.repository.MovimientoCajaRepository;
 import com.playzone.pems.domain.promocion.model.Promocion;
 import com.playzone.pems.domain.promocion.repository.PromocionRepository;
 import com.playzone.pems.domain.venta.model.Venta;
@@ -51,7 +47,6 @@ public class VentaMostradorService {
     private final ReservaPublicaRepository reservaRepository;
     private final VentaPagoRepository      ventaPagoRepository;
     private final AperturaCajaRepository   aperturaCajaRepository;
-    private final MovimientoCajaRepository movimientoCajaRepository;
     private final TarifaRepository         tarifaRepository;
     private final FeriadoRepository        feriadoRepository;
     private final PromocionRepository      promocionRepository;
@@ -62,7 +57,9 @@ public class VentaMostradorService {
     @Transactional
     public VentaMostradorQuery registrar(RegistrarVentaMostradorCommand cmd) {
 
-        AperturaCaja aperturaCaja = aperturaCajaRepository.findActivaBySede(cmd.getSedeId())
+        // Valida que exista una caja abierta para la sede (los triggers de BD
+        // necesitan la apertura activa para registrar el movimiento de efectivo).
+        aperturaCajaRepository.findActivaBySede(cmd.getSedeId())
                 .orElseThrow(() -> new ValidationException(
                         "No hay caja abierta para esta sede. Abrir caja antes de registrar ventas."));
 
@@ -207,20 +204,12 @@ public class VentaMostradorService {
             pagosGuardados.add(pago);
         }
 
-        String conceptoVenta = "Venta #" + ventaGuardada.getId();
-        for (VentaPago pago : pagosGuardados) {
-            movimientoCajaRepository.save(MovimientoCaja.builder()
-                    .idAperturaCaja(aperturaCaja.getId())
-                    .tipo(TipoMovimientoCaja.INGRESO)
-                    .concepto(conceptoVenta)
-                    .monto(pago.getMonto())
-                    .medioPago(pago.getMedioPagoCodigo())
-                    .idVenta(ventaGuardada.getId())
-                    .esManual(false)
-                    .idUsuarioRegistra(usuarioActual)
-                    .build());
-        }
-        aperturaCajaRepository.incrementarIngresos(aperturaCaja.getId(), total);
+        // El movimiento de caja NO se crea aquí: los triggers de BD
+        // (trg_venta_pago_registrar_ingreso -> trg_registro_ingreso_movimiento_caja)
+        // generan el registro_ingreso y el movimiento_caja de efectivo a partir de
+        // cada venta_pago, e incrementan apertura_caja.total_ingresos. Hacerlo también
+        // aquí duplicaba el movimiento e inflaba el total de la caja. Este flujo es
+        // consistente con ReservaPublicaService / EventoPrivadoService / VentaService.
 
         auditoria.ejecutar(new RegistrarLogUseCase.Command(
                 usuarioActual, AuditoriaConstants.ACCION_CREAR, AuditoriaConstants.MOD_VENTAS,
