@@ -1,6 +1,7 @@
 package com.playzone.pems.interfaces.rest.finanzas.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.playzone.pems.domain.finanzas.model.enums.CategoriaRetiro;
 import com.playzone.pems.domain.finanzas.model.enums.TipoMovimientoCaja;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,6 +19,7 @@ public class MovimientoCajaResponse {
     private String             concepto;
     private BigDecimal         monto;
     private String             medioPago;
+    private CategoriaRetiro    categoriaRetiro;
     private Long               idRegistroIngreso;
     private Long               idRegistroEgreso;
     private Long               idVenta;

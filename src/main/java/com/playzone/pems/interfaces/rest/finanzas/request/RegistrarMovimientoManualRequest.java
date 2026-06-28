@@ -1,5 +1,6 @@
 package com.playzone.pems.interfaces.rest.finanzas.request;
 
+import com.playzone.pems.domain.finanzas.model.enums.CategoriaRetiro;
 import com.playzone.pems.domain.finanzas.model.enums.TipoMovimientoCaja;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -24,4 +25,6 @@ public class RegistrarMovimientoManualRequest {
     private BigDecimal monto;
 
     private String medioPago;
+
+    private CategoriaRetiro categoriaRetiro;
 }

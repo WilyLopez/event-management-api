@@ -1,5 +1,6 @@
 package com.playzone.pems.infrastructure.persistence.finanzas.entity;
 
+import com.playzone.pems.domain.finanzas.model.enums.CategoriaRetiro;
 import com.playzone.pems.domain.finanzas.model.enums.TipoMovimientoCaja;
 import jakarta.persistence.*;
 import lombok.*;
@@ -39,6 +40,10 @@ public class MovimientoCajaEntity {
 
     @Column(name = "medio_pago_codigo", length = 30)
     private String medioPago;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "categoria_retiro", length = 30)
+    private CategoriaRetiro categoriaRetiro;
 
     @Column(name = "registro_ingreso_id")
     private Long idRegistroIngreso;
