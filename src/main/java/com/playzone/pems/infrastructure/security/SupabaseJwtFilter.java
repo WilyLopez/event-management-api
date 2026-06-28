@@ -133,7 +133,6 @@ public class SupabaseJwtFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Restricción por cambio obligatorio de contraseña
         if (auth.debeCambiarPassword() && !request.getRequestURI().equals("/api/v1/usuarios/me/password")) {
             writeError(response, HttpServletResponse.SC_FORBIDDEN, "password_change_required",
                     "Debe cambiar su contraseña antes de continuar.");
@@ -186,10 +185,17 @@ public class SupabaseJwtFilter extends OncePerRequestFilter {
                     && staff.get().getBloqueadoHasta().isAfter(java.time.OffsetDateTime.now());
         }
 
-        CachedAuthorities fresh = new CachedAuthorities(roles, permisos, clientePerfilId, 
+        CachedAuthorities fresh = new CachedAuthorities(roles, permisos, clientePerfilId,
                 debeCambiarPassword, esActivo, estaBloqueado,
                 System.currentTimeMillis());
-        cache.put(userId, fresh);
+
+
+        boolean provisionado = clientePerfilId != null || staff.isPresent();
+        if (provisionado) {
+            cache.put(userId, fresh);
+        } else {
+            cache.remove(userId);
+        }
         return fresh;
     }
 
