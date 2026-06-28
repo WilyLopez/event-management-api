@@ -20,6 +20,7 @@ public class TipoNotificacion {
     private String plantillaTitulo;
     private String plantillaMensaje;
     private String prioridad;
+    private boolean esObligatoria;
     private boolean esSistema;
     private boolean activo;
     private int orden;
