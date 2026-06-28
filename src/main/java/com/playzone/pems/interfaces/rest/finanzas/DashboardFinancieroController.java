@@ -42,6 +42,16 @@ public class DashboardFinancieroController {
                 .reservasCanceladas(q.getReservasCanceladas())
                 .ticketPromedio(q.getTicketPromedio())
                 .saldoPendienteEventos(q.getSaldoPendienteEventos())
+                .totalIngresosMesAnterior(q.getTotalIngresosMesAnterior())
+                .totalEgresosMesAnterior(q.getTotalEgresosMesAnterior())
+                .utilidadMesAnterior(q.getUtilidadMesAnterior())
+                .serieDiaria(q.getSerieDiaria().stream()
+                        .map(s -> DashboardFinancieroResponse.SerieDiaResponse.builder()
+                                .fecha(s.fecha())
+                                .ingresos(s.ingresos())
+                                .egresos(s.egresos())
+                                .build())
+                        .toList())
                 .build();
     }
 }

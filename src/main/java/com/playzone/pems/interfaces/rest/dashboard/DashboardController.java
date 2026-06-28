@@ -27,6 +27,8 @@ public class DashboardController {
         return DashboardAdminResponse.builder()
                 .fecha(q.getFecha())
                 .reservasHoy(q.getReservasHoy())
+                .reservasAyer(q.getReservasAyer())
+                .ingresosHoy(q.getIngresosHoy())
                 .reservasConfirmadas(q.getReservasConfirmadas())
                 .pendientesPago(q.getPendientesPago())
                 .aforoMaximo(q.getAforoMaximo())

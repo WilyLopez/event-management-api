@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Builder
@@ -25,4 +27,16 @@ public class DashboardFinancieroResponse {
     private long       reservasCanceladas;
     private BigDecimal ticketPromedio;
     private BigDecimal saldoPendienteEventos;
+    private BigDecimal totalIngresosMesAnterior;
+    private BigDecimal totalEgresosMesAnterior;
+    private BigDecimal utilidadMesAnterior;
+    private List<SerieDiaResponse> serieDiaria;
+
+    @Getter
+    @Builder
+    public static class SerieDiaResponse {
+        private LocalDate  fecha;
+        private BigDecimal ingresos;
+        private BigDecimal egresos;
+    }
 }

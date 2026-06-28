@@ -1,6 +1,7 @@
 package com.playzone.pems.infrastructure.persistence.finanzas.adapter;
 
 import com.playzone.pems.domain.finanzas.model.RegistroIngreso;
+import com.playzone.pems.domain.finanzas.query.MontoPorDia;
 import com.playzone.pems.domain.finanzas.repository.RegistroIngresoRepository;
 import com.playzone.pems.infrastructure.persistence.finanzas.entity.RegistroIngresoEntity;
 import com.playzone.pems.infrastructure.persistence.finanzas.jpa.RegistroIngresoJpaRepository;
@@ -65,6 +66,13 @@ public class RegistroIngresoPersistenceAdapter implements RegistroIngresoReposit
                         row -> (String) row[0],
                         row -> (BigDecimal) row[1]
                 ));
+    }
+
+    @Override
+    public List<MontoPorDia> sumMontoAgrupadoPorDia(Long idSede, LocalDate inicio, LocalDate fin) {
+        return jpaRepository.sumMontoAgrupadoPorDia(idSede, inicio, fin).stream()
+                .map(row -> new MontoPorDia((LocalDate) row[0], (BigDecimal) row[1]))
+                .toList();
     }
 
     @Override

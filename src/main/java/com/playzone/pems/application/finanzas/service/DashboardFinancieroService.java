@@ -1,7 +1,9 @@
 package com.playzone.pems.application.finanzas.service;
 
 import com.playzone.pems.application.finanzas.dto.query.DashboardFinancieroQuery;
+import com.playzone.pems.application.finanzas.dto.query.SerieDiaQuery;
 import com.playzone.pems.application.finanzas.port.in.ConsultarDashboardFinancieroUseCase;
+import com.playzone.pems.domain.finanzas.query.MontoPorDia;
 import com.playzone.pems.domain.evento.repository.EventoPrivadoRepository;
 import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
 import com.playzone.pems.domain.finanzas.model.enums.CategoriaEgreso;
@@ -12,7 +14,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -51,6 +58,36 @@ public class DashboardFinancieroService implements ConsultarDashboardFinancieroU
         BigDecimal ticketPromedio   = reservaPublicaRepository.avgTicketBySedeAndPeriodo(idSede, anio, mes);
         BigDecimal saldoPendiente   = eventoPrivadoRepository.sumSaldoPendienteBySedeAndMes(idSede, anio, mes);
 
+        YearMonth anterior = YearMonth.of(anio, mes).minusMonths(1);
+        BigDecimal totalIngresosAnt = registroIngresoRepository
+                .sumMontoAgrupadoPorTipo(idSede, anterior.getYear(), anterior.getMonthValue())
+                .values().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalEgresosAnt  = registroEgresoRepository
+                .sumMontoAgrupadoPorCategoria(idSede, anterior.getYear(), anterior.getMonthValue())
+                .values().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal utilidadAnt      = totalIngresosAnt.subtract(totalEgresosAnt);
+
+        YearMonth periodo = YearMonth.of(anio, mes);
+        LocalDate inicio  = periodo.atDay(1);
+        LocalDate fin     = periodo.atEndOfMonth();
+
+        Map<LocalDate, BigDecimal> ingresosPorDia = registroIngresoRepository
+                .sumMontoAgrupadoPorDia(idSede, inicio, fin).stream()
+                .collect(Collectors.toMap(MontoPorDia::fecha, MontoPorDia::monto));
+        Map<LocalDate, BigDecimal> egresosPorDia = registroEgresoRepository
+                .sumMontoAgrupadoPorDia(idSede, inicio, fin).stream()
+                .collect(Collectors.toMap(MontoPorDia::fecha, MontoPorDia::monto));
+
+        Map<LocalDate, SerieDiaQuery> serie = new TreeMap<>();
+        ingresosPorDia.keySet().forEach(f -> serie.put(f, null));
+        egresosPorDia.keySet().forEach(f -> serie.put(f, null));
+        List<SerieDiaQuery> serieDiaria = serie.keySet().stream()
+                .map(f -> new SerieDiaQuery(
+                        f,
+                        ingresosPorDia.getOrDefault(f, BigDecimal.ZERO),
+                        egresosPorDia.getOrDefault(f, BigDecimal.ZERO)))
+                .toList();
+
         return DashboardFinancieroQuery.builder()
                 .anio(anio)
                 .mes(mes)
@@ -67,6 +104,10 @@ public class DashboardFinancieroService implements ConsultarDashboardFinancieroU
                 .reservasCanceladas(reservasCanceladas)
                 .ticketPromedio(ticketPromedio)
                 .saldoPendienteEventos(saldoPendiente)
+                .totalIngresosMesAnterior(totalIngresosAnt)
+                .totalEgresosMesAnterior(totalEgresosAnt)
+                .utilidadMesAnterior(utilidadAnt)
+                .serieDiaria(serieDiaria)
                 .build();
     }
 }

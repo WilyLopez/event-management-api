@@ -3,6 +3,7 @@ package com.playzone.pems.interfaces.rest.dashboard.response;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -10,10 +11,12 @@ import java.util.List;
 @Builder
 public class DashboardAdminResponse {
 
-    private final LocalDate fecha;
-    private final int       reservasHoy;
-    private final int       reservasConfirmadas;
-    private final int       pendientesPago;
+    private final LocalDate  fecha;
+    private final int        reservasHoy;
+    private final int        reservasAyer;
+    private final BigDecimal ingresosHoy;
+    private final int        reservasConfirmadas;
+    private final int        pendientesPago;
     private final int       aforoMaximo;
     private final int       plazasDisponibles;
     private final int       eventosEstaSemana;

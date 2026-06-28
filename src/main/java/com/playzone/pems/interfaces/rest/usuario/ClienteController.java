@@ -2,11 +2,13 @@ package com.playzone.pems.interfaces.rest.usuario;
 
 import com.playzone.pems.application.usuario.dto.command.ActualizarClientePerfilCommand;
 import com.playzone.pems.domain.storage.StoragePort;
+import com.playzone.pems.application.usuario.dto.command.CompletarPerfilClienteCommand;
 import com.playzone.pems.application.usuario.dto.command.RegistrarClientePerfilCommand;
 import com.playzone.pems.application.usuario.dto.command.RegistrarClientePublicoCommand;
 import com.playzone.pems.application.usuario.dto.query.ClientePerfilQuery;
 import com.playzone.pems.application.usuario.port.in.ActualizarClientePerfilUseCase;
 import com.playzone.pems.application.usuario.port.in.ActualizarSegmentoPerfilUseCase;
+import com.playzone.pems.application.usuario.port.in.CompletarPerfilClienteUseCase;
 import com.playzone.pems.application.usuario.port.in.ActivarClientePerfilUseCase;
 import com.playzone.pems.application.usuario.port.in.DesactivarClientePerfilUseCase;
 import com.playzone.pems.application.usuario.port.in.HacerVipPerfilUseCase;
@@ -17,7 +19,10 @@ import com.playzone.pems.application.usuario.port.in.RegistrarClientePerfilUseCa
 import com.playzone.pems.application.usuario.port.in.RegistrarClientePublicoUseCase;
 import com.playzone.pems.application.usuario.port.in.RegistrarVisitaPerfilUseCase;
 import com.playzone.pems.domain.usuario.model.ClientePerfil;
+import com.playzone.pems.infrastructure.security.SupabaseAuthContext;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.interfaces.rest.usuario.request.ActualizarClientePerfilRequest;
+import com.playzone.pems.interfaces.rest.usuario.request.CompletarPerfilClienteRequest;
 import com.playzone.pems.interfaces.rest.usuario.request.HacerVipRequest;
 import com.playzone.pems.interfaces.rest.usuario.request.RegistrarClientePerfilRequest;
 import com.playzone.pems.interfaces.rest.usuario.request.RegistrarClientePublicoRequest;
@@ -43,6 +48,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -62,6 +68,8 @@ public class ClienteController {
     private final QuitarVipPerfilUseCase         quitarVipUseCase;
     private final RegistrarVisitaPerfilUseCase   visitaUseCase;
     private final ActualizarSegmentoPerfilUseCase segmentoUseCase;
+    private final CompletarPerfilClienteUseCase  completarUseCase;
+    private final SupabaseAuthFacade             supabaseAuthFacade;
     private final StoragePort storagePort;
     private final String bucketPublico;
 
@@ -77,6 +85,8 @@ public class ClienteController {
             QuitarVipPerfilUseCase quitarVipUseCase,
             RegistrarVisitaPerfilUseCase visitaUseCase,
             ActualizarSegmentoPerfilUseCase segmentoUseCase,
+            CompletarPerfilClienteUseCase completarUseCase,
+            SupabaseAuthFacade supabaseAuthFacade,
             StoragePort storagePort,
             @Value("${supabase.storage.bucket-publico}") String bucketPublico) {
         this.registrarUseCase = registrarUseCase;
@@ -90,6 +100,8 @@ public class ClienteController {
         this.quitarVipUseCase = quitarVipUseCase;
         this.visitaUseCase = visitaUseCase;
         this.segmentoUseCase = segmentoUseCase;
+        this.completarUseCase = completarUseCase;
+        this.supabaseAuthFacade = supabaseAuthFacade;
         this.storagePort = storagePort;
         this.bucketPublico = bucketPublico;
     }
@@ -126,6 +138,30 @@ public class ClienteController {
                         .correo(request.getCorreo())
                         .telefono(request.getTelefono())
                         .origen(request.getOrigen() != null ? request.getOrigen() : "ADMIN")
+                        .aceptaComunicaciones(request.isAceptaComunicaciones())
+                        .build());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(perfil)));
+    }
+
+    @PostMapping("/me/completar")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<ClientePerfilResponse>> completarPerfil(
+            @Valid @RequestBody CompletarPerfilClienteRequest request) {
+
+        SupabaseAuthContext ctx = supabaseAuthFacade.contextoActual()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado"));
+
+        ClientePerfil perfil = completarUseCase.ejecutar(
+                CompletarPerfilClienteCommand.builder()
+                        .usuarioId(ctx.userId())
+                        .correo(ctx.email())
+                        .nombres(request.getNombres())
+                        .apellidoPaterno(request.getApellidoPaterno())
+                        .apellidoMaterno(request.getApellidoMaterno())
+                        .tipoDocumentoCodigo(request.getTipoDocumento())
+                        .numeroDocumento(request.getNumeroDocumento())
+                        .telefono(request.getTelefono())
                         .aceptaComunicaciones(request.isAceptaComunicaciones())
                         .build());
 

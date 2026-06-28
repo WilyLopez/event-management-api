@@ -1,11 +1,13 @@
 package com.playzone.pems.application.usuario.service;
 
 import com.playzone.pems.application.usuario.dto.command.ActualizarClientePerfilCommand;
+import com.playzone.pems.application.usuario.dto.command.CompletarPerfilClienteCommand;
 import com.playzone.pems.application.usuario.dto.command.RegistrarClientePerfilCommand;
 import com.playzone.pems.application.usuario.dto.command.RegistrarClientePublicoCommand;
 import com.playzone.pems.application.usuario.dto.query.ClientePerfilQuery;
 import com.playzone.pems.application.usuario.port.in.ActualizarClientePerfilUseCase;
 import com.playzone.pems.application.usuario.port.in.ActualizarSegmentoPerfilUseCase;
+import com.playzone.pems.application.usuario.port.in.CompletarPerfilClienteUseCase;
 import com.playzone.pems.application.usuario.port.in.ActivarClientePerfilUseCase;
 import com.playzone.pems.application.usuario.port.in.DesactivarClientePerfilUseCase;
 import com.playzone.pems.application.usuario.port.in.HacerVipPerfilUseCase;
@@ -44,7 +46,8 @@ public class ClientePerfilService
         HacerVipPerfilUseCase,
         QuitarVipPerfilUseCase,
         RegistrarVisitaPerfilUseCase,
-        ActualizarSegmentoPerfilUseCase {
+        ActualizarSegmentoPerfilUseCase,
+        CompletarPerfilClienteUseCase {
 
     private final ClientePerfilRepository clientePerfilRepository;
     private final SupabaseAuthPort        supabaseAuthPort;
@@ -137,6 +140,76 @@ public class ClientePerfilService
                 .correo(command.getCorreo())
                 .telefono(command.getTelefono())
                 .origen(command.getOrigen() != null ? command.getOrigen() : "ADMIN")
+                .aceptaComunicaciones(command.isAceptaComunicaciones())
+                .segmentoCodigo("NUEVO")
+                .esVip(false)
+                .contadorVisitas(0)
+                .totalGastado(BigDecimal.ZERO)
+                .build();
+
+        return clientePerfilRepository.guardar(nuevo);
+    }
+
+    @Override
+    @Transactional
+    public ClientePerfil ejecutar(CompletarPerfilClienteCommand command) {
+        if (command.getUsuarioId() == null) {
+            throw new ValidationException("usuarioId", "No autenticado.");
+        }
+        if (command.getNumeroDocumento() == null || command.getNumeroDocumento().isBlank()) {
+            throw new ValidationException("numeroDocumento", "El número de documento es obligatorio.");
+        }
+
+        clientePerfilRepository.buscarPorUsuarioId(command.getUsuarioId()).ifPresent(c -> {
+            throw new ValidationException("usuarioId", "Ya tienes un perfil registrado.");
+        });
+
+        Optional<ClientePerfil> porCorreo = command.getCorreo() != null
+                ? clientePerfilRepository.buscarPorCorreo(command.getCorreo())
+                : Optional.empty();
+
+        if (porCorreo.isPresent()) {
+            ClientePerfil existente = porCorreo.get();
+            if (existente.getUsuarioId() != null) {
+                throw new ValidationException("correo", "Ese correo ya está vinculado a otra cuenta.");
+            }
+            clientePerfilRepository.buscarPorDocumento(
+                            command.getTipoDocumentoCodigo(), command.getNumeroDocumento())
+                    .filter(d -> !d.getId().equals(existente.getId()))
+                    .ifPresent(d -> {
+                        throw new ValidationException("numeroDocumento", "Ya existe una cuenta con ese documento.");
+                    });
+
+            ClientePerfil vinculado = existente.toBuilder()
+                    .usuarioId(command.getUsuarioId())
+                    .tipoDocumentoCodigo(command.getTipoDocumentoCodigo())
+                    .numeroDocumento(command.getNumeroDocumento())
+                    .nombres(command.getNombres())
+                    .apellidoPaterno(command.getApellidoPaterno())
+                    .apellidoMaterno(command.getApellidoMaterno())
+                    .telefono(command.getTelefono())
+                    .origen("WEB")
+                    .aceptaComunicaciones(command.isAceptaComunicaciones())
+                    .build();
+            return clientePerfilRepository.guardar(vinculado);
+        }
+
+        clientePerfilRepository.buscarPorDocumento(
+                command.getTipoDocumentoCodigo(), command.getNumeroDocumento()
+        ).ifPresent(c -> {
+            throw new ValidationException("numeroDocumento", "Ya existe una cuenta con ese documento.");
+        });
+
+        ClientePerfil nuevo = ClientePerfil.builder()
+                .usuarioId(command.getUsuarioId())
+                .tipoDocumentoCodigo(command.getTipoDocumentoCodigo())
+                .numeroDocumento(command.getNumeroDocumento())
+                .nombres(command.getNombres())
+                .apellidoPaterno(command.getApellidoPaterno())
+                .apellidoMaterno(command.getApellidoMaterno())
+                .correo(command.getCorreo())
+                .telefono(command.getTelefono())
+                .origen("WEB")
                 .aceptaComunicaciones(command.isAceptaComunicaciones())
                 .segmentoCodigo("NUEVO")
                 .esVip(false)

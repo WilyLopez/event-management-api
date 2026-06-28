@@ -42,4 +42,10 @@ public interface RegistroIngresoJpaRepository extends JpaRepository<RegistroIngr
            "GROUP BY r.tipoCodigo")
     List<Object[]> sumMontoAgrupadoPorTipo(
             @Param("idSede") Long idSede, @Param("anio") int anio, @Param("mes") int mes);
+
+    @Query("SELECT r.fecha, COALESCE(SUM(r.monto), 0) FROM RegistroIngresoEntity r " +
+           "WHERE r.sede.id = :idSede AND r.fecha BETWEEN :inicio AND :fin " +
+           "GROUP BY r.fecha ORDER BY r.fecha")
+    List<Object[]> sumMontoAgrupadoPorDia(
+            @Param("idSede") Long idSede, @Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
 }
