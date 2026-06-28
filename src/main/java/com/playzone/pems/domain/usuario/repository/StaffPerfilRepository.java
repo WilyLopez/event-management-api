@@ -19,4 +19,6 @@ public interface StaffPerfilRepository {
     StaffPerfil guardar(StaffPerfil staffPerfil);
 
     long contarActivosPorRol(String rolCodigo);
+
+    long contarActivosPorRolExcluyendo(String rolCodigo, Long excludeId);
 }

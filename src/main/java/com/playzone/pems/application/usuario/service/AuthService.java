@@ -44,7 +44,8 @@ public class AuthService implements LoginUseCase, RecuperarPasswordUseCase, Camb
     @Override
     @Transactional(noRollbackFor = UnauthorizedException.class)
     public Map<String, Object> ejecutar(String email, String password, String ipOrigen, String userAgent) {
-        Optional<StaffPerfil> staffOpt = staffPerfilRepository.buscarPorCorreo(email);
+        String emailNorm = email.toLowerCase(java.util.Locale.ROOT).trim();
+        Optional<StaffPerfil> staffOpt = staffPerfilRepository.buscarPorCorreo(emailNorm);
 
         if (staffOpt.isPresent()) {
             StaffPerfil staff = staffOpt.get();
@@ -57,7 +58,7 @@ public class AuthService implements LoginUseCase, RecuperarPasswordUseCase, Camb
         }
 
         try {
-            Map<String, Object> response = supabaseAuthPort.login(email, password);
+            Map<String, Object> response = supabaseAuthPort.login(emailNorm, password);
 
             if (staffOpt.isPresent()) {
                 StaffPerfil staff = staffOpt.get();
@@ -69,7 +70,7 @@ public class AuthService implements LoginUseCase, RecuperarPasswordUseCase, Camb
                 auditoria.ejecutar(new RegistrarLogUseCase.Command(
                         staff.getUsuarioId(), AuditoriaConstants.ACCION_LOGIN, AuditoriaConstants.MOD_ACCESOS,
                         "PerfilUsuario", null, null, null,
-                        "Login exitoso: " + email,
+                        "Login exitoso: " + emailNorm,
                         ipOrigen, userAgent, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
             }
 
@@ -84,7 +85,7 @@ public class AuthService implements LoginUseCase, RecuperarPasswordUseCase, Camb
                 OffsetDateTime bloqueo = null;
                 if (nuevosIntentos >= maxIntentos) {
                     bloqueo = OffsetDateTime.now().plusMinutes(duracionBloqueoMin);
-                    log.warn("Usuario {} bloqueado hasta {}", email, bloqueo);
+                    log.warn("Usuario {} bloqueado hasta {}", emailNorm, bloqueo);
                 }
                 staffPerfilRepository.guardar(staff.toBuilder()
                         .intentosFallidos(nuevosIntentos)
@@ -95,7 +96,7 @@ public class AuthService implements LoginUseCase, RecuperarPasswordUseCase, Camb
                 auditoria.ejecutar(new RegistrarLogUseCase.Command(
                         userId, AuditoriaConstants.ACCION_LOGIN_FALLIDO, AuditoriaConstants.MOD_ACCESOS,
                         "PerfilUsuario", null, null, null,
-                        "Intento fallido para: " + email,
+                        "Intento fallido para: " + emailNorm,
                         ipOrigen, userAgent, AuditoriaConstants.NIVEL_WARNING, AuditoriaConstants.RESULTADO_FALLIDO));
 
                 if (bloqueo != null) {
