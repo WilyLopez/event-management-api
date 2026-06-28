@@ -1,5 +1,6 @@
 package com.playzone.pems.domain.finanzas.model;
 
+import com.playzone.pems.domain.finanzas.model.enums.CategoriaRetiro;
 import com.playzone.pems.domain.finanzas.model.enums.TipoMovimientoCaja;
 import lombok.*;
 
@@ -18,6 +19,7 @@ public class MovimientoCaja {
     private String             concepto;
     private BigDecimal         monto;
     private String             medioPago;
+    private CategoriaRetiro    categoriaRetiro;
     private Long               idRegistroIngreso;
     private Long               idRegistroEgreso;
     private Long               idVenta;

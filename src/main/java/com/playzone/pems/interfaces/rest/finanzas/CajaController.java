@@ -112,6 +112,7 @@ public class CajaController {
                 .concepto(request.getConcepto())
                 .monto(request.getMonto())
                 .medioPago(request.getMedioPago())
+                .categoriaRetiro(request.getCategoriaRetiro())
                 .idUsuarioRegistra(supabaseAuthFacade.usuarioActualId().orElseThrow())
                 .build());
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toMovimientoResponse(query)));
@@ -182,6 +183,7 @@ public class CajaController {
                 .concepto(q.getConcepto())
                 .monto(q.getMonto())
                 .medioPago(q.getMedioPago())
+                .categoriaRetiro(q.getCategoriaRetiro())
                 .idRegistroIngreso(q.getIdRegistroIngreso())
                 .idRegistroEgreso(q.getIdRegistroEgreso())
                 .idVenta(q.getIdVenta())

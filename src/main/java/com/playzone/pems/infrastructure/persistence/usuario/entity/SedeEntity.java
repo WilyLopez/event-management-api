@@ -23,20 +23,11 @@ public class SedeEntity {
     @Column(nullable = false, length = 120)
     private String nombre;
 
-    @Column(nullable = false, length = 300)
-    private String direccion;
-
     @Column(nullable = false, length = 80)
     private String ciudad;
 
     @Column(nullable = false, length = 80)
     private String departamento;
-
-    @Column(length = 20)
-    private String telefono;
-
-    @Column(length = 120)
-    private String correo;
 
     @Column(length = 11)
     private String ruc;

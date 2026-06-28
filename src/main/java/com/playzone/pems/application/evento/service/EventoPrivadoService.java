@@ -1,5 +1,7 @@
 package com.playzone.pems.application.evento.service;
 
+import com.playzone.pems.application.auditoria.AuditoriaConstants;
+import com.playzone.pems.application.auditoria.port.in.RegistrarLogUseCase;
 import com.playzone.pems.application.evento.dto.command.ConfirmarEventoCommand;
 import com.playzone.pems.application.evento.dto.command.RegistrarPagoCuotaCommand;
 import com.playzone.pems.application.evento.dto.command.RegistrarSaldoCommand;
@@ -18,6 +20,8 @@ import com.playzone.pems.application.evento.port.in.RegistrarPagoCuotaUseCase;
 import com.playzone.pems.application.evento.port.in.RegistrarSaldoUseCase;
 import com.playzone.pems.application.evento.port.in.SolicitarEventoPrivadoUseCase;
 import com.playzone.pems.application.evento.port.out.EnviarNotificacionEventoPort;
+import com.playzone.pems.application.notificacion.dto.command.CrearNotificacionCommand;
+import com.playzone.pems.application.notificacion.port.out.CrearNotificacionPort;
 import com.playzone.pems.domain.calendario.exception.FechaNoDisponibleException;
 import com.playzone.pems.domain.evento.model.EventoCuota;
 import com.playzone.pems.domain.evento.model.EventoExtra;
@@ -63,6 +67,7 @@ import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -96,6 +101,8 @@ public class EventoPrivadoService
     private final EventoCuotaRepository           cuotaRepository;
     private final ChecklistEventoRepository       checklistRepository;
     private final PerfilUsuarioRepository          perfilUsuarioRepository;
+    private final RegistrarLogUseCase              auditoria;
+    private final CrearNotificacionPort            crearNotificacionPort;
 
     // ─── Consultas ────────────────────────────────────────────────────────────
 
@@ -211,6 +218,25 @@ public class EventoPrivadoService
                     guardado.getId(), guardado.getIdCliente());
         }
         notificacionPort.notificarAdminNuevaSolicitud(query);
+
+        crearNotificacionPort.notificar(CrearNotificacionCommand.builder()
+                .tipoCodigo("EVENTO_PRESUPUESTO_ENVIADO")
+                .destinatarioClienteId(guardado.getIdCliente())
+                .entidadTipo("evento_privado")
+                .entidadId(guardado.getId())
+                .datosExtra(Map.of(
+                        "fecha", guardado.getFechaEvento().toString(),
+                        "tipo",  guardado.getTipoEvento()))
+                .build());
+
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                supabaseAuthFacade.usuarioActualId().orElse(null),
+                AuditoriaConstants.ACCION_CREAR, AuditoriaConstants.MOD_EVENTOS,
+                "EventoPrivado", guardado.getId(),
+                null, "cliente=" + guardado.getIdCliente() + " | fecha=" + guardado.getFechaEvento(),
+                "Evento privado #" + guardado.getId() + " solicitado para " + guardado.getFechaEvento(),
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
+
         return query;
     }
 
@@ -269,6 +295,37 @@ public class EventoPrivadoService
             log.warn("Evento {} sin correo de cliente {}, no se envia notificacion confirmacion",
                     guardado.getId(), guardado.getIdCliente());
         }
+
+        if (adelanto.compareTo(BigDecimal.ZERO) > 0) {
+            crearNotificacionPort.notificar(CrearNotificacionCommand.builder()
+                    .tipoCodigo("PAGO_ADELANTO_CONFIRMADO")
+                    .destinatarioClienteId(guardado.getIdCliente())
+                    .entidadTipo("evento_privado")
+                    .entidadId(guardado.getId())
+                    .datosExtra(Map.of(
+                            "monto", adelanto.toPlainString(),
+                            "fecha", guardado.getFechaEvento().toString()))
+                    .build());
+            if (command.getIdUsuarioGestor() != null) {
+                crearNotificacionPort.notificar(CrearNotificacionCommand.builder()
+                        .tipoCodigo("EVENTO_ADELANTO_RECIBIDO")
+                        .destinatarioUsuarioId(command.getIdUsuarioGestor())
+                        .entidadTipo("evento_privado")
+                        .entidadId(guardado.getId())
+                        .datosExtra(Map.of(
+                                "monto",   adelanto.toPlainString(),
+                                "cliente", cliente.nombreCompleto()))
+                        .build());
+            }
+        }
+
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                command.getIdUsuarioGestor(), AuditoriaConstants.ACCION_CONFIRMAR, AuditoriaConstants.MOD_EVENTOS,
+                "EventoPrivado", guardado.getId(),
+                EstadoEventoPrivado.SOLICITADA.getCodigo(), EstadoEventoPrivado.CONFIRMADA.getCodigo(),
+                "Evento #" + guardado.getId() + " confirmado | precio=" + command.getPrecioTotal() + " | modalidad=" + modalidad,
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
+
         return query;
     }
 
@@ -331,6 +388,17 @@ public class EventoPrivadoService
 
         BigDecimal nuevoAdelanto = evento.getMontoAdelanto().add(command.getMonto());
         EventoPrivado guardado = eventoRepository.save(evento.toBuilder().montoAdelanto(nuevoAdelanto).build());
+
+        if (evento.getIdUsuarioGestor() != null) {
+            crearNotificacionPort.notificar(CrearNotificacionCommand.builder()
+                    .tipoCodigo("EVENTO_SALDO_RECIBIDO")
+                    .destinatarioUsuarioId(evento.getIdUsuarioGestor())
+                    .entidadTipo("evento_privado")
+                    .entidadId(guardado.getId())
+                    .datosExtra(Map.of("monto", command.getMonto().toPlainString()))
+                    .build());
+        }
+
         return toQuery(guardado, obtenerCliente(guardado.getIdCliente()), obtenerTurno(guardado.getIdTurno()), false);
     }
 
@@ -350,6 +418,14 @@ public class EventoPrivadoService
                 .estado(EstadoEventoPrivado.COMPLETADA)
                 .idUsuarioGestor(idUsuarioGestor)
                 .build());
+
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                idUsuarioGestor, AuditoriaConstants.ACCION_ACTUALIZAR, AuditoriaConstants.MOD_EVENTOS,
+                "EventoPrivado", idEvento,
+                EstadoEventoPrivado.CONFIRMADA.getCodigo(), EstadoEventoPrivado.COMPLETADA.getCodigo(),
+                "Evento #" + idEvento + " marcado como completado",
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
+
         return toQuery(guardado, obtenerCliente(guardado.getIdCliente()), obtenerTurno(guardado.getIdTurno()), false);
     }
 
@@ -378,6 +454,25 @@ public class EventoPrivadoService
         if (cliente.getCorreo() != null) {
             notificacionPort.notificarEventoCancelado(cliente.getCorreo(), query, motivoCancelacion);
         }
+
+        crearNotificacionPort.notificar(CrearNotificacionCommand.builder()
+                .tipoCodigo("EVENTO_CANCELADO_ADMIN")
+                .destinatarioClienteId(guardado.getIdCliente())
+                .entidadTipo("evento_privado")
+                .entidadId(idEvento)
+                .datosExtra(Map.of(
+                        "fecha",  guardado.getFechaEvento().toString(),
+                        "motivo", motivoCancelacion))
+                .build());
+
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                supabaseAuthFacade.usuarioActualId().orElse(null),
+                AuditoriaConstants.ACCION_CANCELAR, AuditoriaConstants.MOD_EVENTOS,
+                "EventoPrivado", idEvento,
+                evento.getEstado().getCodigo(), EstadoEventoPrivado.CANCELADA.getCodigo(),
+                "Evento #" + idEvento + " cancelado: " + motivoCancelacion,
+                null, null, AuditoriaConstants.NIVEL_CRITICAL, AuditoriaConstants.RESULTADO_EXITOSO));
+
         return query;
     }
 

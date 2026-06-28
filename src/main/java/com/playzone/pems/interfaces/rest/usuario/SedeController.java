@@ -44,11 +44,8 @@ public class SedeController {
         Sede sede = gestionarSedeUseCase.actualizar(idSede,
                 new GestionarSedeUseCase.ActualizarSedeCommand(
                         request.getNombre(),
-                        request.getDireccion(),
                         request.getCiudad(),
                         request.getDepartamento(),
-                        request.getTelefono(),
-                        request.getCorreo(),
                         request.getRuc(),
                         request.getLatitud(),
                         request.getLongitud()));
@@ -60,11 +57,8 @@ public class SedeController {
         return SedeResponse.builder()
                 .id(s.getId())
                 .nombre(s.getNombre())
-                .direccion(s.getDireccion())
                 .ciudad(s.getCiudad())
                 .departamento(s.getDepartamento())
-                .telefono(s.getTelefono())
-                .correo(s.getCorreo())
                 .ruc(s.getRuc())
                 .latitud(s.getLatitud())
                 .longitud(s.getLongitud())
@@ -76,11 +70,8 @@ public class SedeController {
     @Getter @NoArgsConstructor
     public static class ActualizarSedeRequest {
         @NotBlank @Size(max = 120) private String nombre;
-        @NotBlank @Size(max = 300) private String direccion;
         @NotBlank @Size(max = 80)  private String ciudad;
         @NotBlank @Size(max = 80)  private String departamento;
-        @Size(max = 20)            private String  telefono;
-        @Size(max = 120)           private String  correo;
         @Size(max = 11)            private String  ruc;
         private Double latitud;
         private Double longitud;

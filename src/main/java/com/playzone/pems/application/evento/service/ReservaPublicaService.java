@@ -1,5 +1,7 @@
 package com.playzone.pems.application.evento.service;
 
+import com.playzone.pems.application.auditoria.AuditoriaConstants;
+import com.playzone.pems.application.auditoria.port.in.RegistrarLogUseCase;
 import com.playzone.pems.application.evento.dto.command.CrearReservaPublicaCommand;
 import com.playzone.pems.application.evento.dto.command.ReprogramarReservaCommand;
 import com.playzone.pems.application.evento.dto.query.ReservaPublicaQuery;
@@ -8,6 +10,8 @@ import com.playzone.pems.application.evento.port.in.ConsultarReservasUseCase;
 import com.playzone.pems.application.evento.port.in.CrearReservaPublicaUseCase;
 import com.playzone.pems.application.evento.port.in.ReprogramarReservaUseCase;
 import com.playzone.pems.application.evento.port.out.EnviarTicketPorCorreoPort;
+import com.playzone.pems.application.notificacion.dto.command.CrearNotificacionCommand;
+import com.playzone.pems.application.notificacion.port.out.CrearNotificacionPort;
 import com.playzone.pems.domain.calendario.exception.AforoExcedidoException;
 import com.playzone.pems.domain.venta.model.Venta;
 import com.playzone.pems.domain.venta.model.VentaPago;
@@ -25,6 +29,7 @@ import com.playzone.pems.domain.calendario.repository.TarifaRepository;
 import com.playzone.pems.domain.evento.exception.ReservaNotFoundException;
 import com.playzone.pems.domain.evento.model.ReservaPublica;
 import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
+import com.playzone.pems.domain.configuracion.repository.ConfiguracionGlobalRepository;
 import com.playzone.pems.domain.evento.repository.EventoPrivadoRepository;
 import com.playzone.pems.domain.evento.repository.ReservaPublicaRepository;
 import com.playzone.pems.domain.storage.StoragePort;
@@ -36,7 +41,6 @@ import com.playzone.pems.shared.exception.ValidationException;
 import com.playzone.pems.shared.util.FechaUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -46,6 +50,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -70,9 +75,9 @@ public class ReservaPublicaService
     private final VentaRepository                   ventaRepository;
     private final VentaPagoRepository               ventaPagoRepository;
     private final SupabaseAuthFacade                supabaseAuthFacade;
-
-    @Value("${playzone.negocio.max-reprogramaciones:1}")
-    private int maxReprogramaciones;
+    private final ConfiguracionGlobalRepository     configuracionGlobalRepository;
+    private final RegistrarLogUseCase               auditoria;
+    private final CrearNotificacionPort             crearNotificacionPort;
 
     // ── Consultas ────────────────────────────────────────────────────────────────
 
@@ -181,6 +186,23 @@ public class ReservaPublicaService
             log.warn("Reserva {} sin correo de cliente {}, no se envia ticket", guardada.getId(), command.getIdCliente());
         }
 
+        crearNotificacionPort.notificar(CrearNotificacionCommand.builder()
+                .tipoCodigo("TICKET_DISPONIBLE")
+                .destinatarioClienteId(guardada.getIdCliente())
+                .entidadTipo("reserva_publica")
+                .entidadId(guardada.getId())
+                .datosExtra(Map.of(
+                        "fecha",  guardada.getFechaEvento().toString(),
+                        "ticket", guardada.getNumeroTicket() != null ? guardada.getNumeroTicket() : ""))
+                .build());
+
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                cliente.getUsuarioId(), AuditoriaConstants.ACCION_CREAR, AuditoriaConstants.MOD_RESERVAS,
+                "ReservaPublica", guardada.getId(),
+                null, "ticket=" + guardada.getNumeroTicket() + " | fecha=" + guardada.getFechaEvento(),
+                "Reserva #" + guardada.getId() + " creada | ticket=" + guardada.getNumeroTicket(),
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
+
         return query;
     }
 
@@ -189,6 +211,10 @@ public class ReservaPublicaService
     public ReservaPublicaQuery ejecutar(ReprogramarReservaCommand command) {
         ReservaPublica original = reservaRepository.findById(command.getIdReservaOriginal())
                 .orElseThrow(() -> new ReservaNotFoundException(command.getIdReservaOriginal()));
+
+        int maxReprogramaciones = configuracionGlobalRepository.findByClave("MAX_REPROGRAMACIONES")
+                .map(c -> { try { return Integer.parseInt(c.getValor()); } catch (NumberFormatException e) { return 1; } })
+                .orElse(1);
 
         if (!original.puedeReprogramarse(maxReprogramaciones)) {
             throw new ValidationException("La reserva no puede reprogramarse en su estado actual o supero el limite.");
@@ -243,6 +269,14 @@ public class ReservaPublicaService
             log.warn("Reprogramacion {} sin correo de cliente {}, no se envia ticket", guardada.getId(), guardada.getIdCliente());
         }
 
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                supabaseAuthFacade.usuarioActualId().orElse(null),
+                AuditoriaConstants.ACCION_REPROGRAMAR, AuditoriaConstants.MOD_RESERVAS,
+                "ReservaPublica", guardada.getId(),
+                "reservaOriginal=" + command.getIdReservaOriginal(), "nuevaFecha=" + command.getNuevaFechaEvento(),
+                "Reserva #" + command.getIdReservaOriginal() + " reprogramada → nueva reserva #" + guardada.getId(),
+                null, null, AuditoriaConstants.NIVEL_WARNING, AuditoriaConstants.RESULTADO_EXITOSO));
+
         return query;
     }
 
@@ -265,6 +299,14 @@ public class ReservaPublicaService
 
         ClientePerfil cliente = clientePerfilRepository.buscarPorId(guardada.getIdCliente())
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente", guardada.getIdCliente()));
+
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                supabaseAuthFacade.usuarioActualId().orElse(null),
+                AuditoriaConstants.ACCION_CANCELAR, AuditoriaConstants.MOD_RESERVAS,
+                "ReservaPublica", idReserva,
+                reserva.getEstado().getCodigo(), "CANCELADA",
+                "Reserva #" + idReserva + " cancelada: " + motivo,
+                null, null, AuditoriaConstants.NIVEL_CRITICAL, AuditoriaConstants.RESULTADO_EXITOSO));
 
         return toQuery(guardada, cliente.nombreCompleto(), cliente.getCorreo(),
                 fetchNombreSede(guardada.getIdSede()), null, null);
@@ -290,6 +332,17 @@ public class ReservaPublicaService
                 .validadoPor(supabaseAuthFacade.usuarioActualId().orElse(null))
                 .validadoAt(java.time.OffsetDateTime.now())
                 .build());
+
+        crearNotificacionPort.notificar(CrearNotificacionCommand.builder()
+                .tipoCodigo("PAGO_CONFIRMADO")
+                .destinatarioClienteId(guardada.getIdCliente())
+                .entidadTipo("reserva_publica")
+                .entidadId(guardada.getId())
+                .datosExtra(Map.of(
+                        "monto", guardada.getTotalPagado().toPlainString(),
+                        "fecha", guardada.getFechaEvento().toString()))
+                .build());
+
         return enriquecerQuery(guardada);
     }
 

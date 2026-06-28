@@ -1,5 +1,6 @@
 package com.playzone.pems.application.finanzas.dto.query;
 
+import com.playzone.pems.domain.finanzas.model.enums.CategoriaRetiro;
 import com.playzone.pems.domain.finanzas.model.enums.TipoMovimientoCaja;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,6 +17,7 @@ public class MovimientoCajaQuery {
     private String             concepto;
     private BigDecimal         monto;
     private String             medioPago;
+    private CategoriaRetiro    categoriaRetiro;
     private Long               idRegistroIngreso;
     private Long               idRegistroEgreso;
     private Long               idVenta;

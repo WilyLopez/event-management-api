@@ -1,5 +1,7 @@
 package com.playzone.pems.application.usuario.service;
 
+import com.playzone.pems.application.auditoria.AuditoriaConstants;
+import com.playzone.pems.application.auditoria.port.in.RegistrarLogUseCase;
 import com.playzone.pems.application.usuario.dto.command.RegistrarUsuarioAdminCommand;
 import com.playzone.pems.application.usuario.dto.response.UsuarioAdminResponse;
 import com.playzone.pems.application.usuario.port.in.ActivarUsuarioAdminUseCase;
@@ -20,6 +22,7 @@ import com.playzone.pems.domain.usuario.repository.PerfilUsuarioRepository;
 import com.playzone.pems.domain.usuario.repository.SedeRepository;
 import com.playzone.pems.domain.usuario.repository.StaffPerfilRepository;
 import com.playzone.pems.domain.usuario.repository.UsuarioRolRepository;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import com.playzone.pems.shared.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
@@ -59,12 +62,14 @@ public class StaffService implements
     private static final String PW_ALL     = PW_UPPER + PW_LOWER + PW_DIGITS + PW_SPECIAL;
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    private final StaffPerfilRepository   staffPerfilRepository;
-    private final PerfilUsuarioRepository perfilUsuarioRepository;
-    private final SedeRepository          sedeRepository;
-    private final UsuarioRolRepository    usuarioRolRepository;
-    private final SupabaseAuthPort        supabaseAuthPort;
+    private final StaffPerfilRepository    staffPerfilRepository;
+    private final PerfilUsuarioRepository  perfilUsuarioRepository;
+    private final SedeRepository           sedeRepository;
+    private final UsuarioRolRepository     usuarioRolRepository;
+    private final SupabaseAuthPort         supabaseAuthPort;
     private final EnviarCorreoBienvenidaPort enviarCorreoBienvenidaPort;
+    private final SupabaseAuthFacade       authFacade;
+    private final RegistrarLogUseCase      auditoria;
 
 
     @Override
@@ -151,6 +156,14 @@ public class StaffService implements
             }
         });
 
+        UUID actor = authFacade.usuarioActualId().orElse(null);
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                actor, AuditoriaConstants.ACCION_CREAR, AuditoriaConstants.MOD_USUARIOS,
+                "Staff", staff.getId(),
+                null, command.getCorreo() + " | rol=" + rol,
+                "Usuario creado: " + command.getNombre() + " (" + command.getCorreo() + ")",
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
+
         String passwordTemporal = command.isGenerarPassword() ? passwordFinal : null;
 
         return UsuarioAdminResponse.builder()
@@ -176,6 +189,14 @@ public class StaffService implements
                 .orElseThrow(() -> new ResourceNotFoundException("StaffPerfil", id));
 
         perfilUsuarioRepository.actualizarPerfil(staff.getUsuarioId(), nombre, telefono);
+
+        UUID actor = authFacade.usuarioActualId().orElse(null);
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                actor, AuditoriaConstants.ACCION_ACTUALIZAR, AuditoriaConstants.MOD_USUARIOS,
+                "Staff", id,
+                null, "nombre=" + nombre,
+                "Perfil actualizado para staff #" + id,
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
 
         PerfilUsuario perfil = perfilUsuarioRepository.buscarPorId(staff.getUsuarioId())
                 .orElseThrow(() -> new ResourceNotFoundException("PerfilUsuario", "usuarioId", staff.getUsuarioId()));
@@ -223,6 +244,13 @@ public class StaffService implements
                 .rolCodigo(rolNorm)
                 .build());
 
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                solicitanteId, AuditoriaConstants.ACCION_ACTUALIZAR, AuditoriaConstants.MOD_USUARIOS,
+                "Staff", id,
+                rolActual, rolNorm,
+                "Cambio de rol: " + rolActual + " → " + rolNorm + " para staff #" + id,
+                null, null, AuditoriaConstants.NIVEL_WARNING, AuditoriaConstants.RESULTADO_EXITOSO));
+
         PerfilUsuario perfil = perfilUsuarioRepository.buscarPorId(staff.getUsuarioId())
                 .orElseThrow(() -> new ResourceNotFoundException("PerfilUsuario", "usuarioId", staff.getUsuarioId()));
         Sede sede = sedeRepository.findById(staff.getSedeId()).orElse(null);
@@ -248,6 +276,14 @@ public class StaffService implements
         StaffPerfil staff = staffPerfilRepository.buscarPorId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("StaffPerfil", id));
         staffPerfilRepository.guardar(staff.toBuilder().esActivo(true).build());
+
+        UUID actor = authFacade.usuarioActualId().orElse(null);
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                actor, AuditoriaConstants.ACCION_ACTIVAR, AuditoriaConstants.MOD_USUARIOS,
+                "Staff", id,
+                "inactivo", "activo",
+                "Usuario staff #" + id + " activado",
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
     }
 
     @Override
@@ -255,8 +291,15 @@ public class StaffService implements
     public void desactivar(Long id) {
         StaffPerfil staff = staffPerfilRepository.buscarPorId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("StaffPerfil", id));
-
         staffPerfilRepository.guardar(staff.toBuilder().esActivo(false).build());
+
+        UUID actor = authFacade.usuarioActualId().orElse(null);
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                actor, AuditoriaConstants.ACCION_DESACTIVAR, AuditoriaConstants.MOD_USUARIOS,
+                "Staff", id,
+                "activo", "inactivo",
+                "Usuario staff #" + id + " desactivado",
+                null, null, AuditoriaConstants.NIVEL_WARNING, AuditoriaConstants.RESULTADO_EXITOSO));
     }
 
 
@@ -294,7 +337,6 @@ public class StaffService implements
 
     private String generarPasswordTemporal() {
         char[] arr = new char[12];
-        // Garantizar al menos 1 de cada categoría
         arr[0] = PW_UPPER.charAt(RANDOM.nextInt(PW_UPPER.length()));
         arr[1] = PW_LOWER.charAt(RANDOM.nextInt(PW_LOWER.length()));
         arr[2] = PW_DIGITS.charAt(RANDOM.nextInt(PW_DIGITS.length()));
@@ -331,4 +373,3 @@ public class StaffService implements
                 .build();
     }
 }
-

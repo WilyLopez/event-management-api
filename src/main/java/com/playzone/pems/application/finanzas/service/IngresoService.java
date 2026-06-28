@@ -1,5 +1,7 @@
 package com.playzone.pems.application.finanzas.service;
 
+import com.playzone.pems.application.auditoria.AuditoriaConstants;
+import com.playzone.pems.application.auditoria.port.in.RegistrarLogUseCase;
 import com.playzone.pems.application.finanzas.dto.command.RegistrarIngresoManualCommand;
 import com.playzone.pems.application.finanzas.dto.query.RegistroIngresoQuery;
 import com.playzone.pems.application.finanzas.port.in.RegistrarIngresoUseCase;
@@ -7,6 +9,7 @@ import com.playzone.pems.domain.finanzas.model.RegistroIngreso;
 import com.playzone.pems.domain.finanzas.model.TipoIngreso;
 import com.playzone.pems.domain.finanzas.repository.RegistroIngresoRepository;
 import com.playzone.pems.domain.finanzas.repository.TipoIngresoRepository;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import com.playzone.pems.shared.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +28,8 @@ public class IngresoService implements RegistrarIngresoUseCase {
 
     private final RegistroIngresoRepository registroIngresoRepository;
     private final TipoIngresoRepository     tipoIngresoRepository;
+    private final SupabaseAuthFacade        authFacade;
+    private final RegistrarLogUseCase       auditoria;
 
     @Override
     public RegistroIngresoQuery registrar(RegistrarIngresoManualCommand command) {
@@ -43,7 +48,14 @@ public class IngresoService implements RegistrarIngresoUseCase {
                 .esAutomatico(false)
                 .idUsuarioRegistra(command.getIdUsuarioRegistra())
                 .build();
-        return toQuery(registroIngresoRepository.save(ingreso));
+        RegistroIngresoQuery resultado = toQuery(registroIngresoRepository.save(ingreso));
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                command.getIdUsuarioRegistra(), AuditoriaConstants.ACCION_CREAR, AuditoriaConstants.MOD_FINANZAS,
+                "RegistroIngreso", resultado.getId(),
+                null, "monto=" + command.getMonto() + " | tipo=" + command.getTipoIngresoCodigo(),
+                "Ingreso manual registrado: " + command.getTipoIngresoCodigo() + " | S/ " + command.getMonto(),
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
+        return resultado;
     }
 
     @Override
@@ -62,6 +74,13 @@ public class IngresoService implements RegistrarIngresoUseCase {
     @Override
     public void eliminar(Long id) {
         registroIngresoRepository.deleteById(id);
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                authFacade.usuarioActualId().orElse(null),
+                AuditoriaConstants.ACCION_ELIMINAR, AuditoriaConstants.MOD_FINANZAS,
+                "RegistroIngreso", id,
+                String.valueOf(id), null,
+                "Ingreso #" + id + " eliminado",
+                null, null, AuditoriaConstants.NIVEL_WARNING, AuditoriaConstants.RESULTADO_EXITOSO));
     }
 
     private RegistroIngresoQuery toQuery(RegistroIngreso r) {

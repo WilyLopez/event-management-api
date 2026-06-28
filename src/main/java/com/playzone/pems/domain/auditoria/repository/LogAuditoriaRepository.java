@@ -24,6 +24,7 @@ public interface LogAuditoriaRepository {
 
     Page<LogAuditoria> findByFiltros(
             LocalDateTime desde, LocalDateTime hasta,
-            UUID idUsuario, String modulo, String accion, String entidad,
+            UUID idUsuario, String modulo, String accion,
+            String entidad, String nivel, String resultado,
             Pageable pageable);
 }

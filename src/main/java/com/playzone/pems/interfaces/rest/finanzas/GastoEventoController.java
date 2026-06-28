@@ -58,6 +58,7 @@ public class GastoEventoController {
         return GastoEventoResponse.builder()
                 .id(q.getId())
                 .idEventoPrivado(q.getIdEventoPrivado())
+                .fechaEvento(q.getFechaEvento())
                 .descripcion(q.getDescripcion())
                 .monto(q.getMonto())
                 .comprobanteUrl(q.getComprobanteUrl())

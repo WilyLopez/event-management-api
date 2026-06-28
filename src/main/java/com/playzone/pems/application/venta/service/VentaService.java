@@ -1,5 +1,7 @@
 package com.playzone.pems.application.venta.service;
 
+import com.playzone.pems.application.auditoria.AuditoriaConstants;
+import com.playzone.pems.application.auditoria.port.in.RegistrarLogUseCase;
 import com.playzone.pems.application.evento.dto.query.ReservaPublicaQuery;
 import com.playzone.pems.application.venta.dto.query.VentaDetalleQuery;
 import com.playzone.pems.application.venta.dto.command.ProcesarVentaCommand;
@@ -42,6 +44,7 @@ public class VentaService implements ProcesarVentaUseCase, ConsultarVentasUseCas
     private final ReservaPublicaRepository reservaPublicaRepository;
     private final EnviarDocumentosVentaPort enviarDocumentosVentaPort;
     private final ConfiguracionCalendarioRepository configRepository;
+    private final RegistrarLogUseCase      auditoria;
 
     @Override
     @Transactional
@@ -75,7 +78,14 @@ public class VentaService implements ProcesarVentaUseCase, ConsultarVentasUseCas
                 .total(total)
                 .build();
 
-        return toQuery(ventaRepository.save(venta));
+        Venta guardada = ventaRepository.save(venta);
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                command.getCreatedBy(), AuditoriaConstants.ACCION_CREAR, AuditoriaConstants.MOD_VENTAS,
+                "Venta", guardada.getId(),
+                null, "total=" + guardada.getTotal(),
+                "Venta #" + guardada.getId() + " registrada | total=" + guardada.getTotal(),
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
+        return toQuery(guardada);
     }
 
     @Override
@@ -171,6 +181,13 @@ public class VentaService implements ProcesarVentaUseCase, ConsultarVentasUseCas
             .build();
         
         reservaPublicaRepository.save(reservaActualizada);
+
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                command.getCreatedBy(), AuditoriaConstants.ACCION_CREAR, AuditoriaConstants.MOD_VENTAS,
+                "Venta", ventaGuardada.getId(),
+                null, "total=" + ventaGuardada.getTotal(),
+                "Cobro de reserva #" + command.getReservaId() + " | venta #" + ventaGuardada.getId(),
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
 
         return toQuery(ventaGuardada);
     }

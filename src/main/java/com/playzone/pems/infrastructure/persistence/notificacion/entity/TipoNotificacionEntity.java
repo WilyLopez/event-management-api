@@ -45,6 +45,9 @@ public class TipoNotificacionEntity {
     @Column(name = "prioridad", nullable = false)
     private String prioridad;
 
+    @Column(name = "es_obligatoria", nullable = false)
+    private boolean esObligatoria;
+
     @Column(name = "es_sistema", nullable = false)
     private boolean esSistema;
 

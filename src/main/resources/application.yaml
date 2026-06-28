@@ -143,23 +143,8 @@ playzone:
 
   url-base: ${APP_URL:http://localhost:8080}
 
-  seguridad:
-    max-intentos-login: 5
-    duracion-bloqueo-min: 15
-
-  negocio:
-    aforo-maximo: 60
-    anticipacion-min-horas: 1
-    anticipacion-min-evento-dias: 15
-    dias-max-reserva-publica: 14
-    max-reprogramaciones: 1
-    visitas-para-entrada-gratis: 6
-
   cors:
     origenes-permitidos: ${CORS_ORIGINS:http://localhost:3000,http://localhost:5173}
-
-  correo:
-    nombre-remitente: ${MAIL_SENDER_NAME:Kiki y Lala}
 
   # SUNAT / Nubefact
   sunat:

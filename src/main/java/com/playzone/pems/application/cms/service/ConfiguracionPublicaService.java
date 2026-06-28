@@ -1,5 +1,7 @@
 package com.playzone.pems.application.cms.service;
 
+import com.playzone.pems.application.auditoria.AuditoriaConstants;
+import com.playzone.pems.application.auditoria.port.in.RegistrarLogUseCase;
 import com.playzone.pems.application.cms.dto.query.ConfiguracionPublicaQuery;
 import com.playzone.pems.application.cms.port.in.GestionarConfiguracionPublicaUseCase;
 import com.playzone.pems.domain.cms.model.ConfiguracionPublica;
@@ -15,6 +17,7 @@ public class ConfiguracionPublicaService implements GestionarConfiguracionPublic
 
     private final ConfiguracionPublicaRepository configRepository;
     private final SupabaseAuthFacade             supabaseAuthFacade;
+    private final RegistrarLogUseCase            auditoria;
 
     @Override
     @Transactional
@@ -63,7 +66,17 @@ public class ConfiguracionPublicaService implements GestionarConfiguracionPublic
                 .updatedBy(supabaseAuthFacade.usuarioActualId().orElse(null))
                 .build();
 
-        return ConfiguracionPublicaQuery.from(configRepository.save(actualizado));
+        ConfiguracionPublicaQuery resultado = ConfiguracionPublicaQuery.from(configRepository.save(actualizado));
+
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                supabaseAuthFacade.usuarioActualId().orElse(null),
+                AuditoriaConstants.ACCION_ACTUALIZAR, AuditoriaConstants.MOD_CMS,
+                "ConfiguracionPublica", null,
+                null, cmd.nombreNegocio(),
+                "Configuración pública actualizada",
+                null, null, AuditoriaConstants.NIVEL_WARNING, AuditoriaConstants.RESULTADO_EXITOSO));
+
+        return resultado;
     }
 
     private ConfiguracionPublica obtenerOAutocrear() {

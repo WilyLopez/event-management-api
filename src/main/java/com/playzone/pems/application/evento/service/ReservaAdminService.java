@@ -1,5 +1,7 @@
 package com.playzone.pems.application.evento.service;
 
+import com.playzone.pems.application.auditoria.AuditoriaConstants;
+import com.playzone.pems.application.auditoria.port.in.RegistrarLogUseCase;
 import com.playzone.pems.application.fidelizacion.port.in.RegistrarVisitaUseCase;
 import com.playzone.pems.application.evento.dto.query.MetricasReservaQuery;
 import com.playzone.pems.application.evento.dto.query.ReservaPublicaQuery;
@@ -19,6 +21,7 @@ import com.playzone.pems.domain.usuario.model.ClientePerfil;
 import com.playzone.pems.domain.usuario.repository.ClientePerfilRepository;
 import com.playzone.pems.domain.venta.repository.VentaRepository;
 import com.playzone.pems.domain.venta.repository.VentaPagoRepository;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.shared.exception.ValidationException;
 import com.playzone.pems.shared.util.FechaUtil;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +51,8 @@ public class ReservaAdminService
     private final RegistrarVisitaUseCase            registrarVisitaUseCase;
     private final VentaRepository                   ventaRepository;
     private final VentaPagoRepository               ventaPagoRepository;
+    private final SupabaseAuthFacade                authFacade;
+    private final RegistrarLogUseCase               auditoria;
 
     @Override
     @Transactional
@@ -81,6 +86,13 @@ public class ReservaAdminService
 
         String nombre = clientePerfilRepository.buscarPorId(guardada.getIdCliente())
                 .map(ClientePerfil::nombreCompleto).orElse(null);
+
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                idUsuarioAdmin, AuditoriaConstants.ACCION_CONFIRMAR, AuditoriaConstants.MOD_RESERVAS,
+                "ReservaPublica", idReserva,
+                EstadoReservaPublica.CONFIRMADA.getCodigo(), "COMPLETADA",
+                "Ingreso confirmado para reserva #" + idReserva,
+                null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
 
         return toQuery(guardada, nombre, null);
     }
@@ -195,7 +207,17 @@ public class ReservaAdminService
         ReservaPublica actualizada = r.toBuilder()
                 .fechaEvento(nuevaFecha)
                 .build();
-        return toDetalle(reservaRepository.save(actualizada));
+        TicketDetalleQuery resultado = toDetalle(reservaRepository.save(actualizada));
+
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                authFacade.usuarioActualId().orElse(null),
+                AuditoriaConstants.ACCION_REPROGRAMAR, AuditoriaConstants.MOD_RESERVAS,
+                "ReservaPublica", idReserva,
+                r.getFechaEvento().toString(), nuevaFecha.toString(),
+                "Reserva #" + idReserva + " reprogramada: " + r.getFechaEvento() + " → " + nuevaFecha,
+                null, null, AuditoriaConstants.NIVEL_WARNING, AuditoriaConstants.RESULTADO_EXITOSO));
+
+        return resultado;
     }
 
     private TicketDetalleQuery toDetalle(ReservaPublica r) {
@@ -264,5 +286,13 @@ public class ReservaAdminService
                 ventaRepository.deleteById(ventaId);
             }
         }
+
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                authFacade.usuarioActualId().orElse(null),
+                AuditoriaConstants.ACCION_ELIMINAR, AuditoriaConstants.MOD_RESERVAS,
+                "ReservaPublica", idReserva,
+                "ticket=" + reserva.getNumeroTicket(), null,
+                "Reserva #" + idReserva + " (" + reserva.getNumeroTicket() + ") eliminada",
+                null, null, AuditoriaConstants.NIVEL_CRITICAL, AuditoriaConstants.RESULTADO_EXITOSO));
     }
 }

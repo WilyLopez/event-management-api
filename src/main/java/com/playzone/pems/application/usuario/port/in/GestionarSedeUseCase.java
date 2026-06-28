@@ -8,11 +8,8 @@ public interface GestionarSedeUseCase {
 
     record ActualizarSedeCommand(
             String nombre,
-            String direccion,
             String ciudad,
             String departamento,
-            String telefono,
-            String correo,
             String ruc,
             Double latitud,
             Double longitud
