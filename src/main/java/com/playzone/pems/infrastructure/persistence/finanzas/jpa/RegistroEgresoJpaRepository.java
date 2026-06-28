@@ -51,4 +51,10 @@ public interface RegistroEgresoJpaRepository extends JpaRepository<RegistroEgres
            "GROUP BY t.categoria")
     List<Object[]> sumMontoAgrupadoPorCategoria(
             @Param("idSede") Long idSede, @Param("anio") int anio, @Param("mes") int mes);
+
+    @Query("SELECT r.fecha, COALESCE(SUM(r.monto), 0) FROM RegistroEgresoEntity r " +
+           "WHERE r.sede.id = :idSede AND r.fecha BETWEEN :inicio AND :fin " +
+           "GROUP BY r.fecha ORDER BY r.fecha")
+    List<Object[]> sumMontoAgrupadoPorDia(
+            @Param("idSede") Long idSede, @Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
 }

@@ -1,6 +1,7 @@
 package com.playzone.pems.domain.finanzas.repository;
 
 import com.playzone.pems.domain.finanzas.model.RegistroIngreso;
+import com.playzone.pems.domain.finanzas.query.MontoPorDia;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -18,6 +19,7 @@ public interface RegistroIngresoRepository {
     BigDecimal sumMontoBySedeAndPeriodo(Long idSede, int anio, int mes);
     BigDecimal sumMontoBySedeAndRango(Long idSede, LocalDate inicio, LocalDate fin);
     Map<String, BigDecimal> sumMontoAgrupadoPorTipo(Long idSede, int anio, int mes);
+    List<MontoPorDia> sumMontoAgrupadoPorDia(Long idSede, LocalDate inicio, LocalDate fin);
     RegistroIngreso save(RegistroIngreso registro);
     void deleteById(Long id);
 }
