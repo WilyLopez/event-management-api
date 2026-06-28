@@ -21,8 +21,6 @@ logging:
     com.playzone.pems: INFO
     org.hibernate.SQL: WARN
     org.springframework.security: WARN
-  file:
-    name: /var/log/playzone/pems.log
 
 server:
   port: ${SERVER_PORT:8080}
