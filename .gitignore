@@ -30,7 +30,7 @@ uploads*
 *.iws
 *.iml
 *.ipr
-*.md
+HELP.md
 
 ### NetBeans ###
 /nbproject/private/
