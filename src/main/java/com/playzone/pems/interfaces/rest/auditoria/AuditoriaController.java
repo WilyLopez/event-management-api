@@ -1,12 +1,10 @@
 package com.playzone.pems.interfaces.rest.auditoria;
 
-import com.playzone.pems.domain.auditoria.model.LogAuditoria;
-import com.playzone.pems.domain.auditoria.repository.LogAuditoriaRepository;
+import com.playzone.pems.application.auditoria.port.in.ObtenerAuditoriaUseCase;
 import com.playzone.pems.interfaces.rest.auditoria.response.LogAuditoriaResponse;
-import com.playzone.pems.shared.exception.ResourceNotFoundException;
+import com.playzone.pems.shared.exception.ValidationException;
 import com.playzone.pems.shared.response.ApiResponse;
 import com.playzone.pems.shared.response.PagedResponse;
-import com.playzone.pems.shared.util.PaginacionUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -22,7 +20,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AuditoriaController {
 
-    private final LogAuditoriaRepository logRepository;
+    private final ObtenerAuditoriaUseCase obtenerAuditoria;
 
     @GetMapping
     @PreAuthorize("hasAuthority('auditoria.ver')")
@@ -33,22 +31,20 @@ public class AuditoriaController {
             @RequestParam(required = false) String modulo,
             @RequestParam(required = false) String accion,
             @RequestParam(required = false) String entidad,
+            @RequestParam(required = false) String nivel,
+            @RequestParam(required = false) String resultado,
             @RequestParam(defaultValue = "0")  int pagina,
             @RequestParam(defaultValue = "20") int tamano) {
 
-        boolean hayFiltros = idUsuario != null || modulo != null || accion != null || entidad != null;
-
-        Page<LogAuditoriaResponse> page;
-        if (hayFiltros) {
-            page = logRepository
-                    .findByFiltros(desde, hasta, idUsuario, modulo, accion, entidad,
-                            PaginacionUtil.construir(pagina, tamano, "fechaLog", "desc"))
-                    .map(this::toResponse);
-        } else {
-            page = logRepository
-                    .findByFechasBetween(desde, hasta, PaginacionUtil.construir(pagina, tamano, "fechaLog", "desc"))
-                    .map(this::toResponse);
+        if (hasta.isBefore(desde)) {
+            throw new ValidationException("hasta", "La fecha 'hasta' debe ser igual o posterior a 'desde'.");
         }
+
+        ObtenerAuditoriaUseCase.FiltrosQuery filtros = new ObtenerAuditoriaUseCase.FiltrosQuery(
+                desde, hasta, idUsuario, modulo, accion, entidad, nivel, resultado, pagina, tamano);
+
+        Page<LogAuditoriaResponse> page = obtenerAuditoria.listarPorFiltros(filtros)
+                .map(this::toResponse);
 
         return ResponseEntity.ok(ApiResponse.ok(PagedResponse.of(page)));
     }
@@ -56,9 +52,7 @@ public class AuditoriaController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('auditoria.ver')")
     public ResponseEntity<ApiResponse<LogAuditoriaResponse>> obtener(@PathVariable Long id) {
-        LogAuditoria log = logRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("LogAuditoria", id));
-        return ResponseEntity.ok(ApiResponse.ok(toResponse(log)));
+        return ResponseEntity.ok(ApiResponse.ok(toResponse(obtenerAuditoria.obtenerPorId(id))));
     }
 
     @GetMapping("/usuarios/{idAdmin}")
@@ -68,14 +62,13 @@ public class AuditoriaController {
             @RequestParam(defaultValue = "0")  int pagina,
             @RequestParam(defaultValue = "20") int tamano) {
 
-        Page<LogAuditoriaResponse> page = logRepository
-                .findByUsuario(idAdmin, PaginacionUtil.construir(pagina, tamano, "fechaLog", "desc"))
+        Page<LogAuditoriaResponse> page = obtenerAuditoria.listarPorUsuario(idAdmin, pagina, tamano)
                 .map(this::toResponse);
 
         return ResponseEntity.ok(ApiResponse.ok(PagedResponse.of(page)));
     }
 
-    private LogAuditoriaResponse toResponse(LogAuditoria log) {
+    private LogAuditoriaResponse toResponse(com.playzone.pems.domain.auditoria.model.LogAuditoria log) {
         return LogAuditoriaResponse.builder()
                 .id(log.getId())
                 .idUsuarioAdmin(log.getIdUsuarioAdmin())

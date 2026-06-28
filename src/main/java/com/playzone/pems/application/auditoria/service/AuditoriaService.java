@@ -19,28 +19,27 @@ public class AuditoriaService implements RegistrarLogUseCase {
     private final LogAuditoriaRepository logRepository;
     private final ObjectMapper           objectMapper;
 
-    @Async
+    @Async("asyncExecutor")
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void ejecutar(Command command) {
         try {
-            String anterior = toJson(command.valorAnterior());
-            String nuevo    = toJson(command.valorNuevo());
-
-            LogAuditoria log = LogAuditoria.builder()
+            LogAuditoria logAuditoria = LogAuditoria.builder()
                     .idUsuarioAdmin(command.idUsuarioAdmin())
                     .accion(command.accion())
                     .modulo(command.modulo())
                     .entidadAfectada(command.entidadAfectada())
                     .idEntidad(command.idEntidad())
-                    .valorAnterior(anterior)
-                    .valorNuevo(nuevo)
+                    .valorAnterior(toJson(command.valorAnterior()))
+                    .valorNuevo(toJson(command.valorNuevo()))
                     .descripcion(command.descripcion())
                     .ipOrigen(command.ipOrigen())
                     .userAgent(command.userAgent())
+                    .nivel(command.nivel())
+                    .resultado(command.resultado())
                     .build();
 
-            logRepository.save(log);
+            logRepository.save(logAuditoria);
         } catch (Exception e) {
             log.error("Error al registrar log de auditoría: {}", e.getMessage(), e);
         }
