@@ -95,10 +95,11 @@ public class CalendarioService
 
         if (!programacionRepository.existeActivaEnFecha(idSede, fecha)) return false;
 
+        // Un feriado NO bloquea la venta de entradas (solo cambia la tarifa).
+        // Para cerrar un día se usa un bloqueo (BLOQUEADO), no el feriado.
         OcupacionDia oc = ocupacionDia(idSede, fecha);
         if (oc.getTipo() == TipoOcupacionDia.PRIVADO_PARCIAL
-                || oc.getTipo() == TipoOcupacionDia.PRIVADO_LLENO
-                || oc.getTipo() == TipoOcupacionDia.FERIADO) return false;
+                || oc.getTipo() == TipoOcupacionDia.PRIVADO_LLENO) return false;
 
         int reservas = reservaRepository.countActivasBySedeAndFecha(idSede, fecha);
         return reservas < cfg.getAforoMaximo();
@@ -175,7 +176,9 @@ public class CalendarioService
         boolean pasoCierreHoy = fecha.isEqual(hoy)
                 && FechaUtil.ahora().toLocalTime().isAfter(cfg.getHoraCierre());
 
-        boolean disponiblePublico = diaOperacion && !esFeriado && tieneProgramacionSemanal
+        // Un feriado NO bloquea la venta de entradas (solo cambia la tarifa).
+        // Solo un bloqueo real (bloqueadoEfectivo) cierra el día al público.
+        boolean disponiblePublico = diaOperacion && !bloqueadoEfectivo && tieneProgramacionSemanal
                 && oc.getTipo() != TipoOcupacionDia.PRIVADO_PARCIAL
                 && oc.getTipo() != TipoOcupacionDia.PRIVADO_LLENO
                 && aforoActual < aforoMax
@@ -192,7 +195,7 @@ public class CalendarioService
                 .tipoDia(tipoDia)
                 .esFeriado(esFeriado)
                 .descripcionFeriado(descripcionFeriado)
-                .accesoPublicoActivo(diaOperacion && !esFeriado && !bloqueado)
+                .accesoPublicoActivo(diaOperacion && !bloqueado)
                 .turnoT1Disponible(!oc.isTurnoT1Ocupado() && diaOperacion && !esFeriado && !bloqueado)
                 .turnoT2Disponible(!oc.isTurnoT2Ocupado() && diaOperacion && !esFeriado && !bloqueado)
                 .aforoPublicoActual(aforoActual)
@@ -306,7 +309,8 @@ public class CalendarioService
             long diasDesdeHoy = ChronoUnit.DAYS.between(hoy, fechaRef);
             boolean pasoCierreHoy = fechaRef.isEqual(hoy) && yaCerroHoy;
 
-            boolean dispPublico = diaOperacion && !esFeriado && tieneProgramacion
+            // Un feriado NO bloquea la venta de entradas (solo cambia la tarifa).
+            boolean dispPublico = diaOperacion && !bloqueadoEfectivo && tieneProgramacion
                     && oc.getTipo() != TipoOcupacionDia.PRIVADO_PARCIAL
                     && oc.getTipo() != TipoOcupacionDia.PRIVADO_LLENO
                     && aforoActual < aforoMax
@@ -319,7 +323,7 @@ public class CalendarioService
 
             resultado.add(DisponibilidadQuery.builder()
                     .idSede(idSede).fecha(fechaRef).tipoDia(tipoDia).esFeriado(esFeriado).descripcionFeriado(descFeriado)
-                    .accesoPublicoActivo(diaOperacion && !esFeriado && !bloqueadoEfectivo)
+                    .accesoPublicoActivo(diaOperacion && !bloqueadoEfectivo)
                     .turnoT1Disponible(!oc.isTurnoT1Ocupado() && diaOperacion && !esFeriado && !bloqueadoEfectivo)
                     .turnoT2Disponible(!oc.isTurnoT2Ocupado() && diaOperacion && !esFeriado && !bloqueadoEfectivo)
                     .aforoPublicoActual(aforoActual).aforoMaximo(aforoMax).plazasDisponibles(plazas).aforoCompleto(aforoActual >= aforoMax)
