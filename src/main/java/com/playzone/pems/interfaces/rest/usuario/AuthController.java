@@ -5,6 +5,7 @@ import com.playzone.pems.application.usuario.port.in.RecuperarPasswordUseCase;
 import com.playzone.pems.interfaces.rest.usuario.request.LoginRequest;
 import com.playzone.pems.interfaces.rest.usuario.request.RecuperarPasswordRequest;
 import com.playzone.pems.shared.response.ApiResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -24,8 +26,14 @@ public class AuthController {
     private final RecuperarPasswordUseCase recuperarPasswordUseCase;
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok(loginUseCase.ejecutar(request.getEmail(), request.getPassword())));
+    public ResponseEntity<ApiResponse<Map<String, Object>>> login(
+            @Valid @RequestBody LoginRequest request,
+            HttpServletRequest servletRequest) {
+        String ip = Optional.ofNullable(servletRequest.getHeader("X-Forwarded-For"))
+                .map(h -> h.split(",")[0].trim())
+                .orElse(servletRequest.getRemoteAddr());
+        String ua = servletRequest.getHeader("User-Agent");
+        return ResponseEntity.ok(ApiResponse.ok(loginUseCase.ejecutar(request.getEmail(), request.getPassword(), ip, ua)));
     }
 
     @PostMapping("/recuperar-password")

@@ -1,8 +1,11 @@
 package com.playzone.pems.application.usuario.service;
 
+import com.playzone.pems.application.auditoria.AuditoriaConstants;
+import com.playzone.pems.application.auditoria.port.in.RegistrarLogUseCase;
 import com.playzone.pems.application.usuario.port.in.GestionarSedeUseCase;
 import com.playzone.pems.domain.usuario.model.Sede;
 import com.playzone.pems.domain.usuario.repository.SedeRepository;
+import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,7 +17,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SedeService implements GestionarSedeUseCase {
 
-    private final SedeRepository sedeRepository;
+    private final SedeRepository   sedeRepository;
+    private final SupabaseAuthFacade authFacade;
+    private final RegistrarLogUseCase auditoria;
 
     @Override
     public List<Sede> listar() {
@@ -33,16 +38,23 @@ public class SedeService implements GestionarSedeUseCase {
         Sede sede = sedeRepository.findById(idSede)
                 .orElseThrow(() -> new ResourceNotFoundException("Sede", idSede));
 
-        return sedeRepository.save(sede.toBuilder()
+        Sede actualizada = sedeRepository.save(sede.toBuilder()
                 .nombre(command.nombre() != null ? command.nombre() : sede.getNombre())
-                .direccion(command.direccion() != null ? command.direccion() : sede.getDireccion())
                 .ciudad(command.ciudad() != null ? command.ciudad() : sede.getCiudad())
                 .departamento(command.departamento() != null ? command.departamento() : sede.getDepartamento())
-                .telefono(command.telefono())
-                .correo(command.correo())
                 .ruc(command.ruc())
                 .latitud(command.latitud())
                 .longitud(command.longitud())
                 .build());
+
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                authFacade.usuarioActualId().orElse(null),
+                AuditoriaConstants.ACCION_ACTUALIZAR, AuditoriaConstants.MOD_CONFIGURACION,
+                "Sede", idSede,
+                sede.getNombre(), actualizada.getNombre(),
+                "Sede actualizada: " + actualizada.getNombre(),
+                null, null, AuditoriaConstants.NIVEL_WARNING, AuditoriaConstants.RESULTADO_EXITOSO));
+
+        return actualizada;
     }
 }

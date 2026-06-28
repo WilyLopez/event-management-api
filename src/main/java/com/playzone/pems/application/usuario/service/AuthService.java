@@ -1,9 +1,12 @@
 package com.playzone.pems.application.usuario.service;
 
+import com.playzone.pems.application.auditoria.AuditoriaConstants;
+import com.playzone.pems.application.auditoria.port.in.RegistrarLogUseCase;
 import com.playzone.pems.application.usuario.port.in.CambiarPasswordMeUseCase;
 import com.playzone.pems.application.usuario.port.in.LoginUseCase;
 import com.playzone.pems.application.usuario.port.in.RecuperarPasswordUseCase;
 import com.playzone.pems.application.usuario.port.out.SupabaseAuthPort;
+import com.playzone.pems.domain.configuracion.repository.ConfiguracionGlobalRepository;
 import com.playzone.pems.domain.usuario.model.StaffPerfil;
 import com.playzone.pems.domain.usuario.repository.StaffPerfilRepository;
 import com.playzone.pems.infrastructure.security.SupabaseAuthContext;
@@ -12,7 +15,6 @@ import com.playzone.pems.shared.exception.UnauthorizedException;
 import com.playzone.pems.shared.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
@@ -27,19 +29,21 @@ import java.util.UUID;
 @Slf4j
 public class AuthService implements LoginUseCase, RecuperarPasswordUseCase, CambiarPasswordMeUseCase {
 
-    private final SupabaseAuthPort       supabaseAuthPort;
-    private final StaffPerfilRepository   staffPerfilRepository;
-    private final SupabaseAuthFacade      supabaseAuthFacade;
+    private final SupabaseAuthPort               supabaseAuthPort;
+    private final StaffPerfilRepository          staffPerfilRepository;
+    private final SupabaseAuthFacade             supabaseAuthFacade;
+    private final ConfiguracionGlobalRepository  configuracionGlobalRepository;
+    private final RegistrarLogUseCase            auditoria;
 
-    @Value("${playzone.seguridad.max-intentos-login:5}")
-    private int maxIntentos;
-
-    @Value("${playzone.seguridad.duracion-bloqueo-min:15}")
-    private int duracionBloqueoMin;
+    private int leerEntero(String clave, int defecto) {
+        return configuracionGlobalRepository.findByClave(clave)
+                .map(c -> { try { return Integer.parseInt(c.getValor()); } catch (NumberFormatException e) { return defecto; } })
+                .orElse(defecto);
+    }
 
     @Override
-    @Transactional
-    public Map<String, Object> ejecutar(String email, String password) {
+    @Transactional(noRollbackFor = UnauthorizedException.class)
+    public Map<String, Object> ejecutar(String email, String password, String ipOrigen, String userAgent) {
         Optional<StaffPerfil> staffOpt = staffPerfilRepository.buscarPorCorreo(email);
 
         if (staffOpt.isPresent()) {
@@ -54,24 +58,28 @@ public class AuthService implements LoginUseCase, RecuperarPasswordUseCase, Camb
 
         try {
             Map<String, Object> response = supabaseAuthPort.login(email, password);
-            
-            // Login exitoso
+
             if (staffOpt.isPresent()) {
                 StaffPerfil staff = staffOpt.get();
-                StaffPerfil.StaffPerfilBuilder builder = staff.toBuilder()
+                staffPerfilRepository.guardar(staff.toBuilder()
                         .intentosFallidos(0)
-                        .bloqueadoHasta(null);
-                
-                staffPerfilRepository.guardar(builder.build());
-                
-                // Agregar flag a la respuesta para el frontend
+                        .bloqueadoHasta(null)
+                        .build());
                 response.put("debeCambiarPassword", staff.isDebeCambiarContrasena());
+                auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                        staff.getUsuarioId(), AuditoriaConstants.ACCION_LOGIN, AuditoriaConstants.MOD_ACCESOS,
+                        "PerfilUsuario", null, null, null,
+                        "Login exitoso: " + email,
+                        ipOrigen, userAgent, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
             }
 
             return response;
         } catch (HttpClientErrorException e) {
-            // Login fallido
-            staffOpt.ifPresent(staff -> {
+            int maxIntentos        = leerEntero("INTENTOS_LOGIN_ANTES_BLOQUEO", 5);
+            int duracionBloqueoMin = leerEntero("DURACION_BLOQUEO_LOGIN_MIN", 15);
+
+            if (staffOpt.isPresent()) {
+                StaffPerfil staff = staffOpt.get();
                 int nuevosIntentos = (staff.getIntentosFallidos() != null ? staff.getIntentosFallidos() : 0) + 1;
                 OffsetDateTime bloqueo = null;
                 if (nuevosIntentos >= maxIntentos) {
@@ -82,7 +90,22 @@ public class AuthService implements LoginUseCase, RecuperarPasswordUseCase, Camb
                         .intentosFallidos(nuevosIntentos)
                         .bloqueadoHasta(bloqueo)
                         .build());
-            });
+
+                UUID userId = staff.getUsuarioId();
+                auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                        userId, AuditoriaConstants.ACCION_LOGIN_FALLIDO, AuditoriaConstants.MOD_ACCESOS,
+                        "PerfilUsuario", null, null, null,
+                        "Intento fallido para: " + email,
+                        ipOrigen, userAgent, AuditoriaConstants.NIVEL_WARNING, AuditoriaConstants.RESULTADO_FALLIDO));
+
+                if (bloqueo != null) {
+                    auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                            userId, AuditoriaConstants.ACCION_BLOQUEO, AuditoriaConstants.MOD_ACCESOS,
+                            "PerfilUsuario", null, null, null,
+                            "Cuenta bloqueada tras " + nuevosIntentos + " intentos fallidos",
+                            ipOrigen, userAgent, AuditoriaConstants.NIVEL_CRITICAL, AuditoriaConstants.RESULTADO_FALLIDO));
+                }
+            }
             throw new UnauthorizedException("Credenciales invalidas.");
         }
     }
@@ -99,17 +122,14 @@ public class AuthService implements LoginUseCase, RecuperarPasswordUseCase, Camb
         SupabaseAuthContext ctx = supabaseAuthFacade.contextoActual()
                 .orElseThrow(() -> new UnauthorizedException("No autenticado"));
 
-        // Validar password actual
         try {
             supabaseAuthPort.login(ctx.email(), passwordActual);
         } catch (Exception e) {
             throw new ValidationException("passwordActual", "La contraseña actual no es correcta.");
         }
 
-        // Actualizar en Supabase
         supabaseAuthPort.actualizarPassword(accessToken, nuevoPassword);
 
-        // Actualizar flag en staff_perfil si aplica
         staffPerfilRepository.buscarPorUsuarioId(ctx.userId()).ifPresent(staff -> {
             if (staff.isDebeCambiarContrasena()) {
                 staffPerfilRepository.guardar(staff.toBuilder()
