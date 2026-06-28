@@ -60,6 +60,9 @@ public class HealthController {
             }
         }
 
+        boolean perfilCompleto = "STAFF".equals(tipoPerfil)
+                || ("CLIENTE".equals(tipoPerfil) && ctx.clientePerfilId() != null);
+
         return ResponseEntity.ok(ApiResponse.ok(new MeResponse(
                 ctx.userId(),
                 nombre,
@@ -69,7 +72,8 @@ public class HealthController {
                 tipoPerfil,
                 ctx.clientePerfilId(),
                 sedeId,
-                staffId
+                staffId,
+                perfilCompleto
         )));
     }
 
@@ -82,6 +86,7 @@ public class HealthController {
             String       tipoPerfil,
             Long         clientePerfilId,
             Long         sedeId,
-            Long         staffId
+            Long         staffId,
+            boolean      perfilCompleto
     ) {}
 }
