@@ -63,6 +63,11 @@ public class StaffPerfilPersistenceAdapter implements StaffPerfilRepository {
         return jpa.contarActivosPorRol(rolCodigo);
     }
 
+    @Override
+    public long contarActivosPorRolExcluyendo(String rolCodigo, Long excludeId) {
+        return jpa.contarActivosPorRolExcluyendo(rolCodigo, excludeId);
+    }
+
     private StaffPerfil toDomain(StaffPerfilEntity e) {
         return StaffPerfil.builder()
                 .id(e.getId())

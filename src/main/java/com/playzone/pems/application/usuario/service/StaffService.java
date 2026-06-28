@@ -8,6 +8,7 @@ import com.playzone.pems.application.usuario.port.in.ActivarUsuarioAdminUseCase;
 import com.playzone.pems.application.usuario.port.in.ActualizarUsuarioAdminUseCase;
 import com.playzone.pems.application.usuario.port.in.CambiarRolUsuarioAdminUseCase;
 import com.playzone.pems.application.usuario.port.in.DesactivarUsuarioAdminUseCase;
+import com.playzone.pems.application.usuario.port.in.DesbloquearUsuarioAdminUseCase;
 import com.playzone.pems.application.usuario.port.in.ListarUsuariosAdminUseCase;
 import com.playzone.pems.application.usuario.port.in.ObtenerUsuarioAdminUseCase;
 import com.playzone.pems.application.usuario.port.in.RegistrarUsuarioAdminUseCase;
@@ -47,10 +48,11 @@ public class StaffService implements
         CambiarRolUsuarioAdminUseCase,
         ResetPasswordAdminUseCase,
         ActivarUsuarioAdminUseCase,
-        DesactivarUsuarioAdminUseCase {
+        DesactivarUsuarioAdminUseCase,
+        DesbloquearUsuarioAdminUseCase {
 
-    private static final int MAX_ADMINS   = 3;
-    private static final int MAX_CAJEROS  = 3;
+    private static final int MAX_ADMINS   = 4;
+    private static final int MAX_CAJEROS  = 5;
     private static final String SUPERADMIN = "SUPERADMIN";
     private static final String ADMIN      = "ADMIN";
     private static final String CAJERO     = "CAJERO";
@@ -110,9 +112,22 @@ public class StaffService implements
             throw new ValidationException("rolCodigo", "Solo se permite crear usuarios con rol ADMIN o CAJERO.");
         }
 
+        if (ADMIN.equals(rol)) {
+            UUID actorId = authFacade.usuarioActualId().orElse(null);
+            if (actorId == null) {
+                throw new ValidationException("auth", "No se pudo identificar al solicitante.");
+            }
+            List<String> rolesActor = usuarioRolRepository.listarCodigosRolPorUsuario(actorId);
+            if (!rolesActor.contains(SUPERADMIN)) {
+                throw new ValidationException("rolCodigo", "Solo un SUPERADMIN puede crear usuarios con rol ADMIN.");
+            }
+        }
+
         validarLimiteRol(rol, -1L);
 
-        perfilUsuarioRepository.buscarPorCorreo(command.getCorreo()).ifPresent(u -> {
+        String correoNorm = command.getCorreo().toLowerCase(java.util.Locale.ROOT).trim();
+
+        perfilUsuarioRepository.buscarPorCorreo(correoNorm).ifPresent(u -> {
             throw new ValidationException("correo", "El correo ya se encuentra registrado.");
         });
 
@@ -127,7 +142,12 @@ public class StaffService implements
             passwordFinal = command.getPassword();
         }
 
-        UUID usuarioId = supabaseAuthPort.crearUsuario(command.getCorreo(), passwordFinal, command.getNombre());
+        UUID usuarioId;
+        try {
+            usuarioId = supabaseAuthPort.crearUsuario(correoNorm, passwordFinal, command.getNombre());
+        } catch (Exception ex) {
+            throw new ValidationException("correo", "El correo ya se encuentra registrado en el sistema.");
+        }
 
         usuarioRolRepository.eliminar(usuarioId, "CLIENTE");
         usuarioRolRepository.guardar(UsuarioRol.builder()
@@ -143,16 +163,15 @@ public class StaffService implements
                 .intentosFallidos(0)
                 .build());
 
-        final String correo        = command.getCorreo();
-        final String nombre        = command.getNombre();
-        final String password      = passwordFinal;
-        final String rolLabel      = ADMIN.equals(rol) ? "Administrador" : "Cajero";
-        final String sedeNombre    = sede.getNombre();
+        final String nombre     = command.getNombre();
+        final String password   = passwordFinal;
+        final String rolLabel   = ADMIN.equals(rol) ? "Administrador" : "Cajero";
+        final String sedeNombre = sede.getNombre();
         CompletableFuture.runAsync(() -> {
             try {
-                enviarCorreoBienvenidaPort.enviarCredencialesUsuario(correo, nombre, password, rolLabel, sedeNombre);
+                enviarCorreoBienvenidaPort.enviarCredencialesUsuario(correoNorm, nombre, password, rolLabel, sedeNombre);
             } catch (Exception ex) {
-                log.warn("No se pudo enviar el correo de bienvenida a {}: {}", correo, ex.getMessage());
+                log.warn("No se pudo enviar el correo de bienvenida a {}: {}", correoNorm, ex.getMessage());
             }
         });
 
@@ -160,8 +179,8 @@ public class StaffService implements
         auditoria.ejecutar(new RegistrarLogUseCase.Command(
                 actor, AuditoriaConstants.ACCION_CREAR, AuditoriaConstants.MOD_USUARIOS,
                 "Staff", staff.getId(),
-                null, command.getCorreo() + " | rol=" + rol,
-                "Usuario creado: " + command.getNombre() + " (" + command.getCorreo() + ")",
+                null, correoNorm + " | rol=" + rol,
+                "Usuario creado: " + nombre + " (" + correoNorm + ")",
                 null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
 
         String passwordTemporal = command.isGenerarPassword() ? passwordFinal : null;
@@ -169,8 +188,8 @@ public class StaffService implements
         return UsuarioAdminResponse.builder()
                 .id(staff.getId())
                 .usuarioId(usuarioId)
-                .nombre(command.getNombre())
-                .correo(command.getCorreo())
+                .nombre(nombre)
+                .correo(correoNorm)
                 .rol(rol)
                 .idSede(command.getSedeId())
                 .sedeNombre(sede.getNombre())
@@ -218,6 +237,13 @@ public class StaffService implements
             throw new ValidationException("nuevoRol", "Rol no válido. Use ADMIN o CAJERO.");
         }
 
+        if (ADMIN.equals(rolNorm)) {
+            List<String> rolesSolicitante = usuarioRolRepository.listarCodigosRolPorUsuario(solicitanteId);
+            if (!rolesSolicitante.contains(SUPERADMIN)) {
+                throw new ValidationException("nuevoRol", "Solo un SUPERADMIN puede asignar el rol ADMIN.");
+            }
+        }
+
         StaffPerfil staff = staffPerfilRepository.buscarPorId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("StaffPerfil", id));
 
@@ -263,6 +289,10 @@ public class StaffService implements
     public void resetear(Long id) {
         StaffPerfil staff = staffPerfilRepository.buscarPorId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("StaffPerfil", id));
+        if (!staff.isEsActivo()) {
+            throw new ValidationException("id",
+                    "No se puede restablecer la contraseña de un usuario inactivo.");
+        }
         PerfilUsuario perfil = perfilUsuarioRepository.buscarPorId(staff.getUsuarioId())
                 .orElseThrow(() -> new ResourceNotFoundException("PerfilUsuario", "usuarioId", staff.getUsuarioId()));
         supabaseAuthPort.recuperarPassword(perfil.getCorreo());
@@ -275,7 +305,11 @@ public class StaffService implements
     public void activar(Long id) {
         StaffPerfil staff = staffPerfilRepository.buscarPorId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("StaffPerfil", id));
-        staffPerfilRepository.guardar(staff.toBuilder().esActivo(true).build());
+        staffPerfilRepository.guardar(staff.toBuilder()
+                .esActivo(true)
+                .bloqueadoHasta(null)
+                .intentosFallidos(0)
+                .build());
 
         UUID actor = authFacade.usuarioActualId().orElse(null);
         auditoria.ejecutar(new RegistrarLogUseCase.Command(
@@ -291,6 +325,13 @@ public class StaffService implements
     public void desactivar(Long id) {
         StaffPerfil staff = staffPerfilRepository.buscarPorId(id)
                 .orElseThrow(() -> new ResourceNotFoundException("StaffPerfil", id));
+
+        List<String> roles = usuarioRolRepository.listarCodigosRolPorUsuario(staff.getUsuarioId());
+        if (roles.contains(ADMIN) && staffPerfilRepository.contarActivosPorRol(ADMIN) <= 1) {
+            throw new ValidationException("id",
+                    "No se puede desactivar al único administrador activo del sistema.");
+        }
+
         staffPerfilRepository.guardar(staff.toBuilder().esActivo(false).build());
 
         UUID actor = authFacade.usuarioActualId().orElse(null);
@@ -303,8 +344,29 @@ public class StaffService implements
     }
 
 
+    @Override
+    @Transactional
+    public void desbloquear(Long id) {
+        StaffPerfil staff = staffPerfilRepository.buscarPorId(id)
+                .orElseThrow(() -> new ResourceNotFoundException("StaffPerfil", id));
+        staffPerfilRepository.guardar(staff.toBuilder()
+                .bloqueadoHasta(null)
+                .intentosFallidos(0)
+                .build());
+
+        UUID actor = authFacade.usuarioActualId().orElse(null);
+        auditoria.ejecutar(new RegistrarLogUseCase.Command(
+                actor, AuditoriaConstants.ACCION_ACTUALIZAR, AuditoriaConstants.MOD_USUARIOS,
+                "Staff", id,
+                "bloqueado", "desbloqueado",
+                "Cuenta desbloqueada manualmente para staff #" + id,
+                null, null, AuditoriaConstants.NIVEL_WARNING, AuditoriaConstants.RESULTADO_EXITOSO));
+    }
+
     private void validarLimiteRol(String rol, Long excludeStaffId) {
-        long activos = staffPerfilRepository.contarActivosPorRol(rol);
+        long activos = (excludeStaffId != null && excludeStaffId > 0)
+                ? staffPerfilRepository.contarActivosPorRolExcluyendo(rol, excludeStaffId)
+                : staffPerfilRepository.contarActivosPorRol(rol);
         if (ADMIN.equals(rol) && activos >= MAX_ADMINS) {
             throw new ValidationException("rolCodigo",
                     "Se alcanzó el límite máximo de " + MAX_ADMINS + " administradores activos.");

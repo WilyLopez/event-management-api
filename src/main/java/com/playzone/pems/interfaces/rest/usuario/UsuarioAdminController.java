@@ -7,6 +7,7 @@ import com.playzone.pems.application.usuario.port.in.ActualizarUsuarioAdminUseCa
 import com.playzone.pems.application.usuario.port.in.CambiarPasswordMeUseCase;
 import com.playzone.pems.application.usuario.port.in.CambiarRolUsuarioAdminUseCase;
 import com.playzone.pems.application.usuario.port.in.DesactivarUsuarioAdminUseCase;
+import com.playzone.pems.application.usuario.port.in.DesbloquearUsuarioAdminUseCase;
 import com.playzone.pems.application.usuario.port.in.ListarUsuariosAdminUseCase;
 import com.playzone.pems.application.usuario.port.in.ObtenerUsuarioAdminUseCase;
 import com.playzone.pems.application.usuario.port.in.RegistrarUsuarioAdminUseCase;
@@ -34,16 +35,17 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UsuarioAdminController {
 
-    private final ListarUsuariosAdminUseCase    listarUseCase;
-    private final ObtenerUsuarioAdminUseCase    obtenerUseCase;
-    private final RegistrarUsuarioAdminUseCase  registrarUseCase;
-    private final ActualizarUsuarioAdminUseCase actualizarUseCase;
-    private final CambiarRolUsuarioAdminUseCase cambiarRolUseCase;
-    private final ResetPasswordAdminUseCase     resetPasswordUseCase;
-    private final ActivarUsuarioAdminUseCase    activarUseCase;
-    private final DesactivarUsuarioAdminUseCase desactivarUseCase;
-    private final CambiarPasswordMeUseCase      cambiarPasswordMeUseCase;
-    private final SupabaseAuthFacade            authFacade;
+    private final ListarUsuariosAdminUseCase     listarUseCase;
+    private final ObtenerUsuarioAdminUseCase     obtenerUseCase;
+    private final RegistrarUsuarioAdminUseCase   registrarUseCase;
+    private final ActualizarUsuarioAdminUseCase  actualizarUseCase;
+    private final CambiarRolUsuarioAdminUseCase  cambiarRolUseCase;
+    private final ResetPasswordAdminUseCase      resetPasswordUseCase;
+    private final ActivarUsuarioAdminUseCase     activarUseCase;
+    private final DesactivarUsuarioAdminUseCase  desactivarUseCase;
+    private final DesbloquearUsuarioAdminUseCase desbloquearUseCase;
+    private final CambiarPasswordMeUseCase       cambiarPasswordMeUseCase;
+    private final SupabaseAuthFacade             authFacade;
 
     @GetMapping
     @PreAuthorize("hasAuthority('usuarios.ver')")
@@ -94,8 +96,11 @@ public class UsuarioAdminController {
             HttpServletRequest servletRequest) {
 
         String authHeader = servletRequest.getHeader("Authorization");
-        String accessToken = authHeader.substring(7);
-        cambiarPasswordMeUseCase.ejecutar(accessToken, request.getContrasenaActual(), request.getContrasenaNueva());
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("Token no proporcionado"));
+        }
+        cambiarPasswordMeUseCase.ejecutar(authHeader.substring(7), request.getContrasenaActual(), request.getContrasenaNueva());
         return ResponseEntity.ok(ApiResponse.noContent());
     }
 
@@ -129,8 +134,14 @@ public class UsuarioAdminController {
     @PatchMapping("/{id}/desactivar")
     @PreAuthorize("hasAuthority('usuarios.editar')")
     public ResponseEntity<ApiResponse<Void>> desactivar(@PathVariable Long id) {
-        // Protección SUPERADMIN: no se puede desactivar a sí mismo si es SUPERADMIN
         desactivarUseCase.desactivar(id);
+        return ResponseEntity.ok(ApiResponse.noContent());
+    }
+
+    @PatchMapping("/{id}/desbloquear")
+    @PreAuthorize("hasAuthority('usuarios.editar')")
+    public ResponseEntity<ApiResponse<Void>> desbloquear(@PathVariable Long id) {
+        desbloquearUseCase.desbloquear(id);
         return ResponseEntity.ok(ApiResponse.noContent());
     }
 }

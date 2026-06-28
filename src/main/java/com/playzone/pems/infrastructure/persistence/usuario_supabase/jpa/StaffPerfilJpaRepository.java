@@ -30,4 +30,17 @@ public interface StaffPerfilJpaRepository extends JpaRepository<StaffPerfilEntit
               AND sp.deleted_at IS NULL
             """, nativeQuery = true)
     long contarActivosPorRol(@org.springframework.data.repository.query.Param("rolCodigo") String rolCodigo);
+
+    @org.springframework.data.jpa.repository.Query(value = """
+            SELECT COUNT(sp.id)
+            FROM staff_perfil sp
+            INNER JOIN usuario_rol ur ON sp.usuario_id = ur.usuario_id
+            WHERE ur.rol_codigo = :rolCodigo
+              AND sp.es_activo = true
+              AND sp.deleted_at IS NULL
+              AND sp.id <> :excludeId
+            """, nativeQuery = true)
+    long contarActivosPorRolExcluyendo(
+            @org.springframework.data.repository.query.Param("rolCodigo") String rolCodigo,
+            @org.springframework.data.repository.query.Param("excludeId") Long excludeId);
 }
