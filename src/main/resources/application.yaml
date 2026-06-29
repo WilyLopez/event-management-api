@@ -153,6 +153,19 @@ playzone:
       token: ${NUBEFACT_TOKEN:changeme}
       ruc: ${NUBEFACT_RUC:20000000001}
 
+  # Decolecta API
+  external:
+    decolecta:
+      url: ${DECOLECTA_URL:https://api.decolecta.com}
+      token: ${DECOLECTA_TOKEN:changeme}
+    apisperu:
+      url: ${APISPERU_URL:${APIS_PERU_URL:https://dniruc.apisperu.com}}
+      token: ${APISPERU_TOKEN:${APIS_PERU_TOKEN:changeme}}
+
+  # Encryption
+  encryption:
+    key: ${ENCRYPTION_KEY:playzoneSecretKey1234567890123456}
+
   # HTTP client
   http:
     connect-timeout-ms: 5000

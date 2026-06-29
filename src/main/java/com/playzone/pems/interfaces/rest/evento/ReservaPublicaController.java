@@ -5,6 +5,7 @@ import com.playzone.pems.application.evento.dto.command.ReprogramarReservaComman
 import com.playzone.pems.application.evento.dto.query.MetricasReservaQuery;
 import com.playzone.pems.application.evento.dto.query.ReservaPublicaQuery;
 import com.playzone.pems.application.evento.dto.query.TicketDetalleQuery;
+import com.playzone.pems.application.cms.port.in.RegistrarConsentimientoUseCase;
 import com.playzone.pems.application.evento.port.in.*;
 import com.playzone.pems.application.evento.service.ReservaAdminService;
 import com.playzone.pems.application.evento.service.ReservaPublicaService;
@@ -18,6 +19,7 @@ import com.playzone.pems.shared.exception.ValidationException;
 import com.playzone.pems.shared.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -41,12 +43,14 @@ import com.playzone.pems.domain.evento.model.enums.EstadoReservaPublica;
 import java.util.Arrays;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/reservas")
 @RequiredArgsConstructor
 public class ReservaPublicaController {
 
     private final CrearReservaPublicaUseCase  crearUseCase;
+    private final RegistrarConsentimientoUseCase consentimientoUseCase;
     private final ReprogramarReservaUseCase   reprogramarUseCase;
     private final CancelarReservaUseCase      cancelarUseCase;
     private final ConsultarReservasUseCase    consultarUseCase;
@@ -173,6 +177,15 @@ public class ReservaPublicaController {
                         .firmoConsentimiento(request.getFirmoConsentimiento())
                         .idPromocionManual(request.getIdPromocionManual())
                         .build());
+
+        if (query.isFirmoConsentimiento()) {
+            try {
+                consentimientoUseCase.registrar("RESERVA", query.getId(), List.of("ACTA"));
+            } catch (Exception e) {
+                log.warn("No se pudo registrar el consentimiento de la reserva {}: {}",
+                        query.getId(), e.getMessage());
+            }
+        }
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(toResponse(query)));
