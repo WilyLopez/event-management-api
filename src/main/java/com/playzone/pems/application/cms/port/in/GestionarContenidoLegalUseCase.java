@@ -1,6 +1,9 @@
 package com.playzone.pems.application.cms.port.in;
 
+import com.playzone.pems.application.cms.dto.query.ContenidoLegalHistorialQuery;
 import com.playzone.pems.application.cms.dto.query.ContenidoLegalQuery;
+import com.playzone.pems.application.cms.dto.query.ContenidoLegalResumenQuery;
+import com.playzone.pems.application.cms.dto.query.TipoLegalQuery;
 
 import java.util.List;
 import java.util.UUID;
@@ -22,6 +25,14 @@ public interface GestionarContenidoLegalUseCase {
     ) {}
 
     ContenidoLegalQuery obtenerPorTipo(String tipo);
+
+    ContenidoLegalQuery obtenerPublicoPorSlug(String slug);
+
+    List<ContenidoLegalResumenQuery> listarPublico();
+
+    List<TipoLegalQuery> listarTipos();
+
+    List<ContenidoLegalHistorialQuery> listarHistorial(String tipo);
 
     List<ContenidoLegalQuery> listar();
 

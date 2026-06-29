@@ -15,6 +15,8 @@ import com.playzone.pems.application.usuario.port.in.HacerVipPerfilUseCase;
 import com.playzone.pems.application.usuario.port.in.ListarClientesPerfilUseCase;
 import com.playzone.pems.application.usuario.port.in.ObtenerClientePerfilUseCase;
 import com.playzone.pems.application.usuario.port.in.QuitarVipPerfilUseCase;
+import com.playzone.pems.application.cms.port.in.RegistrarConsentimientoUseCase;
+import lombok.extern.slf4j.Slf4j;
 import com.playzone.pems.application.usuario.port.in.RegistrarClientePerfilUseCase;
 import com.playzone.pems.application.usuario.port.in.RegistrarClientePublicoUseCase;
 import com.playzone.pems.application.usuario.port.in.RegistrarVisitaPerfilUseCase;
@@ -53,12 +55,14 @@ import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/clientes")
 public class ClienteController {
 
     private final RegistrarClientePerfilUseCase  registrarUseCase;
     private final RegistrarClientePublicoUseCase registrarPublicoUseCase;
+    private final RegistrarConsentimientoUseCase consentimientoUseCase;
     private final ActualizarClientePerfilUseCase actualizarUseCase;
     private final ListarClientesPerfilUseCase    listarUseCase;
     private final ObtenerClientePerfilUseCase    obtenerUseCase;
@@ -76,6 +80,7 @@ public class ClienteController {
     public ClienteController(
             RegistrarClientePerfilUseCase registrarUseCase,
             RegistrarClientePublicoUseCase registrarPublicoUseCase,
+            RegistrarConsentimientoUseCase consentimientoUseCase,
             ActualizarClientePerfilUseCase actualizarUseCase,
             ListarClientesPerfilUseCase listarUseCase,
             ObtenerClientePerfilUseCase obtenerUseCase,
@@ -91,6 +96,7 @@ public class ClienteController {
             @Value("${supabase.storage.bucket-publico}") String bucketPublico) {
         this.registrarUseCase = registrarUseCase;
         this.registrarPublicoUseCase = registrarPublicoUseCase;
+        this.consentimientoUseCase = consentimientoUseCase;
         this.actualizarUseCase = actualizarUseCase;
         this.listarUseCase = listarUseCase;
         this.obtenerUseCase = obtenerUseCase;
@@ -119,6 +125,14 @@ public class ClienteController {
                         .tipoDocumentoCodigo(request.getTipoDocumento())
                         .numeroDocumento(request.getNumeroDocumento())
                         .build());
+
+        try {
+            consentimientoUseCase.registrar(
+                    "REGISTRO", perfil.getId(), java.util.List.of("TERMINOS", "PRIVACIDAD"));
+        } catch (Exception e) {
+            log.warn("No se pudo registrar el consentimiento del registro del cliente {}: {}",
+                    perfil.getId(), e.getMessage());
+        }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(toResponse(perfil)));
     }

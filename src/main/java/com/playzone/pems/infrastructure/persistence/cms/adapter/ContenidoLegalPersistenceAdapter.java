@@ -34,6 +34,11 @@ public class ContenidoLegalPersistenceAdapter implements ContenidoLegalRepositor
     }
 
     @Override
+    public List<ContenidoLegal> findActivos() {
+        return legalJpa.findByActivoTrue().stream().map(mapper::toDomain).toList();
+    }
+
+    @Override
     public List<ContenidoLegal> findAll() {
         return legalJpa.findAll().stream().map(mapper::toDomain).toList();
     }

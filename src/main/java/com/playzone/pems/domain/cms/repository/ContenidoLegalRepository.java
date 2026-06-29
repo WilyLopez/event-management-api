@@ -13,6 +13,8 @@ public interface ContenidoLegalRepository {
 
     Optional<ContenidoLegal> findActivoByTipo(String tipo);
 
+    List<ContenidoLegal> findActivos();
+
     List<ContenidoLegal> findAll();
 
     ContenidoLegal save(ContenidoLegal contenidoLegal);

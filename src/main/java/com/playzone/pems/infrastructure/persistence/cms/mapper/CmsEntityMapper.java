@@ -80,6 +80,33 @@ public class CmsEntityMapper {
                 .build();
     }
 
+    public TipoLegal toDomain(TipoLegalEntity e) {
+        if (e == null) return null;
+        return TipoLegal.builder()
+                .codigo(e.getCodigo())
+                .etiqueta(e.getEtiqueta())
+                .slug(e.getSlug())
+                .orden(e.getOrden())
+                .esSistema(e.isEsSistema())
+                .requerido(e.isRequerido())
+                .visibleFooter(e.isVisibleFooter())
+                .build();
+    }
+
+    public ContenidoLegalHistorial toDomain(ContenidoLegalHistorialEntity e) {
+        if (e == null) return null;
+        return ContenidoLegalHistorial.builder()
+                .id(e.getId())
+                .legalId(e.getLegalId())
+                .tipo(e.getTipo())
+                .titulo(e.getTitulo())
+                .contenido(e.getContenido())
+                .version(e.getVersion())
+                .createdBy(e.getCreatedBy())
+                .createdAt(e.getCreatedAt())
+                .build();
+    }
+
     public ContenidoWeb toDomain(ContenidoWebEntity e) {
         if (e == null) return null;
         return ContenidoWeb.builder()
