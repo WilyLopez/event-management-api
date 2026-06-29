@@ -3,6 +3,7 @@ package com.playzone.pems.infrastructure.persistence.cms.jpa;
 import com.playzone.pems.infrastructure.persistence.cms.entity.ContenidoLegalEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ContenidoLegalJpaRepository extends JpaRepository<ContenidoLegalEntity, Long> {
@@ -10,6 +11,8 @@ public interface ContenidoLegalJpaRepository extends JpaRepository<ContenidoLega
     Optional<ContenidoLegalEntity> findByTipoAndActivoTrue(String tipo);
 
     Optional<ContenidoLegalEntity> findByTipo(String tipo);
+
+    List<ContenidoLegalEntity> findByActivoTrue();
 
     void deleteByTipo(String tipo);
 }

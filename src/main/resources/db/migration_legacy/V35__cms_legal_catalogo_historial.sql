@@ -34,6 +34,19 @@ CREATE INDEX IF NOT EXISTS idx_legal_historial_legal_id
 
 ALTER TABLE contenido_legal DROP CONSTRAINT IF EXISTS ck_legal_tipo;
 
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'contenido_legal' AND column_name = 'version'
+    ) AND NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'contenido_legal' AND column_name = 'version_v'
+    ) THEN
+        ALTER TABLE contenido_legal RENAME COLUMN version TO version_v;
+    END IF;
+END $$;
+
 INSERT INTO contenido_legal (tipo, titulo, contenido, version_v, es_activo, created_at, updated_at)
 SELECT t.codigo,
        t.etiqueta,

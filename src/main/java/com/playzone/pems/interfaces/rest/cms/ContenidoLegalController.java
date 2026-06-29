@@ -1,6 +1,9 @@
 package com.playzone.pems.interfaces.rest.cms;
 
+import com.playzone.pems.application.cms.dto.query.ContenidoLegalHistorialQuery;
 import com.playzone.pems.application.cms.dto.query.ContenidoLegalQuery;
+import com.playzone.pems.application.cms.dto.query.ContenidoLegalResumenQuery;
+import com.playzone.pems.application.cms.dto.query.TipoLegalQuery;
 import com.playzone.pems.application.cms.port.in.GestionarContenidoLegalUseCase;
 import com.playzone.pems.infrastructure.security.SupabaseAuthFacade;
 import com.playzone.pems.shared.response.ApiResponse;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/cms/legal")
@@ -27,6 +31,20 @@ public class ContenidoLegalController {
     private final SupabaseAuthFacade             supabaseAuthFacade;
 
     // ── Público ──────────────────────────────────────────────────────────
+
+    @GetMapping("/publico")
+    public ResponseEntity<ApiResponse<List<LegalResumenResponse>>> listarPublico() {
+        List<LegalResumenResponse> result = legalUseCase.listarPublico()
+                .stream().map(LegalResumenResponse::from).toList();
+        return ResponseEntity.ok(ApiResponse.ok(result));
+    }
+
+    @GetMapping("/publico/slug/{slug}")
+    public ResponseEntity<ApiResponse<ContenidoLegalResponse>> obtenerPublicoPorSlug(
+            @PathVariable String slug) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                ContenidoLegalResponse.from(legalUseCase.obtenerPublicoPorSlug(slug))));
+    }
 
     @GetMapping("/publico/{tipo}")
     public ResponseEntity<ApiResponse<ContenidoLegalResponse>> obtenerPublico(
@@ -42,6 +60,23 @@ public class ContenidoLegalController {
     public ResponseEntity<ApiResponse<List<ContenidoLegalResponse>>> listar() {
         List<ContenidoLegalResponse> result = legalUseCase.listar()
                 .stream().map(ContenidoLegalResponse::from).toList();
+        return ResponseEntity.ok(ApiResponse.ok(result));
+    }
+
+    @GetMapping("/tipos")
+    @PreAuthorize("hasAuthority('sitio.legal')")
+    public ResponseEntity<ApiResponse<List<TipoLegalResponse>>> listarTipos() {
+        List<TipoLegalResponse> result = legalUseCase.listarTipos()
+                .stream().map(TipoLegalResponse::from).toList();
+        return ResponseEntity.ok(ApiResponse.ok(result));
+    }
+
+    @GetMapping("/{tipo}/historial")
+    @PreAuthorize("hasAuthority('sitio.legal')")
+    public ResponseEntity<ApiResponse<List<LegalHistorialResponse>>> listarHistorial(
+            @PathVariable String tipo) {
+        List<LegalHistorialResponse> result = legalUseCase.listarHistorial(tipo)
+                .stream().map(LegalHistorialResponse::from).toList();
         return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
@@ -140,6 +175,80 @@ public class ContenidoLegalController {
                     .version(q.getVersion())
                     .activo(q.isActivo())
                     .fechaActualizacion(q.getFechaActualizacion())
+                    .build();
+        }
+    }
+
+    @Getter
+    @Builder
+    public static class LegalResumenResponse {
+        private String        tipo;
+        private String        etiqueta;
+        private String        slug;
+        private String        titulo;
+        private int           version;
+        private boolean       visibleFooter;
+        private OffsetDateTime fechaActualizacion;
+
+        public static LegalResumenResponse from(ContenidoLegalResumenQuery q) {
+            return LegalResumenResponse.builder()
+                    .tipo(q.getTipo())
+                    .etiqueta(q.getEtiqueta())
+                    .slug(q.getSlug())
+                    .titulo(q.getTitulo())
+                    .version(q.getVersion())
+                    .visibleFooter(q.isVisibleFooter())
+                    .fechaActualizacion(q.getFechaActualizacion())
+                    .build();
+        }
+    }
+
+    @Getter
+    @Builder
+    public static class TipoLegalResponse {
+        private String  codigo;
+        private String  etiqueta;
+        private String  slug;
+        private int     orden;
+        private boolean esSistema;
+        private boolean requerido;
+        private boolean visibleFooter;
+        private boolean yaCreado;
+
+        public static TipoLegalResponse from(TipoLegalQuery q) {
+            return TipoLegalResponse.builder()
+                    .codigo(q.getCodigo())
+                    .etiqueta(q.getEtiqueta())
+                    .slug(q.getSlug())
+                    .orden(q.getOrden())
+                    .esSistema(q.isEsSistema())
+                    .requerido(q.isRequerido())
+                    .visibleFooter(q.isVisibleFooter())
+                    .yaCreado(q.isYaCreado())
+                    .build();
+        }
+    }
+
+    @Getter
+    @Builder
+    public static class LegalHistorialResponse {
+        private Long          id;
+        private String        tipo;
+        private String        titulo;
+        private String        contenido;
+        private int           version;
+        private UUID          createdBy;
+        private OffsetDateTime fechaCreacion;
+
+        public static LegalHistorialResponse from(ContenidoLegalHistorialQuery q) {
+            return LegalHistorialResponse.builder()
+                    .id(q.getId())
+                    .tipo(q.getTipo())
+                    .titulo(q.getTitulo())
+                    .contenido(q.getContenido())
+                    .version(q.getVersion())
+                    .createdBy(q.getCreatedBy())
+                    .fechaCreacion(q.getFechaCreacion())
                     .build();
         }
     }
