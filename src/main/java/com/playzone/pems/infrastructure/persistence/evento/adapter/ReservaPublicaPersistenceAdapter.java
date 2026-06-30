@@ -81,10 +81,10 @@ public class ReservaPublicaPersistenceAdapter implements ReservaPublicaRepositor
     @Override
     public Page<ReservaPublica> buscarAdmin(
             Long idSede, EstadoReservaPublica estadoEnum, LocalDate fecha,
-            Boolean ingresado, Boolean esReprogramacion, String searchPattern,
-            Pageable pageable) {
+            Boolean ingresado, Boolean esReprogramacion, String medioPago,
+            String searchPattern, Pageable pageable) {
         return reservaJpa.buscarAdmin(
-                idSede, estadoEnum, fecha, ingresado, esReprogramacion, searchPattern, pageable)
+                idSede, estadoEnum, fecha, ingresado, esReprogramacion, medioPago, searchPattern, pageable)
                 .map(mapper::toDomain);
     }
 

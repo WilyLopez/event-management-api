@@ -44,8 +44,8 @@ public interface ReservaPublicaRepository {
 
     Page<ReservaPublica> buscarAdmin(
             Long idSede, EstadoReservaPublica estadoEnum, LocalDate fecha,
-            Boolean ingresado, Boolean esReprogramacion, String searchPattern,
-            Pageable pageable);
+            Boolean ingresado, Boolean esReprogramacion, String medioPago,
+            String searchPattern, Pageable pageable);
 
     MetricasReservaQuery calcularMetricas(Long idSede, LocalDate fecha);
 

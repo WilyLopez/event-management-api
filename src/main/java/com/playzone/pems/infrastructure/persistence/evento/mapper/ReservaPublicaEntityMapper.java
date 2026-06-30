@@ -61,7 +61,9 @@ public class ReservaPublicaEntityMapper {
                 .esReprogramacion(d.isEsReprogramacion())
                 .vecesReprogramada(d.getVecesReprogramada())
                 .fechaEvento(d.getFechaEvento())
+                .numeroTicket(d.getNumeroTicket())
                 .precioHistorico(d.getPrecioHistorico())
+
                 .descuentoAplicado(d.getDescuentoAplicado())
                 .totalPagado(d.getTotalPagado())
                 .nombreNino(d.getNombreNino())

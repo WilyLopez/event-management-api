@@ -39,6 +39,10 @@ public interface ReservaPublicaJpaRepository extends JpaRepository<ReservaPublic
               AND (CAST(:fecha AS localdate) IS NULL OR r.fechaEvento = :fecha)
               AND (CAST(:ingresado AS boolean) IS NULL OR r.ingresado = :ingresado)
               AND (CAST(:esReprogramacion AS boolean) IS NULL OR r.esReprogramacion = :esReprogramacion)
+              AND (:medioPago IS NULL OR EXISTS (
+                    SELECT 1 FROM VentaPagoEntity vp
+                    WHERE vp.ventaId = r.ventaId AND vp.medioPagoCodigo = :medioPago
+              ))
               AND (:searchPattern IS NULL OR
                    LOWER(r.numeroTicket)      LIKE :searchPattern OR
                    LOWER(r.nombreNino)        LIKE :searchPattern OR
@@ -51,6 +55,7 @@ public interface ReservaPublicaJpaRepository extends JpaRepository<ReservaPublic
             @Param("fecha")            LocalDate            fecha,
             @Param("ingresado")        Boolean              ingresado,
             @Param("esReprogramacion") Boolean              esReprogramacion,
+            @Param("medioPago")        String               medioPago,
             @Param("searchPattern")    String               searchPattern,
             Pageable pageable
     );
