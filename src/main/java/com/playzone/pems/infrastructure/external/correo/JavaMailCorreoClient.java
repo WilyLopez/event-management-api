@@ -17,7 +17,7 @@ public class JavaMailCorreoClient {
 
     private final JavaMailSender mailSender;
 
-    @Value("${spring.mail.username}")
+    @Value("${playzone.correo.remitente}")
     private String remitente;
 
     @Value("${playzone.correo.nombre-remitente:PlayZone}")

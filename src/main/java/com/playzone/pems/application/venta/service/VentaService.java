@@ -94,11 +94,8 @@ public class VentaService implements ProcesarVentaUseCase, ConsultarVentasUseCas
         ReservaPublica reserva = reservaPublicaRepository.findById(command.getReservaId())
                 .orElseThrow(() -> new ValidationException("Reserva no encontrada."));
 
-        if (reserva.getEstado() == EstadoReservaPublica.CANCELADA) {
-            throw new ValidationException("No se puede cobrar una reserva cancelada.");
-        }
-        if (reserva.getVentaId() != null) {
-            throw new ValidationException("La reserva ya tiene una venta asociada.");
+        if (reserva.getEstado() != EstadoReservaPublica.PENDIENTE) {
+            throw new ValidationException("Solo se pueden cobrar reservas en estado PENDIENTE.");
         }
 
         java.time.ZoneId zoneId = java.time.ZoneId.of("America/Lima");
@@ -125,26 +122,41 @@ public class VentaService implements ProcesarVentaUseCase, ConsultarVentasUseCas
         BigDecimal efectivoRecibido = command.getEfectivoRecibido() != null ? command.getEfectivoRecibido() : BigDecimal.ZERO;
         BigDecimal vuelto = VentaPagoValidator.validarYCalcularVuelto(command.getPagos(), reserva.getTotalPagado(), efectivoRecibido);
 
-        Venta venta = Venta.builder()
-                .idSede(reserva.getIdSede())
-                .clienteId(reserva.getIdCliente())
-                .tipo("RESERVA")
-                .canalCodigo("MOSTRADOR")
-                .fechaVisita(reserva.getFechaEvento())
-                .nombreAcompanante(reserva.getNombreAcompanante())
-                .dniAcompanante(reserva.getDniAcompanante())
-                .subtotal(reserva.getPrecioHistorico())
-                .descuento(reserva.getDescuentoAplicado())
-                .total(reserva.getTotalPagado())
-                .efectivoRecibido(efectivoRecibido)
-                .vuelto(vuelto)
-                .actaFirmada(command.isActaFirmada())
-                .esAnticipada(reserva.getFechaEvento().isAfter(LocalDate.now(zoneId)))
-                .notas(command.getNotas())
-                .createdBy(command.getCreatedBy())
-                .build();
+        Venta venta;
+        if (reserva.getVentaId() != null) {
+            Venta existente = ventaRepository.findById(reserva.getVentaId())
+                    .orElseThrow(() -> new ValidationException("Venta asociada no encontrada."));
+            venta = existente.toBuilder()
+                    .canalCodigo("MOSTRADOR")
+                    .efectivoRecibido(efectivoRecibido)
+                    .vuelto(vuelto)
+                    .actaFirmada(command.isActaFirmada())
+                    .esAnticipada(reserva.getFechaEvento().isAfter(LocalDate.now(zoneId)))
+                    .notas(command.getNotas())
+                    .build();
+        } else {
+            venta = Venta.builder()
+                    .idSede(reserva.getIdSede())
+                    .clienteId(reserva.getIdCliente())
+                    .tipo("RESERVA")
+                    .canalCodigo("MOSTRADOR")
+                    .fechaVisita(reserva.getFechaEvento())
+                    .nombreAcompanante(reserva.getNombreAcompanante())
+                    .dniAcompanante(reserva.getDniAcompanante())
+                    .subtotal(reserva.getPrecioHistorico())
+                    .descuento(reserva.getDescuentoAplicado())
+                    .total(reserva.getTotalPagado())
+                    .efectivoRecibido(efectivoRecibido)
+                    .vuelto(vuelto)
+                    .actaFirmada(command.isActaFirmada())
+                    .esAnticipada(reserva.getFechaEvento().isAfter(LocalDate.now(zoneId)))
+                    .notas(command.getNotas())
+                    .createdBy(command.getCreatedBy())
+                    .build();
+        }
 
         Venta ventaGuardada = ventaRepository.save(venta);
+        ventaPagoRepository.deleteByVentaId(ventaGuardada.getId());
 
         for (PagoMostradorCommand pagoCmd : command.getPagos()) {
             ventaPagoRepository.save(VentaPago.builder()

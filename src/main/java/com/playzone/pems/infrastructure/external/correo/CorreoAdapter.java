@@ -18,14 +18,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -41,15 +38,17 @@ public class CorreoAdapter
 
     private final JavaMailCorreoClient            correoClient;
     private final JavaMailSender                  mailSender;
-    private final ResendCorreoClient              resendCorreoClient;
     private final TicketIngresoPdfService         ticketIngresoPdfService;
     private final NotaVentaPdfService             notaVentaPdfService;
     private final SedeRepository                  sedeRepository;
     private final TemplateService                 templateService;
     private final GestionarConfiguracionPublicaUseCase configuracionPublica;
 
-    @Value("${spring.mail.username}")
+    @Value("${playzone.correo.remitente}")
     private String remitente;
+
+    @Value("${playzone.correo.alertas-admin:}")
+    private String adminEmailOverride;
 
     @Value("${playzone.url-login:http://localhost:3000/auth/login}")
     private String loginUrl;
@@ -60,16 +59,16 @@ public class CorreoAdapter
         String asunto = "Bienvenido al Panel Administrativo — Kiki y Lala";
 
         Map<String, String> variables = Map.of(
-                "nombre",    nombre,
-                "correo",    correo,
-                "password",  password,
-                "rol",       rolLabel,
-                "sede",      sedeNombre,
-                "loginUrl",  loginUrl
+                "nombre",    nombre != null ? nombre : "",
+                "correo",    correo != null ? correo : "",
+                "password",  password != null ? password : "",
+                "rol",       rolLabel != null ? rolLabel : "",
+                "sede",      sedeNombre != null ? sedeNombre : "Sede Principal",
+                "loginUrl",  loginUrl != null ? loginUrl : ""
         );
 
         String cuerpoHtml = templateService.procesarTemplate("welcome-user", variables);
-        resendCorreoClient.enviarConLogo(correo, asunto, cuerpoHtml);
+        correoClient.enviarConLogo(correo, asunto, cuerpoHtml);
     }
 
     @Async("asyncExecutor")
@@ -82,8 +81,17 @@ public class CorreoAdapter
         byte[] pdfTicket = ticketIngresoPdfService.generarTicketPdf(reserva, nombreSede);
 
         try {
-            String asunto = "Tu ticket Kiki y Lala — " + reserva.getNumeroTicket();
-            
+            String nombreRemitente = configuracionPublica.obtener().getNombreNegocio();
+            if (nombreRemitente == null || nombreRemitente.isBlank()) {
+                nombreRemitente = "PlayZone";
+            }
+
+            MimeMessage mensaje = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+            helper.setFrom(remitente, nombreRemitente);
+            helper.setTo(destinatario);
+            helper.setSubject("Tu ticket Kiki y Lala — " + reserva.getNumeroTicket());
+
             Map<String, String> variables = Map.of(
                     "nombreCliente", nombreCliente,
                     "numeroTicket",  reserva.getNumeroTicket(),
@@ -92,15 +100,17 @@ public class CorreoAdapter
             );
             String cuerpoHtml = templateService.procesarTemplate("email-ticket", variables);
 
-            resendCorreoClient.enviarConAdjuntos(
-                destinatario,
-                asunto,
-                cuerpoHtml,
-                List.of(new ResendCorreoClient.AttachmentInfo("Ticket-" + reserva.getNumeroTicket() + ".pdf", pdfTicket))
+            helper.setText(cuerpoHtml, true);
+            helper.addAttachment(
+                "Ticket-" + reserva.getNumeroTicket() + ".pdf",
+                new ByteArrayResource(pdfTicket),
+                "application/pdf"
             );
-            log.info("Ticket PDF enviado via Resend a {}: {}", destinatario, reserva.getNumeroTicket());
+
+            mailSender.send(mensaje);
+            log.info("Ticket PDF enviado a {}: {}", destinatario, reserva.getNumeroTicket());
         } catch (Exception e) {
-            log.error("Error al enviar ticket via Resend a {}: {}", destinatario, e.getMessage(), e);
+            log.error("Error al enviar ticket a {}: {}", destinatario, e.getMessage(), e);
             throw new RuntimeException("Error al enviar el ticket por correo.", e);
         }
     }
@@ -116,7 +126,7 @@ public class CorreoAdapter
             + resumenEvento(evento)
             + "<p style='color:#64748b;font-size:13px;margin-top:20px;'>Próximos pasos: te confirmaremos disponibilidad, precio y condiciones por este medio.</p>"
         );
-        resendCorreoClient.enviarConLogo(destinatario, asunto, cuerpo);
+        correoClient.enviarConLogo(destinatario, asunto, cuerpo);
     }
 
     @Override
@@ -132,7 +142,7 @@ public class CorreoAdapter
             + filaFinanciera("Saldo pendiente", "S/ " + evento.getMontoSaldo())
             + "<p style='color:#64748b;font-size:13px;margin-top:16px;'>El contrato será enviado próximamente. El saldo pendiente se abona el día del evento.</p>"
         );
-        resendCorreoClient.enviarConLogo(destinatario, asunto, cuerpo);
+        correoClient.enviarConLogo(destinatario, asunto, cuerpo);
     }
 
     @Override
@@ -145,15 +155,18 @@ public class CorreoAdapter
             + "<p><b>Motivo:</b> " + motivo + "</p>"
             + "<p style='color:#64748b;font-size:13px;'>Si tienes dudas, contáctanos por WhatsApp o correo.</p>"
         );
-        resendCorreoClient.enviarConLogo(destinatario, asunto, cuerpo);
+        correoClient.enviarConLogo(destinatario, asunto, cuerpo);
     }
 
     @Async("asyncExecutor")
     @Override
     public void notificarAdminNuevaSolicitud(EventoPrivadoQuery evento) {
-        String correoAdmin = configuracionPublica.obtener().getCorreo();
+        String correoAdmin = adminEmailOverride;
         if (correoAdmin == null || correoAdmin.isBlank()) {
-            log.warn("correo admin no configurado en configuracion publica, omitiendo notificacion de nueva solicitud");
+            correoAdmin = configuracionPublica.obtener().getCorreo();
+        }
+        if (correoAdmin == null || correoAdmin.isBlank()) {
+            log.warn("correo admin no configurado, omitiendo notificacion de nueva solicitud");
             return;
         }
         String asunto = "[Nueva solicitud] " + evento.getTipoEvento() + " — " + evento.getFechaEvento();
@@ -166,7 +179,7 @@ public class CorreoAdapter
             + "<p><b>Teléfono:</b> " + (evento.getTelefonoCliente() != null ? evento.getTelefonoCliente() : "—") + "</p>"
             + "<p style='margin-top:16px;'><a href='#' style='background:#00AEEF;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:bold;'>Ver en el panel</a></p>"
         );
-        resendCorreoClient.enviar(correoAdmin, asunto, cuerpo);
+        correoClient.enviar(correoAdmin, asunto, cuerpo);
     }
 
     private String htmlBase(String titulo, String contenido) {
@@ -196,15 +209,6 @@ public class CorreoAdapter
         return "<p style='margin:6px 0;display:flex;justify-content:space-between;'>"
             + "<span style='color:#64748b;'>" + label + "</span>"
             + "<b style='color:#1A1A2E;'>" + valor + "</b></p>";
-    }
-
-    private String cargarTemplate(String nombre) {
-        try {
-            ClassPathResource resource = new ClassPathResource("templates/" + nombre);
-            return new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new RuntimeException("No se pudo cargar el template de correo: " + nombre, e);
-        }
     }
 
     @Async("asyncExecutor")
@@ -240,7 +244,16 @@ public class CorreoAdapter
         byte[] pdfNota = notaVentaPdfService.generarNotaVentaPdf(ventaQuery, nombreSede);
 
         try {
-            String asunto = "Tus comprobantes Kiki y Lala — Venta #" + ventaDetalle.getId();
+            String nombreRemitente = configuracionPublica.obtener().getNombreNegocio();
+            if (nombreRemitente == null || nombreRemitente.isBlank()) {
+                nombreRemitente = "PlayZone";
+            }
+
+            MimeMessage mensaje = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+            helper.setFrom(remitente, nombreRemitente);
+            helper.setTo(destinatario);
+            helper.setSubject("Tus comprobantes Kiki y Lala — Venta #" + ventaDetalle.getId());
 
             Map<String, String> variables = Map.of(
                     "nombreCliente", ventaDetalle.getNombreCliente() != null ? ventaDetalle.getNombreCliente() : "Cliente",
@@ -250,18 +263,27 @@ public class CorreoAdapter
             );
             String cuerpoHtml = templateService.procesarTemplate("email-venta", variables);
 
-            List<ResendCorreoClient.AttachmentInfo> attachments = new ArrayList<>();
-            attachments.add(new ResendCorreoClient.AttachmentInfo("NotaVenta-" + ventaDetalle.getId() + ".pdf", pdfNota));
+            helper.setText(cuerpoHtml, true);
+            helper.addAttachment(
+                "NotaVenta-" + ventaDetalle.getId() + ".pdf",
+                new ByteArrayResource(pdfNota),
+                "application/pdf"
+            );
 
+            List<ByteArrayResource> ticketResources = new ArrayList<>();
             for (var t : ventaDetalle.getTickets()) {
                 byte[] pdfTicket = ticketIngresoPdfService.generarTicketPdf(t, nombreSede);
-                attachments.add(new ResendCorreoClient.AttachmentInfo("Ticket-" + t.getNumeroTicket() + ".pdf", pdfTicket));
+                helper.addAttachment(
+                    "Ticket-" + t.getNumeroTicket() + ".pdf",
+                    new ByteArrayResource(pdfTicket),
+                    "application/pdf"
+                );
             }
 
-            resendCorreoClient.enviarConAdjuntos(destinatario, asunto, cuerpoHtml, attachments);
-            log.info("Documentos de venta consolidada enviados via Resend a {}: Venta #{}", destinatario, ventaDetalle.getId());
+            mailSender.send(mensaje);
+            log.info("Documentos de venta consolidada enviados por correo a {}: Venta #{}", destinatario, ventaDetalle.getId());
         } catch (Exception e) {
-            log.error("Error al enviar documentos de venta consolidada via Resend a {}: {}", destinatario, e.getMessage(), e);
+            log.error("Error al enviar documentos de venta consolidada a {}: {}", destinatario, e.getMessage(), e);
             throw new RuntimeException("Error al enviar los documentos por correo.", e);
         }
     }

@@ -129,6 +129,7 @@ supabase:
     jwks-url: ${SUPABASE_JWKS_URL:https://divljjsnorvkrgcznwlh.supabase.co/auth/v1/.well-known/jwks.json}
   auth:
     anon-key: ${SUPABASE_ANON_KEY:}
+    service-role-key: ${SUPABASE_SERVICE_ROLE_KEY:}
   storage:
     endpoint: ${SUPABASE_STORAGE_S3_ENDPOINT:https://divljjsnorvkrgcznwlh.supabase.co/storage/v1/s3}
     access-key: ${SUPABASE_STORAGE_ACCESS_KEY:}
@@ -141,6 +142,11 @@ supabase:
     max-tamanio-mb: 10
 
 playzone:
+
+  correo:
+    remitente: ${MAIL_FROM:${MAIL_USERNAME:tucorreo@gmail.com}}
+    nombre-remitente: ${MAIL_SENDER_NAME:PlayZone}
+    alertas-admin: ${MAIL_ADMIN:}
 
   url-base: ${APP_URL:http://localhost:8080}
 
@@ -171,10 +177,6 @@ playzone:
   http:
     connect-timeout-ms: 5000
     read-timeout-ms: 10000
-
-  resend:
-    api-key: ${RESEND_API_KEY:re_7nURdiD7_N6aSCFavBNntctnpdNcEr6Ch}
-    from: ${RESEND_FROM:onboarding@resend.dev}
 
 logging:
   level:
