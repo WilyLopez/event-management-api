@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.time.OffsetDateTime;
 
@@ -23,6 +24,10 @@ import java.time.OffsetDateTime;
 @Service
 @RequiredArgsConstructor
 public class MensajeContactoService implements GestionarMensajeContactoUseCase {
+
+    @Value("${playzone.correo.alertas-admin:}")
+    private String adminEmailOverride;
+
 
     private final MensajeContactoRepository            repository;
     private final JavaMailCorreoClient                 correoClient;
@@ -57,9 +62,12 @@ public class MensajeContactoService implements GestionarMensajeContactoUseCase {
         MensajeContacto guardado = repository.save(mensaje);
 
         try {
-            String correoAdmin = configuracionPublica.obtener().getCorreo();
+            String correoAdmin = adminEmailOverride;
             if (correoAdmin == null || correoAdmin.isBlank()) {
-                log.warn("correo admin no configurado en configuracion publica, omitiendo alerta de contacto");
+                correoAdmin = configuracionPublica.obtener().getCorreo();
+            }
+            if (correoAdmin == null || correoAdmin.isBlank()) {
+                log.warn("correo admin no configurado, omitiendo alerta de contacto");
             } else {
                 String asuntoEmail = "[Contacto Web] Nuevo mensaje de " + cmd.getNombre();
                 String cuerpoHtml = String.format(
