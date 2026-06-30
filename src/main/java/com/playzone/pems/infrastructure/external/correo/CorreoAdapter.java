@@ -53,6 +53,7 @@ public class CorreoAdapter
     @Value("${playzone.url-login:http://localhost:3000/auth/login}")
     private String loginUrl;
 
+    @Async("asyncExecutor")
     @Override
     public void enviarCredencialesUsuario(String correo, String nombre, String password,
                                           String rolLabel, String sedeNombre) {
@@ -129,6 +130,7 @@ public class CorreoAdapter
         correoClient.enviarConLogo(destinatario, asunto, cuerpo);
     }
 
+    @Async("asyncExecutor")
     @Override
     public void notificarEventoConfirmado(String destinatario, EventoPrivadoQuery evento) {
         String asunto = "Tu evento privado ha sido confirmado — Kiki y Lala";
@@ -145,6 +147,7 @@ public class CorreoAdapter
         correoClient.enviarConLogo(destinatario, asunto, cuerpo);
     }
 
+    @Async("asyncExecutor")
     @Override
     public void notificarEventoCancelado(String destinatario, EventoPrivadoQuery evento, String motivo) {
         String asunto = "Evento privado cancelado — Kiki y Lala";
