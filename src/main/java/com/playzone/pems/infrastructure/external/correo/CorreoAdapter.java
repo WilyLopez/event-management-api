@@ -69,6 +69,7 @@ public class CorreoAdapter
         correoClient.enviarConLogo(correo, asunto, cuerpoHtml);
     }
 
+    @Async("asyncExecutor")
     @Override
     public void enviarTicket(String destinatario, String nombreCliente, ReservaPublicaQuery reserva) {
         String nombreSede = sedeRepository.findById(reserva.getIdSede())
@@ -224,6 +225,7 @@ public class CorreoAdapter
         }
     }
 
+    @Async("asyncExecutor")
     @Override
     public void enviarDocumentos(String destinatario, VentaDetalleQuery ventaDetalle) {
         String nombreSede = sedeRepository.findById(ventaDetalle.getIdSede())

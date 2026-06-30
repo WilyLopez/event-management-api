@@ -16,6 +16,9 @@ public class TicketIngresoPdfService {
     private final TemplateEngine templateEngine;
 
     public byte[] generarTicketPdf(ReservaPublicaQuery reserva, String nombreSede) {
+        System.setProperty("sun.net.client.defaultConnectTimeout", "1500");
+        System.setProperty("sun.net.client.defaultReadTimeout", "1500");
+
         Context ctx = new Context();
         ctx.setVariable("reserva",    reserva);
         ctx.setVariable("nombreSede", nombreSede);
