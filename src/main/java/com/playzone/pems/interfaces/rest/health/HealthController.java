@@ -40,9 +40,13 @@ public class HealthController {
         SupabaseAuthContext ctx = supabaseAuthFacade.contextoActual()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado"));
 
-        String nombre = perfilUsuarioRepository.buscarPorId(ctx.userId())
-                .map(p -> p.getNombreCompleto())
-                .orElse(null);
+        String nombre = null;
+        String fotoPerfilUrl = null;
+        var perfilOpt = perfilUsuarioRepository.buscarPorId(ctx.userId());
+        if (perfilOpt.isPresent()) {
+            nombre = perfilOpt.get().getNombreCompleto();
+            fotoPerfilUrl = perfilOpt.get().getFotoPerfilPath();
+        }
 
         String tipoPerfil;
         Long sedeId   = null;
@@ -73,7 +77,8 @@ public class HealthController {
                 ctx.clientePerfilId(),
                 sedeId,
                 staffId,
-                perfilCompleto
+                perfilCompleto,
+                fotoPerfilUrl
         )));
     }
 
@@ -87,6 +92,7 @@ public class HealthController {
             Long         clientePerfilId,
             Long         sedeId,
             Long         staffId,
-            boolean      perfilCompleto
+            boolean      perfilCompleto,
+            String       fotoPerfilUrl
     ) {}
 }

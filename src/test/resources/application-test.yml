@@ -36,3 +36,10 @@ supabase:
   jwt:
     issuer: http://localhost:0/fake-issuer
     jwks-url: http://localhost:0/fake-jwks
+
+playzone:
+  correo:
+    remitente: test@playzone.com
+    nombre-remitente: PlayZone Test
+    alertas-admin: test-admin@playzone.com
+
