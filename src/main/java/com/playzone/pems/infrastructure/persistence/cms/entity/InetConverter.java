@@ -26,9 +26,6 @@ public class InetConverter implements AttributeConverter<String, Object> {
 
     @Override
     public Object convertToDatabaseColumn(String attribute) {
-        if (attribute == null || attribute.isBlank()) {
-            return null;
-        }
         if (pgObjectClass == null) {
             // Fallback para base de datos H2 en tests
             return attribute;
@@ -36,7 +33,11 @@ public class InetConverter implements AttributeConverter<String, Object> {
         try {
             Object pgObject = pgObjectConstructor.newInstance();
             setTypeMethod.invoke(pgObject, "inet");
-            setValueMethod.invoke(pgObject, attribute.trim());
+            if (attribute != null && !attribute.isBlank()) {
+                setValueMethod.invoke(pgObject, attribute.trim());
+            } else {
+                setValueMethod.invoke(pgObject, (String) null);
+            }
             return pgObject;
         } catch (Exception e) {
             throw new IllegalArgumentException("Error al convertir String a inet usando reflexión: " + attribute, e);
