@@ -12,4 +12,5 @@ public class RegistrarUsuarioAdminCommand {
     private Long    sedeId;
     private String  password;
     private boolean generarPassword;
+    private String  telefono;
 }

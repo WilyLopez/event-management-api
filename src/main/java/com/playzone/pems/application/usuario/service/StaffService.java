@@ -144,10 +144,12 @@ public class StaffService implements
 
         UUID usuarioId;
         try {
-            usuarioId = supabaseAuthPort.crearUsuario(correoNorm, passwordFinal, command.getNombre());
+            usuarioId = supabaseAuthPort.crearUsuario(correoNorm, passwordFinal, command.getNombre(), true);
         } catch (Exception ex) {
             throw new ValidationException("correo", "El correo ya se encuentra registrado en el sistema.");
         }
+
+        perfilUsuarioRepository.actualizarPerfil(usuarioId, command.getNombre(), command.getTelefono());
 
         usuarioRolRepository.eliminar(usuarioId, "CLIENTE");
         usuarioRolRepository.guardar(UsuarioRol.builder()
@@ -171,7 +173,7 @@ public class StaffService implements
             try {
                 enviarCorreoBienvenidaPort.enviarCredencialesUsuario(correoNorm, nombre, password, rolLabel, sedeNombre);
             } catch (Exception ex) {
-                log.warn("No se pudo enviar el correo de bienvenida a {}: {}", correoNorm, ex.getMessage());
+                log.error("No se pudo enviar el correo de bienvenida a " + correoNorm, ex);
             }
         });
 
@@ -431,6 +433,7 @@ public class StaffService implements
                 .bloqueadoHasta(staff.getBloqueadoHasta())
                 .ultimoAcceso(perfil.getUltimoLoginAt())
                 .fechaCreacion(staff.getCreatedAt())
+                .fotoPerfilUrl(perfil.getFotoPerfilPath())
                 .passwordTemporal(passwordTemporal)
                 .build();
     }
