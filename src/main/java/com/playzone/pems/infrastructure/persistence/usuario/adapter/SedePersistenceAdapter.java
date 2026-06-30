@@ -17,6 +17,7 @@ public class SedePersistenceAdapter implements SedeRepository {
     private final SedeJpaRepository sedeJpaRepository;
     private final SedeEntityMapper  sedeEntityMapper;
 
+    @org.springframework.cache.annotation.Cacheable("sedes")
     @Override
     public Optional<Sede> findById(Long id) {
         return sedeJpaRepository.findById(id).map(sedeEntityMapper::toDomain);
@@ -29,6 +30,7 @@ public class SedePersistenceAdapter implements SedeRepository {
                 .toList();
     }
 
+    @org.springframework.cache.annotation.CacheEvict(value = "sedes", allEntries = true)
     @Override
     public Sede save(Sede sede) {
         return sedeEntityMapper.toDomain(

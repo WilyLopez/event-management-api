@@ -22,7 +22,7 @@ spring:
       minimum-idle: 2
       maximum-pool-size: 10
       idle-timeout: 30000
-      connection-timeout: 20000
+      connection-timeout: 60000
       max-lifetime: 1800000
 
   jpa:
@@ -34,6 +34,7 @@ spring:
         format_sql: true
         default_schema: public
         hbm2ddl.auto: none
+        dialect: org.hibernate.dialect.PostgreSQLDialect
         jdbc:
           time_zone: America/Lima
 

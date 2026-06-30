@@ -16,6 +16,7 @@ public class ConfiguracionCalendarioPersistenceAdapter implements ConfiguracionC
     private final ConfiguracionCalendarioJpaRepository configJpa;
     private final SedeJpaRepository                    sedeJpa;
 
+    @org.springframework.cache.annotation.Cacheable(value = "configuracionesCalendario", key = "#idSede")
     @Override
     public ConfiguracionCalendario obtener(Long idSede) {
         ConfiguracionCalendarioEntity e = configJpa.findBySede_Id(idSede)
@@ -23,6 +24,7 @@ public class ConfiguracionCalendarioPersistenceAdapter implements ConfiguracionC
         return toDomain(e);
     }
 
+    @org.springframework.cache.annotation.CacheEvict(value = "configuracionesCalendario", key = "#config.idSede")
     @Override
     public ConfiguracionCalendario save(ConfiguracionCalendario config) {
         ConfiguracionCalendarioEntity entity = configJpa.findBySede_Id(config.getIdSede())

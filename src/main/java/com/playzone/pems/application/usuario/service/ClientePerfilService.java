@@ -130,6 +130,20 @@ public class ClientePerfilService
             throw new ValidationException("numeroDocumento", "Ya existe una cuenta con ese documento.");
         });
 
+        String rucVal = null;
+        String razonSocialVal = null;
+        if ("RUC".equalsIgnoreCase(command.getTipoDocumentoCodigo())) {
+            rucVal = command.getNumeroDocumento();
+            StringBuilder sb = new StringBuilder(command.getNombres() != null ? command.getNombres() : "");
+            if (command.getApellidoPaterno() != null) {
+                sb.append(" ").append(command.getApellidoPaterno());
+            }
+            if (command.getApellidoMaterno() != null) {
+                sb.append(" ").append(command.getApellidoMaterno());
+            }
+            razonSocialVal = sb.toString().trim();
+        }
+
         ClientePerfil nuevo = ClientePerfil.builder()
                 .usuarioId(command.getUsuarioId())
                 .tipoDocumentoCodigo(command.getTipoDocumentoCodigo())
@@ -139,6 +153,8 @@ public class ClientePerfilService
                 .apellidoMaterno(command.getApellidoMaterno())
                 .correo(command.getCorreo())
                 .telefono(command.getTelefono())
+                .ruc(rucVal)
+                .razonSocial(razonSocialVal)
                 .origen(command.getOrigen() != null ? command.getOrigen() : "ADMIN")
                 .aceptaComunicaciones(command.isAceptaComunicaciones())
                 .segmentoCodigo("NUEVO")

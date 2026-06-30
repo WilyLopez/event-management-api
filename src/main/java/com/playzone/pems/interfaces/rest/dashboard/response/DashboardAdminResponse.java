@@ -23,6 +23,8 @@ public class DashboardAdminResponse {
     private final int       solicitudesEventoSinResponder;
     private final int       eventosSaldoPendiente;
     private final boolean   cajaAbierta;
+    private final int       yapesPorValidar;
+
 
     private final List<AgendaReservaResponse>    reservasHoyDetalle;
     private final List<AgendaEventoResponse>     eventosHoyDetalle;

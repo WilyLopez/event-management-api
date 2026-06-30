@@ -81,11 +81,17 @@ public class ConsultaDocumentoController {
             List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, idSede);
             if (!rows.isEmpty()) {
                 Map<String, Object> row = rows.get(0);
-                prov = (String) row.get("proveedor_codigo");
-                url = (String) row.get("api_url");
+                String dbProv = (String) row.get("proveedor_codigo");
+                String dbUrl = (String) row.get("api_url");
                 String tokenCifrado = (String) row.get("api_token_cifrado");
-                limite = ((Number) row.get("limite_mensual")).intValue();
-                token = tokenEncryptor.decrypt(tokenCifrado);
+                int dbLimite = ((Number) row.get("limite_mensual")).intValue();
+                String dbToken = tokenEncryptor.decrypt(tokenCifrado);
+
+                // Asignar solo si el desencriptado y consulta de datos es exitosa sin excepciones
+                prov = dbProv;
+                url = dbUrl;
+                token = dbToken;
+                limite = dbLimite;
                 usarConfigDb = true;
             }
         } catch (Exception e) {
@@ -117,26 +123,27 @@ public class ConsultaDocumentoController {
             }
         }
 
-        Map<String, Object> responseData;
+        Map<String, Object> responseData = null;
 
-        // Ejecutar consulta según el proveedor
         if ("APISPERU".equalsIgnoreCase(prov)) {
-            responseData = apisPeruClient.consultarDni(numero, url, token);
+            Map<String, Object> rawResponse;
             if ("RUC".equals(tipoDoc)) {
-                responseData = apisPeruClient.consultarRuc(numero, url, token);
+                rawResponse = apisPeruClient.consultarRuc(numero, url, token);
+            } else {
+                rawResponse = apisPeruClient.consultarDni(numero, url, token);
             }
-            // Mapeo unificado para que tenga los mismos campos
-            if (responseData != null && responseData.containsKey("data")) {
-                Object dataObj = responseData.get("data");
+            if (rawResponse != null && rawResponse.containsKey("data")) {
+                Object dataObj = rawResponse.get("data");
                 if (dataObj instanceof Map) {
-                    responseData = (Map<String, Object>) dataObj;
+                    rawResponse = (Map<String, Object>) dataObj;
                 }
             }
+            responseData = unificarRespuesta(rawResponse, prov, tipoDoc);
         } else {
-            // Decolecta
-            responseData = decolectaClient.consultarDni(numero, url, token);
             if ("RUC".equals(tipoDoc)) {
                 responseData = decolectaClient.consultarRuc(numero, url, token);
+            } else {
+                responseData = decolectaClient.consultarDni(numero, url, token);
             }
             if (responseData != null && responseData.containsKey("data")) {
                 Object dataObj = responseData.get("data");
@@ -157,5 +164,56 @@ public class ConsultaDocumentoController {
         }
 
         return responseData;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> unificarRespuesta(Map<String, Object> raw, String prov, String tipoDoc) {
+        if (raw == null) return Map.of();
+        
+        java.util.HashMap<String, Object> unified = new java.util.HashMap<>();
+        
+        if ("APISPERU".equalsIgnoreCase(prov)) {
+            if ("DNI".equalsIgnoreCase(tipoDoc)) {
+                String docNum = raw.get("dni") != null ? (String) raw.get("dni") : (String) raw.get("numero");
+                String name = (String) raw.get("nombres");
+                String apPat = raw.get("apellidoPaterno") != null ? (String) raw.get("apellidoPaterno") : (String) raw.get("apellido_paterno");
+                String apMat = raw.get("apellidoMaterno") != null ? (String) raw.get("apellidoMaterno") : (String) raw.get("apellido_materno");
+                
+                String fullName = null;
+                if (raw.get("nombre_completo") != null) {
+                    fullName = (String) raw.get("nombre_completo");
+                } else if (raw.get("nombreCompleto") != null) {
+                    fullName = (String) raw.get("nombreCompleto");
+                } else {
+                    fullName = ((apPat != null ? apPat : "") + " " + (apMat != null ? apMat : "") + " " + (name != null ? name : "")).trim();
+                }
+
+                unified.put("document_number", docNum);
+                unified.put("first_name", name);
+                unified.put("first_last_name", apPat);
+                unified.put("second_last_name", apMat);
+                unified.put("full_name", fullName);
+            } else { // RUC
+                String rucNum = raw.get("ruc") != null ? (String) raw.get("ruc") : 
+                               (raw.get("numeroDocumento") != null ? (String) raw.get("numeroDocumento") : (String) raw.get("numero_documento"));
+                String razSocial = raw.get("razonSocial") != null ? (String) raw.get("razonSocial") : (String) raw.get("razon_social");
+                
+                unified.put("numero_documento", rucNum);
+                unified.put("razon_social", razSocial);
+                unified.put("estado", raw.get("estado"));
+                unified.put("condicion", raw.get("condicion"));
+                unified.put("direccion", raw.get("direccion"));
+                unified.put("via_tipo", raw.get("via_tipo"));
+                unified.put("via_nombre", raw.get("via_nombre"));
+                unified.put("numero", raw.get("numero"));
+                unified.put("distrito", raw.get("distrito"));
+                unified.put("provincia", raw.get("provincia"));
+                unified.put("departamento", raw.get("departamento"));
+            }
+        } else {
+            return raw;
+        }
+        
+        return unified;
     }
 }
