@@ -25,4 +25,5 @@ public class UsuarioAdminResponse {
     private OffsetDateTime fechaCreacion;
     /** Solo presente en la respuesta de creación cuando generarPassword=true */
     private String         passwordTemporal;
+    private String         fotoPerfilUrl;
 }

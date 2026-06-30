@@ -50,7 +50,7 @@ class ClientePerfilServiceTest {
         UUID usuarioId = UUID.randomUUID();
         when(clientePerfilRepository.buscarPorCorreo(anyString())).thenReturn(Optional.empty());
         when(clientePerfilRepository.buscarPorDocumento(anyString(), anyString())).thenReturn(Optional.empty());
-        when(supabaseAuthPort.crearUsuario(anyString(), anyString(), anyString())).thenReturn(usuarioId);
+        when(supabaseAuthPort.crearUsuario(anyString(), anyString(), anyString(), anyBoolean())).thenReturn(usuarioId);
         when(clientePerfilRepository.guardar(any(ClientePerfil.class))).thenAnswer(i -> i.getArgument(0));
 
         // Act
@@ -61,7 +61,7 @@ class ClientePerfilServiceTest {
         assertEquals(usuarioId, resultado.getUsuarioId());
         assertEquals(command.getCorreo(), resultado.getCorreo());
         assertEquals("WEB", resultado.getOrigen());
-        verify(supabaseAuthPort).crearUsuario(command.getCorreo(), command.getPassword(), command.getNombre());
+        verify(supabaseAuthPort).crearUsuario(command.getCorreo(), command.getPassword(), command.getNombre(), false);
         verify(clientePerfilRepository).guardar(any(ClientePerfil.class));
     }
 
@@ -78,7 +78,7 @@ class ClientePerfilServiceTest {
                 .build();
 
         when(clientePerfilRepository.buscarPorCorreo(command.getCorreo())).thenReturn(Optional.of(clienteExistente));
-        when(supabaseAuthPort.crearUsuario(anyString(), anyString(), anyString())).thenReturn(usuarioId);
+        when(supabaseAuthPort.crearUsuario(anyString(), anyString(), anyString(), anyBoolean())).thenReturn(usuarioId);
         when(clientePerfilRepository.guardar(any(ClientePerfil.class))).thenAnswer(i -> i.getArgument(0));
 
         // Act
@@ -89,7 +89,7 @@ class ClientePerfilServiceTest {
         assertEquals(usuarioId, resultado.getUsuarioId());
         assertEquals(1L, resultado.getId());
         assertEquals("WEB", resultado.getOrigen());
-        verify(supabaseAuthPort).crearUsuario(command.getCorreo(), command.getPassword(), command.getNombre());
+        verify(supabaseAuthPort).crearUsuario(command.getCorreo(), command.getPassword(), command.getNombre(), false);
         verify(clientePerfilRepository, never()).buscarPorDocumento(anyString(), anyString());
     }
 
@@ -124,7 +124,7 @@ class ClientePerfilServiceTest {
         // Arrange
         when(clientePerfilRepository.buscarPorCorreo(anyString())).thenReturn(Optional.empty());
         when(clientePerfilRepository.buscarPorDocumento(anyString(), anyString())).thenReturn(Optional.empty());
-        when(supabaseAuthPort.crearUsuario(anyString(), anyString(), anyString()))
+        when(supabaseAuthPort.crearUsuario(anyString(), anyString(), anyString(), anyBoolean()))
                 .thenThrow(new RuntimeException("Supabase Error"));
 
         // Act & Assert

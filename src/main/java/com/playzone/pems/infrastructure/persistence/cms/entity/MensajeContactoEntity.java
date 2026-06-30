@@ -50,6 +50,7 @@ public class MensajeContactoEntity {
     private OffsetDateTime respondidoAt;
 
     @Column(name = "ip_origen")
+    @Convert(converter = InetConverter.class)
     private String ipOrigen;
 
     @Column(name = "user_agent")

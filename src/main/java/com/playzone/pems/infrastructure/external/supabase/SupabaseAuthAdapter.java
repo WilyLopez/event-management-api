@@ -30,6 +30,9 @@ public class SupabaseAuthAdapter implements SupabaseAuthPort {
     @Value("${supabase.auth.anon-key}")
     private String anonKey;
 
+    @Value("${supabase.auth.service-role-key:}")
+    private String serviceRoleKey;
+
     @Override
     public java.util.Map<String, Object> login(String email, String password) {
         String url = authUrl + "/token?grant_type=password";
@@ -97,20 +100,35 @@ public class SupabaseAuthAdapter implements SupabaseAuthPort {
     }
 
     @Override
-    public UUID crearUsuario(String email, String password, String nombreCompleto) {
-        String url = authUrl + "/signup";
-
+    public UUID crearUsuario(String email, String password, String nombreCompleto, boolean confirmarEmail) {
+        String url;
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("apikey", anonKey);
 
         Map<String, Object> body = new HashMap<>();
         body.put("email", email);
         body.put("password", password);
 
-        Map<String, Object> data = new HashMap<>();
-        data.put("full_name", nombreCompleto);
-        body.put("user_metadata", data);
+        if (confirmarEmail) {
+            if (serviceRoleKey == null || serviceRoleKey.isBlank()) {
+                throw new IllegalStateException("La clave service_role de Supabase no está configurada. No se puede crear un usuario auto-confirmado.");
+            }
+            url = authUrl + "/admin/users";
+            headers.set("apikey", serviceRoleKey);
+            headers.set("Authorization", "Bearer " + serviceRoleKey);
+            body.put("email_confirm", true);
+
+            Map<String, Object> userMetadata = new HashMap<>();
+            userMetadata.put("full_name", nombreCompleto);
+            body.put("user_metadata", userMetadata);
+        } else {
+            url = authUrl + "/signup";
+            headers.set("apikey", anonKey);
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("full_name", nombreCompleto);
+            body.put("data", data);
+        }
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
 

@@ -19,7 +19,9 @@ import com.playzone.pems.application.usuario.port.in.RegistrarClientePublicoUseC
 import com.playzone.pems.application.usuario.port.in.RegistrarVisitaPerfilUseCase;
 import com.playzone.pems.application.usuario.port.out.SupabaseAuthPort;
 import com.playzone.pems.domain.usuario.model.ClientePerfil;
+import com.playzone.pems.domain.usuario.model.PerfilUsuario;
 import com.playzone.pems.domain.usuario.repository.ClientePerfilRepository;
+import com.playzone.pems.domain.usuario.repository.PerfilUsuarioRepository;
 import com.playzone.pems.shared.exception.ResourceNotFoundException;
 import com.playzone.pems.shared.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +52,7 @@ public class ClientePerfilService
         CompletarPerfilClienteUseCase {
 
     private final ClientePerfilRepository clientePerfilRepository;
+    private final PerfilUsuarioRepository perfilUsuarioRepository;
     private final SupabaseAuthPort        supabaseAuthPort;
 
     @Override
@@ -74,13 +77,18 @@ public class ClientePerfilService
             
             // Caso POS: El cliente existe pero no tiene usuarioId
             // 2. Crear usuario en Supabase
-            UUID usuarioId = supabaseAuthPort.crearUsuario(command.getCorreo(), command.getPassword(), command.getNombre());
+            UUID usuarioId = supabaseAuthPort.crearUsuario(command.getCorreo(), command.getPassword(), command.getNombre(), false);
+
+            String fotoGoogle = perfilUsuarioRepository.buscarPorId(usuarioId)
+                    .map(PerfilUsuario::getFotoPerfilPath)
+                    .orElse(null);
 
             // 3. Vincular usuarioId al cliente existente
             ClientePerfil vinculado = cliente.toBuilder()
                     .usuarioId(usuarioId)
                     .nombres(command.getNombre()) // Actualizamos el nombre con el del registro web si es necesario
                     .origen("WEB")
+                    .fotoPerfilPath(fotoGoogle)
                     .build();
 
             return clientePerfilRepository.guardar(vinculado);
@@ -95,7 +103,11 @@ public class ClientePerfilService
         });
 
         // 3. Crear usuario en Supabase
-        UUID usuarioId = supabaseAuthPort.crearUsuario(command.getCorreo(), command.getPassword(), command.getNombre());
+        UUID usuarioId = supabaseAuthPort.crearUsuario(command.getCorreo(), command.getPassword(), command.getNombre(), false);
+
+        String fotoGoogle = perfilUsuarioRepository.buscarPorId(usuarioId)
+                .map(PerfilUsuario::getFotoPerfilPath)
+                .orElse(null);
 
         // 4. Crear cliente_perfil
         ClientePerfil nuevo = ClientePerfil.builder()
@@ -111,6 +123,7 @@ public class ClientePerfilService
                 .esVip(false)
                 .contadorVisitas(0)
                 .totalGastado(BigDecimal.ZERO)
+                .fotoPerfilPath(fotoGoogle)
                 .build();
 
         return clientePerfilRepository.guardar(nuevo);
@@ -144,6 +157,10 @@ public class ClientePerfilService
             razonSocialVal = sb.toString().trim();
         }
 
+        String fotoGoogle = (command.getUsuarioId() != null) 
+                ? perfilUsuarioRepository.buscarPorId(command.getUsuarioId()).map(PerfilUsuario::getFotoPerfilPath).orElse(null) 
+                : null;
+
         ClientePerfil nuevo = ClientePerfil.builder()
                 .usuarioId(command.getUsuarioId())
                 .tipoDocumentoCodigo(command.getTipoDocumentoCodigo())
@@ -161,6 +178,7 @@ public class ClientePerfilService
                 .esVip(false)
                 .contadorVisitas(0)
                 .totalGastado(BigDecimal.ZERO)
+                .fotoPerfilPath(fotoGoogle)
                 .build();
 
         return clientePerfilRepository.guardar(nuevo);
@@ -184,6 +202,10 @@ public class ClientePerfilService
                 ? clientePerfilRepository.buscarPorCorreo(command.getCorreo())
                 : Optional.empty();
 
+        String fotoGoogle = perfilUsuarioRepository.buscarPorId(command.getUsuarioId())
+                .map(PerfilUsuario::getFotoPerfilPath)
+                .orElse(null);
+
         if (porCorreo.isPresent()) {
             ClientePerfil existente = porCorreo.get();
             if (existente.getUsuarioId() != null) {
@@ -206,6 +228,7 @@ public class ClientePerfilService
                     .telefono(command.getTelefono())
                     .origen("WEB")
                     .aceptaComunicaciones(command.isAceptaComunicaciones())
+                    .fotoPerfilPath(fotoGoogle)
                     .build();
             return clientePerfilRepository.guardar(vinculado);
         }
@@ -231,6 +254,7 @@ public class ClientePerfilService
                 .esVip(false)
                 .contadorVisitas(0)
                 .totalGastado(BigDecimal.ZERO)
+                .fotoPerfilPath(fotoGoogle)
                 .build();
 
         return clientePerfilRepository.guardar(nuevo);

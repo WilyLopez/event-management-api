@@ -73,6 +73,7 @@ public class UsuarioAdminController {
                         .rolCodigo(request.getRol())
                         .sedeId(sedeId)
                         .generarPassword(request.isGenerarPassword())
+                        .telefono(request.getTelefono())
                         .build()
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(response));
