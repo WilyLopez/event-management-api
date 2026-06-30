@@ -44,12 +44,12 @@ public class ResumenDiaService implements ConsultarResumenDiaUseCase {
         boolean bloqueado = bloqueRepository.existsBloqueActivoEnFecha(idSede, fecha);
 
         String tipoOcupacion = "LIBRE";
-        if (esFeriado) tipoOcupacion = "FERIADO";
-        else if (bloqueado) {
+        if (bloqueado) {
             tipoOcupacion = "BLOQUEADO";
         } else if (eventos.size() >= 2) tipoOcupacion = "PRIVADO_LLENO";
         else if (eventos.size() == 1) tipoOcupacion = "PRIVADO_PARCIAL";
         else if (reservas.size() > 0) tipoOcupacion = "PUBLICO";
+
 
         BigDecimal ingresoEstimado = reservas.stream()
                 .filter(r -> r.getEstado() == EstadoReservaPublica.CONFIRMADA

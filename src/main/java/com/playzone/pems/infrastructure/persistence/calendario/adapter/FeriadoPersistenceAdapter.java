@@ -25,6 +25,7 @@ public class FeriadoPersistenceAdapter implements FeriadoRepository {
         return feriadoJpa.findById(id).map(mapper::toDomain);
     }
 
+    @org.springframework.cache.annotation.Cacheable(value = "feriados", key = "#fecha")
     @Override
     public Optional<Feriado> findByFecha(LocalDate fecha) {
         return feriadoJpa.findByFecha(fecha).map(mapper::toDomain);
@@ -40,6 +41,7 @@ public class FeriadoPersistenceAdapter implements FeriadoRepository {
         return feriadoJpa.findByFechaBetween(inicio, fin).stream().map(mapper::toDomain).toList();
     }
 
+    @org.springframework.cache.annotation.CacheEvict(value = "feriados", allEntries = true)
     @Override
     @Transactional
     public Feriado save(Feriado feriado) {
@@ -54,6 +56,7 @@ public class FeriadoPersistenceAdapter implements FeriadoRepository {
         return mapper.toDomain(feriadoJpa.save(entity));
     }
 
+    @org.springframework.cache.annotation.CacheEvict(value = "feriados", allEntries = true)
     @Override
     public void deleteById(Long id) {
         feriadoJpa.deleteById(id);

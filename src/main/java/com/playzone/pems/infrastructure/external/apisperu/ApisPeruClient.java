@@ -27,10 +27,10 @@ public class ApisPeruClient {
     private Map<String, Object> get(String urlBase, String path, String token) {
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(java.util.List.of(MediaType.APPLICATION_JSON));
-        headers.setBearerAuth(token);
 
         HttpEntity<Void> entity = new HttpEntity<>(headers);
-        String url = (urlBase.endsWith("/") ? urlBase.substring(0, urlBase.length() - 1) : urlBase) + path;
+        String cleanUrlBase = urlBase.endsWith("/") ? urlBase.substring(0, urlBase.length() - 1) : urlBase;
+        String url = cleanUrlBase + path + "?token=" + token;
 
         try {
             ResponseEntity<Map> response = restTemplate.exchange(

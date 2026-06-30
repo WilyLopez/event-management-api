@@ -52,6 +52,7 @@ public class SedeIntegracionController {
             boolean activo = (Boolean) row.get("activo");
 
             boolean tieneToken = tokenCifrado != null && !tokenCifrado.isBlank();
+            int realizadas = obtenerConsultasRealizadas(idSede, prov);
 
             SedeIntegracionResponse config = SedeIntegracionResponse.builder()
                     .proveedorCodigo(prov)
@@ -59,6 +60,7 @@ public class SedeIntegracionController {
                     .apiToken(tieneToken ? PLACEHOLDER : "")
                     .limiteMensual(limite)
                     .activo(activo)
+                    .consultasRealizadas(realizadas)
                     .build();
 
             response.add(config);
@@ -69,25 +71,40 @@ public class SedeIntegracionController {
 
         // Agregar defaults si no existen en BD
         if (!tieneDecolecta) {
+            int realizadas = obtenerConsultasRealizadas(idSede, "DECOLECTA");
             response.add(SedeIntegracionResponse.builder()
                     .proveedorCodigo("DECOLECTA")
                     .apiUrl("https://api.decolecta.com")
                     .apiToken("")
                     .limiteMensual(100)
                     .activo(false)
+                    .consultasRealizadas(realizadas)
                     .build());
         }
         if (!tieneApisPeru) {
+            int realizadas = obtenerConsultasRealizadas(idSede, "APISPERU");
             response.add(SedeIntegracionResponse.builder()
                     .proveedorCodigo("APISPERU")
                     .apiUrl("https://dniruc.apisperu.com")
                     .apiToken("")
                     .limiteMensual(2000)
                     .activo(false)
+                    .consultasRealizadas(realizadas)
                     .build());
         }
 
         return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
+    private int obtenerConsultasRealizadas(Long idSede, String proveedorCodigo) {
+        String sql = "SELECT COUNT(*)::INT FROM public.registro_consulta_documento WHERE idsede = ? AND proveedor_codigo = ? AND creado_at >= DATE_TRUNC('month', CURRENT_DATE)";
+        try {
+            Integer count = jdbcTemplate.queryForObject(sql, Integer.class, idSede, proveedorCodigo.toUpperCase());
+            return count != null ? count : 0;
+        } catch (Exception e) {
+            log.warn("Fallo al obtener consultas realizadas para {}: {}", proveedorCodigo, e.getMessage());
+            return 0;
+        }
     }
 
     @PutMapping("/{proveedorCodigo}")
@@ -155,6 +172,7 @@ public class SedeIntegracionController {
         private String apiToken;
         private int limiteMensual;
         private boolean activo;
+        private int consultasRealizadas;
     }
 
     @Getter

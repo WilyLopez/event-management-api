@@ -57,11 +57,12 @@ public class VentaMostradorService {
     @Transactional
     public VentaMostradorQuery registrar(RegistrarVentaMostradorCommand cmd) {
 
-        // Valida que exista una caja abierta para la sede (los triggers de BD
-        // necesitan la apertura activa para registrar el movimiento de efectivo).
-        aperturaCajaRepository.findActivaBySede(cmd.getSedeId())
-                .orElseThrow(() -> new ValidationException(
-                        "No hay caja abierta para esta sede. Abrir caja antes de registrar ventas."));
+        boolean isAdminOrSuper = authFacade.tieneRol("SUPERADMIN") || authFacade.tieneRol("ADMIN");
+        if (!isAdminOrSuper) {
+            aperturaCajaRepository.findActivaBySede(cmd.getSedeId())
+                    .orElseThrow(() -> new ValidationException(
+                            "No hay caja abierta para esta sede. Abrir caja antes de registrar ventas."));
+        }
 
         java.time.ZoneId zoneId = java.time.ZoneId.of("America/Lima");
         java.time.LocalTime horaActual = java.time.LocalTime.now(zoneId);

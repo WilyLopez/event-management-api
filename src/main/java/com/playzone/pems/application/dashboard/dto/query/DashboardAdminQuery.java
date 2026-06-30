@@ -22,6 +22,8 @@ public class DashboardAdminQuery {
     private final int       solicitudesEventoSinResponder;
     private final int       eventosSaldoPendiente;
     private final boolean   cajaAbierta;
+    private final int       yapesPorValidar;
+
 
     private final List<AgendaReservaQuery>    reservasHoyDetalle;
     private final List<AgendaEventoQuery>     eventosHoyDetalle;

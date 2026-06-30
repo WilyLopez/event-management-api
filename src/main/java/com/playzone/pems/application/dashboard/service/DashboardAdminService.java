@@ -63,6 +63,17 @@ public class DashboardAdminService implements ConsultarDashboardAdminUseCase {
                 .filter(c -> c.getEstado() == EstadoCaja.ABIERTA)
                 .isPresent();
 
+        int yapesPorValidar = (int) reservaPublicaRepository.buscarAdmin(
+                idSede,
+                EstadoReservaPublica.PENDIENTE,
+                null,
+                null,
+                null,
+                "YAPE",
+                null,
+                org.springframework.data.domain.PageRequest.of(0, 1)
+        ).getTotalElements();
+
         List<ReservaPublica> reservasDetalle = reservaPublicaRepository.findBySedeAndFecha(idSede, hoy);
         List<AgendaReservaQuery> agendaReservas = reservasDetalle.stream()
                 .filter(r -> r.getEstado() != EstadoReservaPublica.CANCELADA)
@@ -120,10 +131,12 @@ public class DashboardAdminService implements ConsultarDashboardAdminUseCase {
                 .solicitudesEventoSinResponder(solicitudes)
                 .eventosSaldoPendiente(saldoPendiente)
                 .cajaAbierta(cajaAbierta)
+                .yapesPorValidar(yapesPorValidar)
                 .reservasHoyDetalle(agendaReservas)
                 .eventosHoyDetalle(agendaEventos)
                 .reservasUltimos30Dias(tendencia)
                 .disponibilidadSemana(semana)
                 .build();
+
     }
 }

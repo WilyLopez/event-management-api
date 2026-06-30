@@ -79,6 +79,12 @@ public class ReservaPublicaService
     private final RegistrarLogUseCase               auditoria;
     private final CrearNotificacionPort             crearNotificacionPort;
 
+    @org.springframework.beans.factory.annotation.Value("${supabase.storage.bucket-comprobantes:comprobantes}")
+    private String bucketComprobantes;
+
+    @org.springframework.beans.factory.annotation.Value("${supabase.storage.bucket-publico:kiki-publico}")
+    private String bucketPublico;
+
     // ── Consultas ────────────────────────────────────────────────────────────────
 
     @Override
@@ -347,13 +353,53 @@ public class ReservaPublicaService
     }
 
     @Transactional
+    public ReservaPublicaQuery rechazarPago(Long idReserva, String motivo) {
+        ReservaPublica reserva = reservaRepository.findById(idReserva)
+                .orElseThrow(() -> new ReservaNotFoundException(idReserva));
+        if (reserva.getEstado() != EstadoReservaPublica.PENDIENTE) {
+            throw new ValidationException("Solo se pueden rechazar pagos de reservas en estado PENDIENTE.");
+        }
+        
+        var pagosExistentes = ventaPagoRepository.findByVentaId(reserva.getVentaId());
+        for (var pago : pagosExistentes) {
+            if (!pago.isEsValidado()) {
+                ventaPagoRepository.save(pago.toBuilder()
+                        .referencia(null)
+                        .build());
+            }
+        }
+
+        crearNotificacionPort.notificar(CrearNotificacionCommand.builder()
+                .tipoCodigo("PAGO_RECHAZADO")
+                .destinatarioClienteId(reserva.getIdCliente())
+                .entidadTipo("reserva_publica")
+                .entidadId(reserva.getId())
+                .datosExtra(Map.of(
+                        "motivo", motivo != null ? motivo : "Comprobante invalido",
+                        "fecha", reserva.getFechaEvento().toString()))
+                .build());
+
+        return enriquecerQuery(reserva);
+    }
+
+    @Transactional
     public ReservaPublicaQuery actualizarReferenciaPago(Long idReserva, MultipartFile archivo) {
         String url;
         try {
             byte[] bytes = archivo.getBytes();
             String key = "comprobantes/" + UUID.randomUUID() + "_" + archivo.getOriginalFilename();
             String mime = archivo.getContentType() != null ? archivo.getContentType() : "application/octet-stream";
-            url = storagePort.upload("comprobantes", key, bytes, mime);
+            try {
+                url = storagePort.upload(bucketComprobantes, key, bytes, mime);
+            } catch (Exception e) {
+                if (e.getClass().getSimpleName().equals("NoSuchBucketException") ||
+                    (e.getMessage() != null && (e.getMessage().contains("Bucket not found") || e.getMessage().contains("NoSuchBucket")))) {
+                    log.warn("Bucket '{}' no encontrado, reintentando con '{}'", bucketComprobantes, bucketPublico);
+                    url = storagePort.upload(bucketPublico, key, bytes, mime);
+                } else {
+                    throw e;
+                }
+            }
         } catch (IOException e) {
             throw new RuntimeException("No se pudo leer el comprobante", e);
         }
@@ -402,9 +448,6 @@ public class ReservaPublicaService
         }
         if (fecha.isEqual(hoy) && FechaUtil.ahora().toLocalTime().isAfter(cfg.getHoraCierre())) {
             throw new FechaNoDisponibleException(fecha, "El local ya cerro por hoy. Elige otra fecha.");
-        }
-        if (feriadoRepository.existsByFecha(fecha)) {
-            throw new FechaNoDisponibleException(fecha, "Esta fecha es feriado.");
         }
         if (bloqueRepository.existsBloqueActivoEnFecha(idSede, fecha)) {
             throw new FechaNoDisponibleException(fecha, "La fecha esta bloqueada.");
@@ -480,6 +523,7 @@ public class ReservaPublicaService
                 .codigoQr(r.getCodigoQr())
                 .medioPago(medioPago)
                 .referenciaPago(referenciaPago)
+                .motivoCancelacion(r.getMotivoCancelacion())
                 .fechaCreacion(r.getCreatedAt())
                 .build();
     }

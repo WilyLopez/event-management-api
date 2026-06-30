@@ -49,7 +49,7 @@ public class LogAuditoriaEntity {
     @Column(length = 500)
     private String descripcion;
 
-    @Column(name = "ip_origen", columnDefinition = "inet")
+    @Column(name = "ip_origen", length = 45)
     private String ipOrigen;
 
     @Column(name = "user_agent", length = 300)

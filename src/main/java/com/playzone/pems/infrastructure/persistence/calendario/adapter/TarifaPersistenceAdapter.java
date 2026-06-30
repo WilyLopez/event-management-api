@@ -29,6 +29,7 @@ public class TarifaPersistenceAdapter implements TarifaRepository {
         return tarifaJpa.findById(id).map(mapper::toDomain);
     }
 
+    @org.springframework.cache.annotation.Cacheable(value = "tarifas", key = "{#idSede, #tipoDia, #fecha}")
     @Override
     public Optional<Tarifa> findVigenteBySedeAndTipoDiaAndFecha(Long idSede, TipoDia tipoDia, LocalDate fecha) {
         return tarifaJpa.findVigenteBySedeAndTipoDiaAndFecha(idSede, tipoDia, fecha).map(mapper::toDomain);
@@ -40,6 +41,7 @@ public class TarifaPersistenceAdapter implements TarifaRepository {
                 .stream().map(mapper::toDomain).toList();
     }
 
+    @org.springframework.cache.annotation.CacheEvict(value = "tarifas", allEntries = true)
     @Override
     @Transactional
     public Tarifa save(Tarifa tarifa) {
@@ -59,6 +61,7 @@ public class TarifaPersistenceAdapter implements TarifaRepository {
         return mapper.toDomain(tarifaJpa.save(entity));
     }
 
+    @org.springframework.cache.annotation.CacheEvict(value = "tarifas", allEntries = true)
     @Override
     @Transactional
     public void desactivarAnterioresBySedeAndTipoDia(Long idSede, TipoDia tipoDia) {

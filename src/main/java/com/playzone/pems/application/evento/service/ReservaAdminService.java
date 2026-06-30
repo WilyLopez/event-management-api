@@ -94,7 +94,8 @@ public class ReservaAdminService
                 "Ingreso confirmado para reserva #" + idReserva,
                 null, null, AuditoriaConstants.NIVEL_INFO, AuditoriaConstants.RESULTADO_EXITOSO));
 
-        return toQuery(guardada, nombre, null);
+        return toQuery(guardada, nombre, null,
+                fetchMedioPago(guardada.getVentaId()), fetchReferenciaPago(guardada.getVentaId()));
     }
 
     @Override
@@ -102,7 +103,7 @@ public class ReservaAdminService
     public Page<ReservaPublicaQuery> buscar(
             Long idSede, String estado, LocalDate fecha,
             Boolean ingresado, Boolean esReprogramacion,
-            String search, Pageable pageable) {
+            String medioPago, String search, Pageable pageable) {
 
         EstadoReservaPublica estadoEnum = null;
         if (estado != null && !estado.isBlank()) {
@@ -113,13 +114,17 @@ public class ReservaAdminService
         String searchPattern = (search != null && !search.isBlank())
                 ? "%" + search.toLowerCase() + "%" : null;
 
+        String medioPagoFiltro = (medioPago != null && !medioPago.isBlank()) ? medioPago : null;
+
         return reservaRepository.buscarAdmin(
                 idSede, estadoEnum, fecha, ingresado, esReprogramacion,
-                searchPattern,
-                pageable
+                medioPagoFiltro, searchPattern, pageable
         ).map(r -> {
             var cp = clientePerfilRepository.buscarPorId(r.getIdCliente()).orElse(null);
-            return toQuery(r, cp != null ? cp.nombreCompleto() : null, cp != null ? cp.getCorreo() : null);
+            String mp = fetchMedioPago(r.getVentaId());
+            String ref = fetchReferenciaPago(r.getVentaId());
+            return toQuery(r, cp != null ? cp.nombreCompleto() : null,
+                    cp != null ? cp.getCorreo() : null, mp, ref);
         });
     }
 
@@ -241,7 +246,9 @@ public class ReservaAdminService
                 .build();
     }
 
-    private ReservaPublicaQuery toQuery(ReservaPublica r, String nombreCliente, String correoCliente) {
+    private ReservaPublicaQuery toQuery(ReservaPublica r, String nombreCliente,
+                                        String correoCliente,
+                                        String medioPago, String referenciaPago) {
         return ReservaPublicaQuery.builder()
                 .id(r.getId())
                 .idCliente(r.getIdCliente())
@@ -266,8 +273,27 @@ public class ReservaAdminService
                 .ingresado(r.isIngresado())
                 .fechaIngreso(r.getIngresoAt())
                 .codigoQr(r.getCodigoQr())
+                .medioPago(medioPago)
+                .referenciaPago(referenciaPago)
+                .motivoCancelacion(r.getMotivoCancelacion())
                 .fechaCreacion(r.getCreatedAt())
                 .build();
+    }
+
+    private String fetchMedioPago(Long idVenta) {
+        if (idVenta == null) return null;
+        var pagos = ventaPagoRepository.findByVentaId(idVenta);
+        if (pagos.isEmpty()) return null;
+        if (pagos.size() == 1) return pagos.get(0).getMedioPagoCodigo();
+        return "MULTIPLE";
+    }
+
+    private String fetchReferenciaPago(Long idVenta) {
+        if (idVenta == null) return null;
+        var pagos = ventaPagoRepository.findByVentaId(idVenta);
+        if (pagos.isEmpty()) return null;
+        if (pagos.size() == 1) return pagos.get(0).getReferencia();
+        return null;
     }
 
     @Transactional

@@ -37,6 +37,7 @@ public class DashboardController {
                 .solicitudesEventoSinResponder(q.getSolicitudesEventoSinResponder())
                 .eventosSaldoPendiente(q.getEventosSaldoPendiente())
                 .cajaAbierta(q.isCajaAbierta())
+                .yapesPorValidar(q.getYapesPorValidar())
                 .reservasHoyDetalle(q.getReservasHoyDetalle().stream()
                         .map(r -> DashboardAdminResponse.AgendaReservaResponse.builder()
                                 .numeroTicket(r.getNumeroTicket())

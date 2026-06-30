@@ -107,6 +107,7 @@ public class ReservaPublicaController {
                 @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
             @RequestParam(required = false)                    Boolean   ingresado,
             @RequestParam(required = false)                    Boolean   esReprogramacion,
+            @RequestParam(required = false)                    String    medioPago,
             @RequestParam(required = false)                    String    search,
             @RequestParam(defaultValue = "0")                  int       page,
             @RequestParam(defaultValue = "20")                 int       size,
@@ -118,7 +119,7 @@ public class ReservaPublicaController {
         Pageable       pageable = PageRequest.of(page, size, Sort.by(dir, parts[0]));
 
         return ResponseEntity.ok(ApiResponse.ok(
-                buscarAdminUseCase.buscar(idSede, estado, fecha, ingresado, esReprogramacion, search, pageable)
+                buscarAdminUseCase.buscar(idSede, estado, fecha, ingresado, esReprogramacion, medioPago, search, pageable)
                         .map(this::toResponse)));
     }
 
@@ -240,6 +241,14 @@ public class ReservaPublicaController {
             @PathVariable Long id,
             @RequestParam String medioPago) {
         return ResponseEntity.ok(ApiResponse.ok(toResponse(reservaService.confirmarPago(id, medioPago))));
+    }
+
+    @PostMapping("/{id}/rechazar-pago")
+    @PreAuthorize("hasAuthority('reserva.confirmar_pago')")
+    public ResponseEntity<ApiResponse<ReservaPublicaResponse>> rechazarPago(
+            @PathVariable Long id,
+            @RequestParam(required = false) String motivo) {
+        return ResponseEntity.ok(ApiResponse.ok(toResponse(reservaService.rechazarPago(id, motivo))));
     }
 
     @GetMapping("/{idReserva}/ticket")
@@ -370,6 +379,7 @@ public class ReservaPublicaController {
                 .codigoQr(q.getCodigoQr())
                 .medioPago(q.getMedioPago())
                 .referenciaPago(q.getReferenciaPago())
+                .motivoCancelacion(q.getMotivoCancelacion())
                 .fechaCreacion(q.getFechaCreacion())
                 .build();
     }

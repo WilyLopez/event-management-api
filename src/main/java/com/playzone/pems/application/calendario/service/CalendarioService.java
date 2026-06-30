@@ -49,10 +49,9 @@ public class CalendarioService
     private final ProgramacionSemanalRepository        programacionRepository;
 
     public OcupacionDia ocupacionDia(Long idSede, LocalDate fecha) {
-        if (feriadoRepository.existsByFecha(fecha))
-            return OcupacionDia.feriado();
         if (bloqueRepository.existsBloqueEfectivoEnFecha(idSede, fecha))
             return OcupacionDia.bloqueado();
+
 
         List<EventoPrivado> eventosActivos = eventoRepository.findActivosBySedeAndFecha(idSede, fecha);
         boolean t1Ocupado = eventosActivos.stream().anyMatch(e -> "T1".equals(obtenerCodigoTurno(e)));
@@ -269,8 +268,7 @@ public class CalendarioService
             boolean t2Ocupado = eventosDia.stream().anyMatch(e -> "T2".equals(obtenerCodigoTurno(e)));
 
             OcupacionDia oc;
-            if (esFeriado) oc = OcupacionDia.feriado();
-            else if (bloqueado) oc = OcupacionDia.bloqueado();
+            if (bloqueado) oc = OcupacionDia.bloqueado();
             else if (t1Ocupado || t2Ocupado) {
                 TipoOcupacionDia tipo = (t1Ocupado && t2Ocupado) ? TipoOcupacionDia.PRIVADO_LLENO : TipoOcupacionDia.PRIVADO_PARCIAL;
                 EventoPrivado evT1 = eventosDia.stream().filter(e -> "T1".equals(obtenerCodigoTurno(e))).findFirst().orElse(null);
@@ -282,6 +280,7 @@ public class CalendarioService
                 long resCount = reservasMap.getOrDefault(fechaRef, 0L);
                 oc = resCount > 0 ? OcupacionDia.publico((int) resCount) : OcupacionDia.libre();
             }
+
 
             boolean diaOperacion = esDiaOperacion(cfg, fechaRef);
             int aforoActual = (int) (long) reservasMap.getOrDefault(fechaRef, 0L);
