@@ -172,6 +172,10 @@ playzone:
     connect-timeout-ms: 5000
     read-timeout-ms: 10000
 
+  resend:
+    api-key: ${RESEND_API_KEY:re_7nURdiD7_N6aSCFavBNntctnpdNcEr6Ch}
+    from: ${RESEND_FROM:onboarding@resend.dev}
+
 logging:
   level:
     root: INFO
