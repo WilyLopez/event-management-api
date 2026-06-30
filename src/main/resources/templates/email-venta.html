@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Tus comprobantes Kiki y Lala</title>
+</head>
+<body>
+<div style='font-family:Arial,sans-serif;max-width:500px;margin:0 auto;'>
+    <div style='background:#F64B8A;padding:20px;border-radius:12px 12px 0 0;text-align:center;'>
+        <h2 style='color:white;margin:0;'>Gracias por tu compra</h2>
+    </div>
+    <div style='background:#f8fafc;padding:20px;border:1px solid #e2e8f0;border-radius:0 0 12px 12px;'>
+        <p style='color:#1A1A2E;font-size:15px;'>Hola <strong>{{nombreCliente}}</strong>,</p>
+        <p style='color:#475569;'>Adjuntamos los documentos y tickets correspondientes a tu visita.</p>
+        <div style='background:white;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:16px 0;'>
+            <p style='margin:4px 0;font-size:13px;color:#64748b;'>Número de venta</p>
+            <p style='margin:4px 0;font-size:16px;font-weight:900;color:#F64B8A;'>#{{ventaId}}</p>
+            <p style='margin:12px 0 4px;font-size:13px;color:#64748b;'>Fecha de visita</p>
+            <p style='margin:4px 0;font-size:15px;font-weight:700;color:#1A1A2E;'>{{fechaVisita}}</p>
+            <p style='margin:12px 0 4px;font-size:13px;color:#64748b;'>Total pagado</p>
+            <p style='margin:4px 0;font-size:15px;font-weight:700;color:#15803d;'>S/ {{total}}</p>
+        </div>
+        <p style='color:#f59e0b;font-size:13px;'>Encontrarás adjunta tu Nota de Venta y cada uno de los tickets de ingreso en PDF.</p>
+        <p style='color:#64748b;font-size:12px;margin-top:16px;'>Kiki y Lala &mdash; El local más divertido de Chiclayo</p>
+    </div>
+</div>
+</body>
+</html>

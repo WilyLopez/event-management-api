@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Tu ticket Kiki y Lala</title>
+</head>
+<body>
+<div style='font-family:Arial,sans-serif;max-width:500px;margin:0 auto;'>
+    <div style='background:#00AEEF;padding:20px;border-radius:12px 12px 0 0;text-align:center;'>
+        <h2 style='color:white;margin:0;'>Tu reserva está confirmada</h2>
+    </div>
+    <div style='background:#f8fafc;padding:20px;border:1px solid #e2e8f0;border-radius:0 0 12px 12px;'>
+        <p style='color:#1A1A2E;font-size:15px;'>Hola <strong>{{nombreCliente}}</strong>,</p>
+        <p style='color:#475569;'>Tu ticket para la zona de juegos de Kiki y Lala está listo.</p>
+        <div style='background:white;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:16px 0;'>
+            <p style='margin:4px 0;font-size:13px;color:#64748b;'>Número de ticket</p>
+            <p style='margin:4px 0;font-size:16px;font-weight:900;font-family:monospace;color:#00AEEF;'>{{numeroTicket}}</p>
+            <p style='margin:12px 0 4px;font-size:13px;color:#64748b;'>Fecha</p>
+            <p style='margin:4px 0;font-size:15px;font-weight:700;color:#1A1A2E;'>{{fecha}}</p>
+            <p style='margin:12px 0 4px;font-size:13px;color:#64748b;'>Total</p>
+            <p style='margin:4px 0;font-size:15px;font-weight:700;color:#15803d;'>S/ {{total}}</p>
+        </div>
+        <p style='color:#f59e0b;font-size:13px;'>Adjuntamos tu ticket en PDF. Preséntalo en recepción el día de tu visita.</p>
+        <p style='color:#64748b;font-size:12px;margin-top:16px;'>Kiki y Lala &mdash; El local más divertido de Chiclayo</p>
+    </div>
+</div>
+</body>
+</html>
