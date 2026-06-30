@@ -6,9 +6,10 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import com.playzone.pems.infrastructure.persistence.cms.entity.InetConverter;
+
 import java.time.OffsetDateTime;
 import java.util.UUID;
-import com.playzone.pems.infrastructure.persistence.cms.entity.InetConverter;
 
 @Entity
 @Table(name = "auditoria_log")
@@ -51,7 +52,6 @@ public class LogAuditoriaEntity {
     private String descripcion;
 
     @Column(name = "ip_origen", length = 45)
-    @Convert(converter = InetConverter.class)
     private String ipOrigen;
 
     @Column(name = "user_agent", length = 300)
